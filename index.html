@@ -1,0 +1,1250 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>小众资源库</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), 
+                        url('https://images.unsplash.com/photo-1506905925346-21bda4d32df4?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80');
+            background-size: cover;
+            background-attachment: fixed;
+            color: #f0f0f0;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: rgba(30, 30, 40, 0.85);
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            overflow: hidden;
+            min-height: 90vh;
+        }
+        
+        header {
+            padding: 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .header-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .nav-toggle, .back-button, .forward-button {
+            background: none;
+            border: none;
+            color: #fff;
+            font-size: 24px;
+            cursor: pointer;
+            padding: 10px;
+            border-radius: 5px;
+            transition: background 0.3s;
+        }
+        
+        .nav-toggle:hover, .back-button:hover, .forward-button:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+        
+        .back-button, .forward-button {
+            display: none;
+        }
+        
+        .back-button.active, .forward-button.active {
+            display: block;
+        }
+        
+        .site-title {
+            font-size: 28px;
+            font-weight: bold;
+            color: #4CAF50;
+            text-shadow: 0 0 10px rgba(76, 175, 80, 0.5);
+        }
+        
+        .main-content {
+            display: flex;
+            min-height: calc(100vh - 120px);
+        }
+        
+        .sidebar {
+            width: 250px;
+            background: rgba(20, 20, 30, 0.9);
+            padding: 20px;
+            transition: transform 0.3s ease;
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .sidebar.hidden {
+            transform: translateX(-100%);
+        }
+        
+        .nav-menu {
+            list-style: none;
+        }
+        
+        .nav-item {
+            margin-bottom: 15px;
+        }
+        
+        .nav-link {
+            color: #ddd;
+            text-decoration: none;
+            font-size: 18px;
+            padding: 10px 15px;
+            display: block;
+            border-radius: 8px;
+            transition: all 0.3s;
+        }
+        
+        .nav-link:hover, .nav-link.active {
+            background: rgba(76, 175, 80, 0.2);
+            color: #4CAF50;
+        }
+        
+        .content-area {
+            flex: 1;
+            padding: 30px;
+            overflow-y: auto;
+        }
+        
+        .section {
+            display: none;
+        }
+        
+        .section.active {
+            display: block;
+            animation: fadeIn 0.5s;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        .author-info {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 30px;
+            align-items: flex-start;
+        }
+        
+        .author-photo {
+            width: 200px;
+            height: 200px;
+            border-radius: 10px;
+            object-fit: cover;
+            border: 3px solid #4CAF50;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            background: rgba(76, 175, 80, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #4CAF50;
+            font-size: 14px;
+            text-align: center;
+            padding: 10px;
+        }
+        
+        .author-details {
+            flex: 1;
+            min-width: 300px;
+        }
+        
+        .author-name {
+            font-size: 32px;
+            margin-bottom: 15px;
+            color: #4CAF50;
+        }
+        
+        .author-description {
+            line-height: 1.6;
+            margin-bottom: 20px;
+            font-size: 16px;
+        }
+        
+        .creation-date {
+            font-style: italic;
+            color: #aaa;
+            margin-bottom: 20px;
+        }
+        
+        .contact-info {
+            background: rgba(76, 175, 80, 0.1);
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #4CAF50;
+        }
+        
+        .folder-container {
+            margin-top: 30px;
+        }
+        
+        .folder {
+            display: inline-block;
+            width: 120px;
+            text-align: center;
+            margin: 15px;
+            cursor: pointer;
+            transition: transform 0.3s;
+        }
+        
+        .folder:hover {
+            transform: translateY(-5px);
+        }
+        
+        .folder-icon {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 10px;
+            background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%234CAF50"><path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/></svg>') no-repeat center;
+            background-size: contain;
+        }
+        
+        .folder-name {
+            word-wrap: break-word;
+            font-size: 14px;
+            color: #ddd;
+        }
+        
+        .search-container {
+            margin: 20px 0;
+            display: flex;
+            justify-content: flex-end;
+        }
+        
+        .search-icon {
+            background: rgba(76, 175, 80, 0.2);
+            border: none;
+            color: #4CAF50;
+            font-size: 18px;
+            padding: 10px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .search-icon:hover {
+            background: rgba(76, 175, 80, 0.4);
+        }
+        
+        .search-bar {
+            display: none;
+            width: 300px;
+            margin-left: 10px;
+            position: relative;
+        }
+        
+        .search-bar.active {
+            display: block;
+            animation: slideIn 0.3s;
+        }
+        
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(-10px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        
+        .search-input {
+            width: 100%;
+            padding: 10px 15px;
+            border: 1px solid rgba(76, 175, 80, 0.5);
+            border-radius: 8px;
+            background: rgba(20, 20, 30, 0.9);
+            color: #fff;
+            font-size: 16px;
+        }
+        
+        .search-input::placeholder {
+            color: #aaa;
+        }
+        
+        .search-results {
+            margin-top: 20px;
+            display: none;
+        }
+        
+        .search-results.active {
+            display: block;
+        }
+        
+        .file-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .file-item {
+            background: rgba(30, 30, 40, 0.8);
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+            transition: transform 0.3s, box-shadow 0.3s;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            cursor: pointer;
+        }
+        
+        .file-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+        
+        .file-icon {
+            width: 60px;
+            height: 60px;
+            margin: 0 auto 10px;
+            background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23667eea"><path d="M6 2c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6H6zm7 7V3.5L18.5 9H13z"/></svg>') no-repeat center;
+            background-size: contain;
+        }
+        
+        .apk-icon {
+            width: 60px;
+            height: 60px;
+            margin: 0 auto 10px;
+            background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23FF5722"><path d="M6 2c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6H6zm7 7V3.5L18.5 9H13z"/></svg>') no-repeat center;
+            background-size: contain;
+        }
+        
+        .rar-icon {
+            width: 60px;
+            height: 60px;
+            margin: 0 auto 10px;
+            background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23FF9800"><path d="M6 2c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6H6zm7 7V3.5L18.5 9H13z"/></svg>') no-repeat center;
+            background-size: contain;
+        }
+        
+        .file-name {
+            word-wrap: break-word;
+            font-size: 14px;
+            color: #ddd;
+        }
+        
+        .folder-long-name {
+            width: 150px;
+        }
+        
+        .breadcrumb {
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        
+        .breadcrumb-item {
+            color: #4CAF50;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        
+        .breadcrumb-item:after {
+            content: " > ";
+            margin-left: 10px;
+            color: #aaa;
+        }
+        
+        .breadcrumb-item:last-child:after {
+            content: "";
+        }
+        
+        .breadcrumb-item:hover {
+            text-decoration: underline;
+        }
+        
+        .folder-content {
+            display: none;
+        }
+        
+        .folder-content.active {
+            display: block;
+            animation: fadeIn 0.5s;
+        }
+        
+        .empty-folder {
+            text-align: center;
+            padding: 40px;
+            color: #aaa;
+            font-style: italic;
+        }
+        
+        .file-details {
+            font-size: 12px;
+            color: #aaa;
+            margin-top: 5px;
+        }
+        
+        .download-link {
+            color: #4CAF50;
+            text-decoration: none;
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+        
+        .warning-message {
+            background: rgba(255, 87, 34, 0.2);
+            border: 1px solid rgba(255, 87, 34, 0.5);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            color: #ffccbc;
+        }
+        
+        @media (max-width: 768px) {
+            .sidebar {
+                position: fixed;
+                top: 0;
+                left: 0;
+                height: 100%;
+                z-index: 1000;
+                transform: translateX(-100%);
+            }
+            
+            .sidebar.active {
+                transform: translateX(0);
+            }
+            
+            .author-info {
+                flex-direction: column;
+                align-items: center;
+                text-align: center;
+            }
+            
+            .search-bar {
+                width: 100%;
+            }
+            
+            .file-list {
+                grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="header-controls">
+                <button class="nav-toggle" id="navToggle">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <button class="back-button" id="backButton">
+                    <i class="fas fa-arrow-left"></i>
+                </button>
+                <button class="forward-button" id="forwardButton">
+                    <i class="fas fa-arrow-right"></i>
+                </button>
+            </div>
+            <h1 class="site-title">小众资源库</h1>
+        </header>
+        
+        <div class="main-content">
+            <div class="sidebar" id="sidebar">
+                <ul class="nav-menu">
+                    <li class="nav-item">
+                        <a href="#" class="nav-link active" data-target="about">关于作者</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#" class="nav-link" data-target="resources">资源库</a>
+                    </li>
+                </ul>
+            </div>
+            
+            <div class="content-area">
+                <div class="section active" id="about">
+                    <div class="author-info">
+                        <div class="author-photo-container">
+                            <div class="author-photo">
+                                个人照片<br>(暂无图片)
+                            </div>
+                        </div>
+                        <div class="author-details">
+                            <h2 class="author-name">肖秉岑</h2>
+                            <p class="author-description">
+                                我是一名初一学生，喜爱钻研计算机安全防御、病毒样本、网页资源科学下载，科学使用谷歌，搜集网页资源等。
+                            </p>
+                            <p class="creation-date">网站成立日期：2025年10月1日</p>
+                            <p class="author-description">
+                                这个网页成立日期为2025年10月1日，从此以后作者会不定时更新网站。因为作者没钱，且经历过那么一段不美好的回忆：
+                                下文件度盘要账号还限速，夸克要手机号，微云要手机号，城通要手机号......这对于没有手机号的人来说是十分不美好的，
+                                所以我特意选择了蓝奏云网盘。此网盘下载文件无需手机号并且不限速。
+                            </p>
+                            <p class="author-description">
+                                另外这个资源库是私密的，如果有人想要里面的文件，请回复作者。
+                            </p>
+                            <div class="contact-info">
+                                <p><strong>作者邮箱：</strong>cn.2345.com@gmail.com</p>
+                                <p><em>由于作者很忙且不常看邮箱，所以你可能会等上几个工作日。</em></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="section" id="resources">
+                    <h2>资源库</h2>
+                    
+                    <div class="breadcrumb" id="breadcrumb">
+                        <div class="breadcrumb-item" data-level="0">首页</div>
+                    </div>
+                    
+                    <div class="search-container">
+                        <button class="search-icon" id="searchToggle">
+                            <i class="fas fa-search"></i>
+                        </button>
+                        <div class="search-bar" id="searchBar">
+                            <input type="text" class="search-input" placeholder="请在此处键入搜索" id="searchInput">
+                        </div>
+                    </div>
+                    
+                    <!-- 搜索结果区域 - 现在放在最前面 -->
+                    <div class="search-results" id="searchResults">
+                        <h3>搜索结果</h3>
+                        <div class="file-list" id="resultsList">
+                            <!-- 搜索结果将在这里显示 -->
+                        </div>
+                    </div>
+                    
+                    <div class="folder-content active" id="folder-level-0">
+                        <div class="folder-container">
+                            <div class="folder" data-folder="main" data-level="1">
+                                <div class="folder-icon"></div>
+                                <div class="folder-name">小众资源库(默认密码:ylec15894423775)</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="folder-content" id="folder-level-1">
+                        <div class="file-list">
+                            <div class="file-item" data-name="音乐库">
+                                <div class="folder-icon"></div>
+                                <div class="file-name">音乐库</div>
+                            </div>
+                            <div class="file-item" data-name="应用">
+                                <div class="folder-icon"></div>
+                                <div class="file-name">应用</div>
+                            </div>
+                            <div class="file-item" data-name="书籍">
+                                <div class="folder-icon"></div>
+                                <div class="file-name">书籍</div>
+                            </div>
+                            <div class="file-item" data-name="windows病毒库">
+                                <div class="folder-icon"></div>
+                                <div class="file-name">windows病毒库</div>
+                            </div>
+                            <div class="file-item" data-name="手机病毒样本">
+                                <div class="folder-icon"></div>
+                                <div class="file-name">手机病毒样本</div>
+                            </div>
+                            <div class="file-item" data-name="电影">
+                                <div class="folder-icon"></div>
+                                <div class="file-name">电影</div>
+                            </div>
+                            <div class="file-item" data-name="综艺">
+                                <div class="folder-icon"></div>
+                                <div class="file-name">综艺</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 音乐库文件夹内容 -->
+                    <div class="folder-content" id="folder-level-2-music">
+                        <div class="file-list">
+                            <div class="file-item" data-name="爱国音乐">
+                                <div class="folder-icon"></div>
+                                <div class="file-name">爱国音乐</div>
+                            </div>
+                            <div class="file-item" data-name="古风，中国风">
+                                <div class="folder-icon"></div>
+                                <div class="file-name">古风，中国风</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 爱国音乐文件夹内容 - 已清空 -->
+                    <div class="folder-content" id="folder-level-3-patriotic">
+                        <div class="empty-folder">
+                            <i class="fas fa-folder-open" style="font-size: 48px; margin-bottom: 15px;"></i>
+                            <h3>文件夹为空</h3>
+                            <p>此文件夹中没有任何文件或文件夹</p>
+                        </div>
+                    </div>
+                    
+                    <!-- 古风，中国风文件夹内容 -->
+                    <div class="folder-content" id="folder-level-3">
+                        <div class="file-list">
+                            <div class="file-item" data-name="晚夜微雨问海棠-镜予歌&amp;喧笑&amp;陈亦洺-mp3免费在线下载播放-歌曲宝-找歌就用歌曲宝-MP3音乐高品质在线免费下载.mp3">
+                                <a href="https://wwzr.lanzout.com/iDggd36voq7i" class="download-link" target="_blank">
+                                    <div class="file-icon"></div>
+                                    <div class="file-name">晚夜微雨问海棠-镜予歌&amp;喧笑&amp;陈亦洺-mp3免费在线下载播放-歌曲宝-找歌就用歌曲宝-MP3音乐高品质在线免费下载.mp3</div>
+                                    <div class="file-details">MP3 | 4.3MB</div>
+                                </a>
+                            </div>
+                            <div class="file-item" data-name="昔言-HITA-mp3免费在线下载播放-歌曲宝-找歌就用歌曲宝-MP3音乐高品质在线免费下载.mp3">
+                                <a href="https://wwzr.lanzout.com/i5xwT36voq3e" class="download-link" target="_blank">
+                                    <div class="file-icon"></div>
+                                    <div class="file-name">昔言-HITA-mp3免费在线下载播放-歌曲宝-找歌就用歌曲宝-MP3音乐高品质在线免费下载.mp3</div>
+                                    <div class="file-details">MP3 | 5.4MB</div>
+                                </a>
+                            </div>
+                            <div class="file-item" data-name="是风动-银临&amp;河图-mp3免费在线下载播放-歌曲宝-找歌就用歌曲宝-MP3音乐高品质在线免费下载.mp3">
+                                <a href="https://wwzr.lanzout.com/i2kmf36vopyj" class="download-link" target="_blank">
+                                    <div class="file-icon"></div>
+                                    <div class="file-name">是风动-银临&amp;河图-mp3免费在线下载播放-歌曲宝-找歌就用歌曲宝-MP3音乐高品质在线免费下载.mp3</div>
+                                    <div class="file-details">MP3 | 4.4MB</div>
+                                </a>
+                            </div>
+                            <div class="file-item" data-name="油纸伞-郑鱼_2A2dpG.mp3">
+                                <a href="https://wwzr.lanzout.com/igeqz36vopvg" class="download-link" target="_blank">
+                                    <div class="file-icon"></div>
+                                    <div class="file-name">油纸伞-郑鱼_2A2dpG.mp3</div>
+                                    <div class="file-details">MP3 | 6.5MB</div>
+                                </a>
+                            </div>
+                            <div class="file-item" data-name="逍遥游-影视原声_iKnZ2.mp3">
+                                <a href="https://wwzr.lanzout.com/iKWgw36vopoj" class="download-link" target="_blank">
+                                    <div class="file-icon"></div>
+                                    <div class="file-name">逍遥游-影视原声_iKnZ2.mp3</div>
+                                    <div class="file-details">MP3 | 5.9MB</div>
+                                </a>
+                            </div>
+                            <div class="file-item" data-name="依山观澜-河图-mp3免费在线下载播放-歌曲宝-找歌就用歌曲宝-MP3音乐高品质在线免费下载.mp3">
+                                <a href="https://wwzr.lanzout.com/iP0C836vopje" class="download-link" target="_blank">
+                                    <div class="file-icon"></div>
+                                    <div class="file-name">依山观澜-河图-mp3免费在线下载播放-歌曲宝-找歌就用歌曲宝-MP3音乐高品质在线免费下载.mp3</div>
+                                    <div class="file-details">MP3 | 4.7MB</div>
+                                </a>
+                            </div>
+                            <div class="file-item" data-name="一拜天地-萧忆情Alex-mp3免费在线下载播放-歌曲宝-找歌就用歌曲宝-MP3音乐高品质在线免费下载.mp3">
+                                <a href="https://wwzr.lanzout.com/iEDwX36vopgb" class="download-link" target="_blank">
+                                    <div class="file-icon"></div>
+                                    <div class="file-name">一拜天地-萧忆情Alex-mp3免费在线下载播放-歌曲宝-找歌就用歌曲宝-MP3音乐高品质在线免费下载.mp3</div>
+                                    <div class="file-details">MP3 | 5.1MB</div>
+                                </a>
+                            </div>
+                            <div class="file-item" data-name="少年中国-李宇春-mp3免费在线下载播放-歌曲宝-找歌就用歌曲宝-MP3音乐高品质在线免费下载.mp3">
+                                <a href="https://wwzr.lanzout.com/iGLDV36vopdi" class="download-link" target="_blank">
+                                    <div class="file-icon"></div>
+                                    <div class="file-name">少年中国-李宇春-mp3免费在线下载播放-歌曲宝-找歌就用歌曲宝-MP3音乐高品质在线免费下载.mp3</div>
+                                    <div class="file-details">MP3 | 4.3MB</div>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 手机病毒样本文件夹内容 -->
+                    <div class="folder-content" id="folder-level-2-mobile-virus">
+                        <div class="warning-message">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <strong>警告：</strong> 此文件夹包含手机病毒样本，仅供安全研究使用。请在隔离环境中运行这些文件，切勿在个人设备上执行！
+                        </div>
+                        <div class="file-list">
+                            <!-- 原有文件 -->
+                            <div class="file-item" data-name="荒野行动盒子root锁机.apk">
+                                <a href="https://wwzr.lanzout.com/iwFoW37fii6d" class="download-link" target="_blank">
+                                    <div class="apk-icon"></div>
+                                    <div class="file-name">荒野行动盒子root锁机.apk</div>
+                                    <div class="file-details">APK | 1.9MB</div>
+                                </a>
+                            </div>
+                            <div class="file-item" data-name="天眼查询系统.apk">
+                                <a href="https://wwzr.lanzout.com/ibL1z37fii5c" class="download-link" target="_blank">
+                                    <div class="apk-icon"></div>
+                                    <div class="file-name">天眼查询系统.apk</div>
+                                    <div class="file-details">APK | 4.1MB</div>
+                                </a>
+                            </div>
+                            <div class="file-item" data-name="seven锁机样本.apk">
+                                <a href="https://wwzr.lanzout.com/iUgnM37fii2j" class="download-link" target="_blank">
+                                    <div class="apk-icon"></div>
+                                    <div class="file-name">seven锁机样本.apk</div>
+                                    <div class="file-details">APK | 6.8MB</div>
+                                </a>
+                            </div>
+                            <div class="file-item" data-name="GameGuardian.apk">
+                                <a href="https://wwzr.lanzout.com/iotJY37fihzg" class="download-link" target="_blank">
+                                    <div class="apk-icon"></div>
+                                    <div class="file-name">GameGuardian.apk</div>
+                                    <div class="file-details">APK | 19.4MB</div>
+                                </a>
+                            </div>
+                            <div class="file-item" data-name="新人福利.apk">
+                                <a href="https://wwzr.lanzout.com/iGOqM37fihta" class="download-link" target="_blank">
+                                    <div class="apk-icon"></div>
+                                    <div class="file-name">新人福利.apk</div>
+                                    <div class="file-details">APK | 7.5MB</div>
+                                </a>
+                            </div>
+                            <div class="file-item" data-name="麻花藤.apk">
+                                <a href="https://wwzr.lanzout.com/iwksB37fihpg" class="download-link" target="_blank">
+                                    <div class="apk-icon"></div>
+                                    <div class="file-name">麻花藤.apk</div>
+                                    <div class="file-details">APK | 128.8KB</div>
+                                </a>
+                            </div>
+                            <div class="file-item" data-name="不可描述.apk">
+                                <a href="https://wwzr.lanzout.com/iiAWw37fihne" class="download-link" target="_blank">
+                                    <div class="apk-icon"></div>
+                                    <div class="file-name">不可描述.apk</div>
+                                    <div class="file-details">APK | 10.1MB</div>
+                                </a>
+                            </div>
+                            <div class="file-item" data-name="MobileFile">
+                                <a href="https://wwzr.lanzout.com/iOohV37fihlc" class="download-link" target="_blank">
+                                    <div class="rar-icon"></div>
+                                    <div class="file-name">MobileFile</div>
+                                    <div class="file-details">RAR | 2.1MB</div>
+                                </a>
+                            </div>
+                            <div class="file-item" data-name="这是个病毒.apk">
+                                <a href="https://wwzr.lanzout.com/ixgao37fihkb" class="download-link" target="_blank">
+                                    <div class="apk-icon"></div>
+                                    <div class="file-name">这是个病毒.apk</div>
+                                    <div class="file-details">APK | 2.7MB</div>
+                                </a>
+                            </div>
+                            <div class="file-item" data-name="卡密跑跑跑.apk">
+                                <a href="https://wwzr.lanzout.com/ilV1i37fihij" class="download-link" target="_blank">
+                                    <div class="apk-icon"></div>
+                                    <div class="file-name">卡密跑跑跑.apk</div>
+                                    <div class="file-details">APK | 2.2MB</div>
+                                </a>
+                            </div>
+                            <div class="file-item" data-name="病毒软件生成器-恶搞专业(刺激).apk">
+                                <a href="https://wwzr.lanzout.com/ifcrT37fihgh" class="download-link" target="_blank">
+                                    <div class="apk-icon"></div>
+                                    <div class="file-name">病毒软件生成器-恶搞专业(刺激).apk</div>
+                                    <div class="file-details">APK | 1.6MB</div>
+                                </a>
+                            </div>
+                            <div class="file-item" data-name="枪战英雄手机决裂.apk">
+                                <a href="https://wwzr.lanzout.com/iQ8Lm37fihfg" class="download-link" target="_blank">
+                                    <div class="apk-icon"></div>
+                                    <div class="file-name">枪战英雄手机决裂.apk</div>
+                                    <div class="file-details">APK | 2.8MB</div>
+                                </a>
+                            </div>
+                            <div class="file-item" data-name="mtglqvipgcb.apk">
+                                <a href="https://wwzr.lanzout.com/ig9kf37fihef" class="download-link" target="_blank">
+                                    <div class="apk-icon"></div>
+                                    <div class="file-name">mtglqvipgcb.apk</div>
+                                    <div class="file-details">APK | 7.1MB</div>
+                                </a>
+                            </div>
+                            <div class="file-item" data-name="Deepseek.apk">
+                                <a href="https://wwzr.lanzout.com/iQGst37fihab" class="download-link" target="_blank">
+                                    <div class="apk-icon"></div>
+                                    <div class="file-name">Deepseek.apk</div>
+                                    <div class="file-details">APK | 8.3MB</div>
+                                </a>
+                            </div>
+                            
+                            <!-- 新增文件 -->
+                            <div class="file-item" data-name="我的世界联机调试器.apk">
+                                <a href="https://wwzr.lanzout.com/iQGst37fihab" class="download-link" target="_blank">
+                                    <div class="apk-icon"></div>
+                                    <div class="file-name">我的世界联机调试器.apk</div>
+                                    <div class="file-details">APK | 2.7MB</div>
+                                </a>
+                            </div>
+                            <div class="file-item" data-name="万能WiFi管家-com.blbr.wnwifig有弹窗j.apk">
+                                <a href="https://wwzr.lanzout.com/iXNlf37fih6h" class="download-link" target="_blank">
+                                    <div class="apk-icon"></div>
+                                    <div class="file-name">万能WiFi管家-com.blbr.wnwifig有弹窗j.apk</div>
+                                    <div class="file-details">APK | 24.8MB</div>
+                                </a>
+                            </div>
+                            <div class="file-item" data-name="4D制作器.apk">
+                                <a href="https://wwzr.lanzout.com/irfdM37fih0b" class="download-link" target="_blank">
+                                    <div class="apk-icon"></div>
+                                    <div class="file-name">4D制作器.apk</div>
+                                    <div class="file-details">APK | 4.2MB</div>
+                                </a>
+                            </div>
+                            <div class="file-item" data-name="Etzmico锁机样本.apk">
+                                <a href="https://wwzr.lanzout.com/iQ1bG37figza" class="download-link" target="_blank">
+                                    <div class="apk-icon"></div>
+                                    <div class="file-name">Etzmico锁机样本.apk</div>
+                                    <div class="file-details">APK | 22.2KB</div>
+                                </a>
+                            </div>
+                            <div class="file-item" data-name="文件加密锁机样本.apk">
+                                <a href="https://wwzr.lanzout.com/iBScU37figyj" class="download-link" target="_blank">
+                                    <div class="apk-icon"></div>
+                                    <div class="file-name">文件加密锁机样本.apk</div>
+                                    <div class="file-details">APK | 14.7MB</div>
+                                </a>
+                            </div>
+                            <div class="file-item" data-name="吓人软件.apk">
+                                <a href="https://wwzr.lanzout.com/iDU6T37figuf" class="download-link" target="_blank">
+                                    <div class="apk-icon"></div>
+                                    <div class="file-name">吓人软件.apk</div>
+                                    <div class="file-details">APK | 5.5MB</div>
+                                </a>
+                            </div>
+                            <div class="file-item" data-name="鹰料js加载器.apk">
+                                <a href="https://wwzr.lanzout.com/iaLEL37figsd" class="download-link" target="_blank">
+                                    <div class="apk-icon"></div>
+                                    <div class="file-name">鹰料js加载器.apk</div>
+                                    <div class="file-details">APK | 13.0MB</div>
+                                </a>
+                            </div>
+                            <div class="file-item" data-name="大佬VON(未激活).apk">
+                                <a href="https://wwzr.lanzout.com/iquHQ37figoj" class="download-link" target="_blank">
+                                    <div class="apk-icon"></div>
+                                    <div class="file-name">大佬VON(未激活).apk</div>
+                                    <div class="file-details">APK | 4.6MB</div>
+                                </a>
+                            </div>
+                            <div class="file-item" data-name="和平全机型透视(免root).apk">
+                                <a href="https://wwzr.lanzout.com/iUsUo37figlg" class="download-link" target="_blank">
+                                    <div class="apk-icon"></div>
+                                    <div class="file-name">和平全机型透视(免root).apk</div>
+                                    <div class="file-details">APK | 1.6MB</div>
+                                </a>
+                            </div>
+                            <div class="file-item" data-name="UElive.com_53351.apk">
+                                <a href="https://wwzr.lanzout.com/ixpD537figje" class="download-link" target="_blank">
+                                    <div class="apk-icon"></div>
+                                    <div class="file-name">UElive.com_53351.apk</div>
+                                    <div class="file-details">APK | 69.3MB</div>
+                                </a>
+                            </div>
+                            <div class="file-item" data-name="防闪框架_v3.4.apk">
+                                <a href="https://wwzr.lanzout.com/i6uY737fifwb" class="download-link" target="_blank">
+                                    <div class="apk-icon"></div>
+                                    <div class="file-name">防闪框架_v3.4.apk</div>
+                                    <div class="file-details">APK | 3.2MB</div>
+                                </a>
+                            </div>
+                            <div class="file-item" data-name="我的世界悬浮窗权限.apk">
+                                <a href="https://wwzr.lanzout.com/iPFpn37fifuj" class="download-link" target="_blank">
+                                    <div class="apk-icon"></div>
+                                    <div class="file-name">我的世界悬浮窗权限.apk</div>
+                                    <div class="file-details">APK | 8.9MB</div>
+                                </a>
+                            </div>
+                            <div class="file-item" data-name="中国移动客户端(获取信息).apk">
+                                <a href="https://wwzr.lanzout.com/iPyhE37fifqf" class="download-link" target="_blank">
+                                    <div class="apk-icon"></div>
+                                    <div class="file-name">中国移动客户端(获取信息).apk</div>
+                                    <div class="file-details">APK | 31.7KB</div>
+                                </a>
+                            </div>
+                            <div class="file-item" data-name="网易我的世界OP外挂.apk">
+                                <a href="https://wwzr.lanzout.com/ikkHB37fifpe" class="download-link" target="_blank">
+                                    <div class="apk-icon"></div>
+                                    <div class="file-name">网易我的世界OP外挂.apk</div>
+                                    <div class="file-details">APK | 9.1MB</div>
+                                </a>
+                            </div>
+                            <div class="file-item" data-name="恐怖锁机-获取Q币(破解版).apk">
+                                <a href="https://wwzr.lanzout.com/i0Oba37fiffe" class="download-link" target="_blank">
+                                    <div class="apk-icon"></div>
+                                    <div class="file-name">恐怖锁机-获取Q币(破解版).apk</div>
+                                    <div class="file-details">APK | 1.6MB</div>
+                                </a>
+                            </div>
+                            <div class="file-item" data-name="和平精英辅助.apk">
+                                <a href="https://wwzr.lanzout.com/iV0Ru37fifed" class="download-link" target="_blank">
+                                    <div class="apk-icon"></div>
+                                    <div class="file-name">和平精英辅助.apk</div>
+                                    <div class="file-details">APK | 6.2MB</div>
+                                </a>
+                            </div>
+                            <div class="file-item" data-name="测试锁机.apk">
+                                <a href="https://wwzr.lanzout.com/iuNi637fifdc" class="download-link" target="_blank">
+                                    <div class="apk-icon"></div>
+                                    <div class="file-name">测试锁机.apk</div>
+                                    <div class="file-details">APK | 780.7KB</div>
+                                </a>
+                            </div>
+                            
+                            <!-- 最新添加的文件 -->
+                            <div class="file-item" data-name="苏州中学社团考勤.apk">
+                                <a href="https://wwzr.lanzout.com/iq2Yw37jy2fg" class="download-link" target="_blank">
+                                    <div class="apk-icon"></div>
+                                    <div class="file-name">苏州中学社团考勤.apk</div>
+                                    <div class="file-details">APK | 1.1MB</div>
+                                </a>
+                            </div>
+                            <div class="file-item" data-name="2x手机病毒.rar">
+                                <a href="https://wwzr.lanzout.com/ih2Dt37jy2ja" class="download-link" target="_blank">
+                                    <div class="rar-icon"></div>
+                                    <div class="file-name">2x手机病毒.rar</div>
+                                    <div class="file-details">RAR | 5.2MB</div>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 其他文件夹内容 - 显示为空 -->
+                    <div class="folder-content" id="folder-level-2-other">
+                        <div class="empty-folder">
+                            <i class="fas fa-folder-open" style="font-size: 48px; margin-bottom: 15px;"></i>
+                            <h3>文件夹为空</h3>
+                            <p>此文件夹中没有任何文件或文件夹</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 导航菜单功能
+        document.addEventListener('DOMContentLoaded', function() {
+            const navToggle = document.getElementById('navToggle');
+            const sidebar = document.getElementById('sidebar');
+            const backButton = document.getElementById('backButton');
+            const forwardButton = document.getElementById('forwardButton');
+            const navLinks = document.querySelectorAll('.nav-link');
+            const sections = document.querySelectorAll('.section');
+            const searchToggle = document.getElementById('searchToggle');
+            const searchBar = document.getElementById('searchBar');
+            const searchInput = document.getElementById('searchInput');
+            const searchResults = document.getElementById('searchResults');
+            const resultsList = document.getElementById('resultsList');
+            const breadcrumb = document.getElementById('breadcrumb');
+            const folderContents = document.querySelectorAll('.folder-content');
+            
+            // 当前文件夹层级和历史记录
+            let currentLevel = 0;
+            let navigationHistory = [];
+            let currentHistoryIndex = -1;
+            
+            // 更新导航按钮状态
+            function updateNavigationButtons() {
+                // 后退按钮状态
+                if (currentHistoryIndex > 0) {
+                    backButton.classList.add('active');
+                } else {
+                    backButton.classList.remove('active');
+                }
+                
+                // 前进按钮状态
+                if (currentHistoryIndex < navigationHistory.length - 1) {
+                    forwardButton.classList.add('active');
+                } else {
+                    forwardButton.classList.remove('active');
+                }
+            }
+            
+            // 保存当前状态到历史记录
+            function saveCurrentState() {
+                // 如果当前不是历史记录的最新位置，则删除之后的所有记录
+                if (currentHistoryIndex < navigationHistory.length - 1) {
+                    navigationHistory = navigationHistory.slice(0, currentHistoryIndex + 1);
+                }
+                
+                const currentState = {
+                    level: currentLevel,
+                    breadcrumb: breadcrumb.innerHTML,
+                    activeFolder: getActiveFolderId(),
+                    searchTerm: searchInput.value,
+                    searchActive: searchResults.classList.contains('active')
+                };
+                
+                navigationHistory.push(currentState);
+                currentHistoryIndex = navigationHistory.length - 1;
+                
+                updateNavigationButtons();
+            }
+            
+            // 获取当前活动文件夹ID
+            function getActiveFolderId() {
+                const activeContent = document.querySelector('.folder-content.active');
+                return activeContent ? activeContent.id : null;
+            }
+            
+            // 返回上一页功能
+            backButton.addEventListener('click', function() {
+                if (currentHistoryIndex > 0) {
+                    currentHistoryIndex--;
+                    const previousState = navigationHistory[currentHistoryIndex];
+                    restoreState(previousState);
+                }
+            });
+            
+            // 前进下一页功能
+            forwardButton.addEventListener('click', function() {
+                if (currentHistoryIndex < navigationHistory.length - 1) {
+                    currentHistoryIndex++;
+                    const nextState = navigationHistory[currentHistoryIndex];
+                    restoreState(nextState);
+                }
+            });
+            
+            // 导航菜单切换
+            navToggle.addEventListener('click', function() {
+                sidebar.classList.toggle('active');
+            });
+            
+            // 导航链接点击事件
+            navLinks.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    
+                    // 移除所有活动类
+                    navLinks.forEach(l => l.classList.remove('active'));
+                    sections.forEach(s => s.classList.remove('active'));
+                    
+                    // 添加活动类到当前链接和目标部分
+                    this.classList.add('active');
+                    const targetId = this.getAttribute('data-target');
+                    document.getElementById(targetId).classList.add('active');
+                    
+                    // 在移动设备上点击后关闭侧边栏
+                    if (window.innerWidth <= 768) {
+                        sidebar.classList.remove('active');
+                    }
+                });
+            });
+            
+            // 搜索功能
+            searchToggle.addEventListener('click', function() {
+                searchBar.classList.toggle('active');
+                if (searchBar.classList.contains('active')) {
+                    searchInput.focus();
+                }
+            });
+            
+            // 搜索输入事件
+            searchInput.addEventListener('input', function() {
+                const searchTerm = this.value.trim().toLowerCase();
+                
+                if (searchTerm === '') {
+                    searchResults.classList.remove('active');
+                    // 恢复显示当前文件夹内容
+                    const activeContent = document.querySelector('.folder-content.active');
+                    if (activeContent) {
+                        activeContent.classList.add('active');
+                    }
+                    return;
+                }
+                
+                // 清空之前的结果
+                resultsList.innerHTML = '';
+                
+                // 获取所有文件项
+                const fileItems = document.querySelectorAll('.file-item');
+                let hasResults = false;
+                
+                // 过滤匹配的文件
+                fileItems.forEach(item => {
+                    const fileName = item.getAttribute('data-name').toLowerCase();
+                    
+                    if (fileName.includes(searchTerm)) {
+                        const clone = item.cloneNode(true);
+                        resultsList.appendChild(clone);
+                        hasResults = true;
+                    }
+                });
+                
+                // 显示搜索结果 - 现在搜索结果会显示在最前面
+                if (hasResults) {
+                    searchResults.classList.add('active');
+                    
+                    // 隐藏所有文件夹内容
+                    folderContents.forEach(content => {
+                        content.classList.remove('active');
+                    });
+                } else {
+                    searchResults.classList.remove('active');
+                    // 如果没有搜索结果，显示当前文件夹内容
+                    const activeContent = document.querySelector('.folder-content.active');
+                    if (activeContent) {
+                        activeContent.classList.add('active');
+                    }
+                }
+            });
+            
+            // 文件夹点击事件
+            document.addEventListener('click', function(e) {
+                if (e.target.closest('.folder')) {
+                    const folder = e.target.closest('.folder');
+                    const folderName = folder.querySelector('.folder-name').textContent;
+                    const level = parseInt(folder.getAttribute('data-level'));
+                    
+                    // 保存当前状态到历史记录
+                    saveCurrentState();
+                    
+                    // 更新面包屑导航
+                    updateBreadcrumb(folderName, level);
+                    
+                    // 显示对应的文件夹内容
+                    showFolderContent(level);
+                    
+                    // 更新当前层级
+                    currentLevel = level;
+                    
+                    // 隐藏搜索结果
+                    searchResults.classList.remove('active');
+                    searchInput.value = '';
+                }
+                
+                if (e.target.closest('.breadcrumb-item')) {
+                    const breadcrumbItem = e.target.closest('.breadcrumb-item');
+                    const level = parseInt(breadcrumbItem.getAttribute('data-level'));
+                    
+                    // 保存当前状态到历史记录
+                    saveCurrentState();
+                    
+                    // 更新面包屑导航
+                    updateBreadcrumbToLevel(level);
+                    
+                    // 显示对应的文件夹内容
+                    showFolderContent(level);
+                    
+                    // 更新当前层级
+                    currentLevel = level;
+                    
+                    // 隐藏搜索结果
+                    searchResults.classList.remove('active');
+                    searchInput.value = '';
+                }
+                
+                if (e.target.closest('.file-item')) {
+                    const fileItem = e.target.closest('.file-item');
+                    const fileName = fileItem.getAttribute('data-name');
+                    
+                    // 如果是文件夹图标，则打开文件夹
+                    if (fileItem.querySelector('.folder-icon')) {
+                        // 保存当前状态到历史记录
+                        saveCurrentState();
+                        
+                        const level = currentLevel + 1;
+                        
+                        // 更新面包屑导航
+                        updateBreadcrumb(fileName, level);
+                        
+                        // 显示对应的文件夹内容
+                        if (fileName === "爱国音乐") {
+                            showFolderContent("patriotic");
+                        } else if (fileName === "古风，中国风") {
+                            showFolderContent(level);
+                        } else if (fileName === "音乐库") {
+                            showFolderContent("music");
+                        } else if (fileName === "手机病毒样本") {
+                            showFolderContent("mobile-virus");
+                        } else {
+                            showFolderContent("other");
+                        }
+                        
+                        // 更新当前层级
+                        currentLevel = level;
+                        
+                        // 隐藏搜索结果
+                        searchResults.classList.remove('active');
+                        searchInput.value = '';
+                    }
+                }
+            });
+            
+            // 更新面包屑导航
+            function updateBreadcrumb(folderName, level) {
+                // 移除当前层级之后的所有面包屑
+                const items = breadcrumb.querySelectorAll('.breadcrumb-item');
+                items.forEach((item, index) => {
+                    if (index > level) {
+                        item.remove();
+                    }
+                });
+                
+                // 添加新的面包屑
+                const newItem = document.createElement('div');
+                newItem.className = 'breadcrumb-item';
+                newItem.setAttribute('data-level', level);
+                newItem.textContent = folderName;
+                breadcrumb.appendChild(newItem);
+            }
+            
+            // 更新面包屑导航到指定层级
+            function updateBreadcrumbToLevel(level) {
+                const items = breadcrumb.querySelectorAll('.breadcrumb-item');
+                items.forEach((item, index) => {
+                    if (index > level) {
+                        item.remove();
+                    }
+                });
+            }
+            
+            // 显示指定层级的文件夹内容
+            function showFolderContent(level) {
+                folderContents.forEach(content => {
+                    content.classList.remove('active');
+                });
+                
+                let targetContent;
+                if (level === "patriotic") {
+                    targetContent = document.getElementById(`folder-level-3-patriotic`);
+                } else if (level === "music") {
+                    targetContent = document.getElementById(`folder-level-2-music`);
+                } else if (level === "mobile-virus") {
+                    targetContent = document.getElementById(`folder-level-2-mobile-virus`);
+                } else if (level === "other") {
+                    targetContent = document.getElementById(`folder-level-2-other`);
+                } else {
+                    targetContent = document.getElementById(`folder-level-${level}`);
+                }
+                
+                if (targetContent) {
+                    targetContent.classList.add('active');
+                }
+            }
+            
+            // 恢复状态
+            function restoreState(state) {
+                currentLevel = state.level;
+                breadcrumb.innerHTML = state.breadcrumb;
+                
+                folderContents.forEach(content => {
+                    content.classList.remove('active');
+                });
+                
+                if (state.activeFolder) {
+                    const targetContent = document.getElementById(state.activeFolder);
+                    if (targetContent) {
+                        targetContent.classList.add('active');
+                    }
+                }
+                
+                // 恢复搜索状态
+                searchInput.value = state.searchTerm || '';
+                if (state.searchActive) {
+                    searchInput.dispatchEvent(new Event('input'));
+                } else {
+                    searchResults.classList.remove('active');
+                }
+                
+                updateNavigationButtons();
+            }
+            
+            // 点击页面其他地方关闭搜索栏（如果展开）
+            document.addEventListener('click', function(e) {
+                if (!searchBar.contains(e.target) && !searchToggle.contains(e.target)) {
+                    if (searchInput.value === '') {
+                        searchBar.classList.remove('active');
+                    }
+                }
+            });
+            
+            // 初始化历史记录
+            saveCurrentState();
+        });
+    </script>
+</body>
+</html>

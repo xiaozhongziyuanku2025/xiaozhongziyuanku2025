@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>应用 - 小众资源库</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* 相同的样式代码 */
+        .folder-container {
+            margin-top: 30px;
+        }
+        
+        .folder {
+            display: inline-block;
+            width: 120px;
+            text-align: center;
+            margin: 15px;
+            cursor: pointer;
+            transition: transform 0.3s;
+            text-decoration: none;
+            color: inherit;
+        }
+        
+        .folder:hover {
+            transform: translateY(-5px);
+        }
+        
+        .folder-icon {
+            width: 80px;
+            height: 80px;
+            background: #4CAF50;
+            border-radius: 10px;
+            margin: 0 auto 10px;
+        }
+        
+        .folder-name {
+            word-wrap: break-word;
+            font-size: 14px;
+            color: #ddd;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="header-controls">
+                <button class="nav-toggle" id="navToggle">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
+            <h1 class="site-title">应用</h1>
+        </header>
+        
+        <div class="main-content">
+            <div class="sidebar" id="sidebar">
+                <ul class="nav-menu">
+                    <li class="nav-item">
+                        <a href="../index.html" class="nav-link">关于作者</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="../resources/index.html" class="nav-link">资源库</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="../main-resources/index.html" class="nav-link">← 返回</a>
+                    </li>
+                </ul>
+            </div>
+            
+            <div class="content-area">
+                <h2>应用文件夹</h2>
+                <div class="folder-container">
+                    <a href="../google-apps/index.html" class="folder">
+                        <div class="folder-icon"></div>
+                        <div class="folder-name">谷歌全家桶</div>
+                    </a>
+                    <div class="folder">
+                        <div class="folder-icon"></div>
+                        <div class="folder-name">办公软件</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('navToggle').addEventListener('click', function() {
+            document.getElementById('sidebar').classList.toggle('active');
+        });
+    </script>
+</body>
+</html>

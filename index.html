@@ -3,210 +3,41 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>小众资源库</title>
+    <title>应用 - 小众资源库</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+        /* 相同的样式代码 */
+        .folder-container {
+            margin-top: 30px;
         }
         
-        body {
-            background: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), 
-                        url('https://images.unsplash.com/photo-1506905925346-21bda4d32df4?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80');
-            background-size: cover;
-            background-attachment: fixed;
-            color: #f0f0f0;
-            min-height: 100vh;
-            padding: 20px;
-        }
-        
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            background-color: rgba(30, 30, 40, 0.85);
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-            overflow: hidden;
-            min-height: 90vh;
-        }
-        
-        header {
-            padding: 20px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-        
-        .header-controls {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        
-        .nav-toggle, .back-button, .forward-button {
-            background: none;
-            border: none;
-            color: #fff;
-            font-size: 24px;
-            cursor: pointer;
-            padding: 10px;
-            border-radius: 5px;
-            transition: background 0.3s;
-        }
-        
-        .nav-toggle:hover, .back-button:hover, .forward-button:hover {
-            background: rgba(255, 255, 255, 0.1);
-        }
-        
-        .back-button, .forward-button {
-            display: none;
-        }
-        
-        .back-button.active, .forward-button.active {
-            display: block;
-        }
-        
-        .site-title {
-            font-size: 28px;
-            font-weight: bold;
-            color: #4CAF50;
-            text-shadow: 0 0 10px rgba(76, 175, 80, 0.5);
-        }
-        
-        .main-content {
-            display: flex;
-            min-height: calc(100vh - 120px);
-        }
-        
-        .sidebar {
-            width: 250px;
-            background: rgba(20, 20, 30, 0.9);
-            padding: 20px;
-            border-right: 1px solid rgba(255, 255, 255, 0.1);
-        }
-        
-        .nav-menu {
-            list-style: none;
-        }
-        
-        .nav-item {
-            margin-bottom: 15px;
-        }
-        
-        .nav-link {
-            color: #ddd;
-            text-decoration: none;
-            font-size: 18px;
-            padding: 10px 15px;
-            display: block;
-            border-radius: 8px;
-            transition: all 0.3s;
-        }
-        
-        .nav-link:hover, .nav-link.active {
-            background: rgba(76, 175, 80, 0.2);
-            color: #4CAF50;
-        }
-        
-        .content-area {
-            flex: 1;
-            padding: 30px;
-            overflow-y: auto;
-        }
-        
-        .section {
-            display: none;
-        }
-        
-        .section.active {
-            display: block;
-            animation: fadeIn 0.5s;
-        }
-        
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-        
-        .author-info {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 30px;
-            align-items: flex-start;
-        }
-        
-        .author-photo {
-            width: 200px;
-            height: 200px;
-            border-radius: 10px;
-            object-fit: cover;
-            border: 3px solid #4CAF50;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-            background: rgba(76, 175, 80, 0.1);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #4CAF50;
-            font-size: 14px;
+        .folder {
+            display: inline-block;
+            width: 120px;
             text-align: center;
-            padding: 10px;
+            margin: 15px;
+            cursor: pointer;
+            transition: transform 0.3s;
+            text-decoration: none;
+            color: inherit;
         }
         
-        .author-details {
-            flex: 1;
-            min-width: 300px;
+        .folder:hover {
+            transform: translateY(-5px);
         }
         
-        .author-name {
-            font-size: 32px;
-            margin-bottom: 15px;
-            color: #4CAF50;
+        .folder-icon {
+            width: 80px;
+            height: 80px;
+            background: #4CAF50;
+            border-radius: 10px;
+            margin: 0 auto 10px;
         }
         
-        .author-description {
-            line-height: 1.6;
-            margin-bottom: 20px;
-            font-size: 16px;
-        }
-        
-        .creation-date {
-            font-style: italic;
-            color: #aaa;
-            margin-bottom: 20px;
-        }
-        
-        .contact-info {
-            background: rgba(76, 175, 80, 0.1);
-            padding: 15px;
-            border-radius: 8px;
-            border-left: 4px solid #4CAF50;
-        }
-        
-        /* 移动端样式 */
-        @media (max-width: 768px) {
-            .sidebar {
-                position: fixed;
-                top: 0;
-                left: 0;
-                height: 100%;
-                z-index: 1000;
-                transform: translateX(-100%);
-                transition: transform 0.3s ease;
-            }
-            
-            .sidebar.active {
-                transform: translateX(0);
-            }
-            
-            .author-info {
-                flex-direction: column;
-                align-items: center;
-                text-align: center;
-            }
+        .folder-name {
+            word-wrap: break-word;
+            font-size: 14px;
+            color: #ddd;
         }
     </style>
 </head>
@@ -218,46 +49,34 @@
                     <i class="fas fa-bars"></i>
                 </button>
             </div>
-            <h1 class="site-title">小众资源库</h1>
+            <h1 class="site-title">应用</h1>
         </header>
         
         <div class="main-content">
             <div class="sidebar" id="sidebar">
                 <ul class="nav-menu">
                     <li class="nav-item">
-                        <a href="#" class="nav-link active" data-target="about">关于作者</a>
+                        <a href="../index.html" class="nav-link">关于作者</a>
                     </li>
                     <li class="nav-item">
-                        <a href="resources/index.html" class="nav-link">资源库</a>
+                        <a href="../resources/index.html" class="nav-link">资源库</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="../main-resources/index.html" class="nav-link">← 返回</a>
                     </li>
                 </ul>
             </div>
             
             <div class="content-area">
-                <div class="section active" id="about">
-                    <div class="author-info">
-                        <div class="author-photo">
-                            个人照片<br>(暂无图片)
-                        </div>
-                        <div class="author-details">
-                            <h2 class="author-name">肖秉岑</h2>
-                            <p class="author-description">
-                                我是一名初一学生，喜爱钻研计算机安全防御、病毒样本、网页资源科学下载，科学使用谷歌，搜集网页资源等。
-                            </p>
-                            <p class="creation-date">网站成立日期：2025年10月1日</p>
-                            <p class="author-description">
-                                这个网页成立日期为2025年10月1日，从此以后作者会不定时更新网站。因为作者没钱，且经历过那么一段不美好的回忆：
-                                下文件度盘要账号还限速，夸克要手机号，微云要手机号，城通要手机号......这对于没有手机号的人来说是十分不美好的，
-                                所以我特意选择了蓝奏云网盘。此网盘下载文件无需手机号并且不限速。
-                            </p>
-                            <p class="author-description">
-                                另外这个资源库是私密的，如果有人想要里面的文件，请回复作者。
-                            </p>
-                            <div class="contact-info">
-                                <p><strong>作者邮箱：</strong>cn.2345.com@gmail.com</p>
-                                <p><em>由于作者很忙且不常看邮箱，所以你可能会等上几个工作日。</em></p>
-                            </div>
-                        </div>
+                <h2>应用文件夹</h2>
+                <div class="folder-container">
+                    <a href="../google-apps/index.html" class="folder">
+                        <div class="folder-icon"></div>
+                        <div class="folder-name">谷歌全家桶</div>
+                    </a>
+                    <div class="folder">
+                        <div class="folder-icon"></div>
+                        <div class="folder-name">办公软件</div>
                     </div>
                 </div>
             </div>

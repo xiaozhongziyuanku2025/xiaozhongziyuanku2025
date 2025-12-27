@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>小众资源库文件夹 - 小众资源库</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css">
+    
+    <style>
+        /* 使用与windows-virus.html相同的面包屑样式 */
+        .breadcrumb {
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            background: rgba(20, 20, 30, 0.7);
+            padding: 12px 20px;
+            border-radius: 8px;
+            border: 1px solid rgba(76, 175, 80, 0.3);
+        }
+        
+        .breadcrumb-item {
+            color: #4CAF50;
+            margin-right: 8px;
+            cursor: pointer;
+        }
+        
+        .breadcrumb-item a {
+            color: #4CAF50;
+            text-decoration: none;
+            padding: 4px 8px;
+            border-radius: 4px;
+            transition: all 0.3s;
+        }
+        
+        .breadcrumb-item a:hover {
+            background: rgba(76, 175, 80, 0.2);
+            text-decoration: underline;
+        }
+        
+        .breadcrumb-item.active a {
+            color: #fff;
+            cursor: default;
+        }
+        
+        .breadcrumb-item.active a:hover {
+            background: none;
+            text-decoration: none;
+        }
+        
+        .breadcrumb-separator {
+            color: #aaa;
+            margin: 0 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <div class="container">
+        <header>
+            <div class="header-controls">
+                <button class="nav-toggle" id="navToggle">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <button class="back-button" id="backButton">
+                    <i class="fas fa-arrow-left"></i>
+                </button>
+                <button class="forward-button" id="forwardButton">
+                    <i class="fas fa-arrow-right"></i>
+                </button>
+            </div>
+            <h1 class="site-title">小众资源库</h1>
+        </header>
+        
+        <div class="main-content">
+            <div class="sidebar" id="sidebar">
+                <ul class="nav-menu">
+                    <li class="nav-item">
+                        <a href="index.html" class="nav-link">
+                            <i class="fas fa-user"></i> 关于作者
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="resources.html" class="nav-link">
+                            <i class="fas fa-folder"></i> 资源库
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="mailto:cn.2345.com@outlook.com" class="nav-link">
+                            <i class="fas fa-envelope"></i> 联系作者
+                        </a>
+                    </li>
+                </ul>
+            </div>
+            
+            <div class="content-area">
+                <h2>小众资源库</h2>
+                
+                <!-- 修复的面包屑导航 -->
+                <div class="breadcrumb">
+                    <div class="breadcrumb-item">
+                        <a href="index.html">首页</a>
+                    </div>
+                    <span class="breadcrumb-separator">></span>
+                    
+                    <div class="breadcrumb-item">
+                        <a href="resources.html">资源库</a>
+                    </div>
+                    <span class="breadcrumb-separator">></span>
+                    
+                    <div class="breadcrumb-item active">
+                        <a href="#">小众资源库</a>
+                    </div>
+                </div>
+                
+                <div class="folder-content active">
+                    <div class="folder-container">
+                        <a href="windows-virus.html" class="folder-link">
+                            <div class="folder" data-folder="windows-virus">
+                                <div class="folder-icon"></div>
+                                <div class="folder-name">Windows病毒库</div>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/main.js"></script>
+</body>
+</html>

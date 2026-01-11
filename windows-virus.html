@@ -1,0 +1,2749 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Windows病毒库 - 小众资源库</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css">
+    
+    <style>
+        /* 面包屑导航样式优化 */
+        .breadcrumb {
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            background: rgba(20, 20, 30, 0.7);
+            padding: 12px 20px;
+            border-radius: 8px;
+            border: 1px solid rgba(76, 175, 80, 0.3);
+        }
+        
+        .breadcrumb-item {
+            color: #4CAF50;
+            margin-right: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .breadcrumb-item a {
+            color: #4CAF50;
+            text-decoration: none;
+            padding: 4px 8px;
+            border-radius: 4px;
+            transition: all 0.3s;
+        }
+        
+        .breadcrumb-item a:hover {
+            background: rgba(76, 175, 80, 0.2);
+            text-decoration: underline;
+        }
+        
+        .breadcrumb-item.active a {
+            color: #fff;
+            cursor: default;
+        }
+        
+        .breadcrumb-item.active a:hover {
+            background: none;
+            text-decoration: none;
+        }
+        
+        .breadcrumb-separator {
+            color: #aaa;
+            margin: 0 8px;
+        }
+        
+        /* 搜索容器样式 */
+        .search-container {
+            margin: 20px 0;
+            display: flex;
+            justify-content: flex-end;
+        }
+        
+        .search-icon {
+            background: rgba(76, 175, 80, 0.2);
+            border: none;
+            color: #4CAF50;
+            font-size: 18px;
+            padding: 10px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .search-icon:hover {
+            background: rgba(76, 175, 80, 0.4);
+        }
+        
+        .search-bar {
+            display: none;
+            width: 300px;
+            margin-left: 10px;
+            position: relative;
+        }
+        
+        .search-bar.active {
+            display: block;
+        }
+        
+        .search-input {
+            width: 100%;
+            padding: 10px 15px;
+            border: 1px solid rgba(76, 175, 80, 0.5);
+            border-radius: 8px;
+            background: rgba(20, 20, 30, 0.9);
+            color: #fff;
+            font-size: 16px;
+        }
+        
+        .search-input::placeholder {
+            color: #aaa;
+        }
+        
+        .search-results {
+            margin-top: 20px;
+            display: none;
+        }
+        
+        .search-results.active {
+            display: block;
+        }
+        
+        /* 文件统计样式 */
+        .file-stats {
+            background: rgba(20, 20, 30, 0.7);
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border: 1px solid rgba(76, 175, 80, 0.3);
+            font-size: 14px;
+        }
+        
+        /* ========== 多选功能样式优化 ========== */
+        /* 操作按钮组 - 优化颜色 */
+        .batch-controls {
+            display: flex;
+            gap: 10px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+        
+        .batch-btn {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            background: linear-gradient(135deg, rgba(76, 175, 80, 0.9), rgba(56, 142, 60, 0.9));
+            color: white;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+            box-shadow: 0 4px 6px rgba(76, 175, 80, 0.2);
+        }
+        
+        .batch-btn:hover {
+            background: linear-gradient(135deg, rgba(76, 175, 80, 1), rgba(56, 142, 60, 1));
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(76, 175, 80, 0.4);
+        }
+        
+        .batch-btn.active {
+            background: linear-gradient(135deg, rgba(76, 175, 80, 1), rgba(46, 125, 50, 1));
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+        
+        .batch-btn.active:hover {
+            background: linear-gradient(135deg, rgba(76, 175, 80, 1), rgba(46, 125, 50, 1));
+        }
+        
+        .batch-btn.warning {
+            background: linear-gradient(135deg, rgba(255, 152, 0, 0.9), rgba(230, 135, 0, 0.9));
+            box-shadow: 0 4px 6px rgba(255, 152, 0, 0.2);
+        }
+        
+        .batch-btn.warning:hover {
+            background: linear-gradient(135deg, rgba(255, 152, 0, 1), rgba(230, 135, 0, 1));
+            box-shadow: 0 6px 12px rgba(255, 152, 0, 0.4);
+        }
+        
+        .batch-btn.danger {
+            background: linear-gradient(135deg, rgba(244, 67, 54, 0.9), rgba(210, 45, 32, 0.9));
+            box-shadow: 0 4px 6px rgba(244, 67, 54, 0.2);
+        }
+        
+        .batch-btn.danger:hover {
+            background: linear-gradient(135deg, rgba(244, 67, 54, 1), rgba(210, 45, 32, 1));
+            box-shadow: 0 6px 12px rgba(244, 67, 54, 0.4);
+        }
+        
+        /* 多选状态下的文件项 - 优化选中效果 */
+        .select-mode .file-item.selectable {
+            cursor: pointer;
+            position: relative;
+            transition: all 0.3s;
+            border: 2px solid transparent;
+        }
+        
+        .select-mode .file-item.selectable:hover {
+            border-color: rgba(76, 175, 80, 0.3);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+        }
+        
+        .select-mode .file-item.selectable.selected {
+            border-color: #4CAF50;
+            background: linear-gradient(135deg, rgba(76, 175, 80, 0.15), rgba(76, 175, 80, 0.05));
+            animation: pulse 0.6s ease-in-out;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+            100% { transform: scale(1); }
+        }
+        
+        .select-mode .file-item.selectable.selected::after {
+            content: "✓";
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 24px;
+            height: 24px;
+            background: linear-gradient(135deg, #4CAF50, #2E7D32);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 14px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+        
+        /* 在选中模式下禁用普通下载 */
+        .select-mode .download-link {
+            pointer-events: none;
+        }
+        
+        /* 批量操作工具栏 - 优化样式 */
+        .batch-toolbar {
+            display: none;
+            margin-bottom: 20px;
+            padding: 15px 20px;
+            background: linear-gradient(135deg, rgba(76, 175, 80, 0.1), rgba(56, 142, 60, 0.1));
+            border: 2px solid rgba(76, 175, 80, 0.5);
+            border-radius: 12px;
+            animation: fadeIn 0.3s ease;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+        
+        .batch-toolbar.active {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .batch-info {
+            font-size: 16px;
+            color: #4CAF50;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .batch-info i {
+            font-size: 18px;
+        }
+        
+        .batch-info strong {
+            color: #fff;
+            font-size: 18px;
+            margin: 0 5px;
+        }
+        
+        .batch-info .selected-count {
+            background: #4CAF50;
+            color: white;
+            padding: 2px 10px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: bold;
+        }
+        
+        .batch-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        /* 批量下载弹窗 - 移动端优化 */
+        .batch-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            overflow-y: auto;
+        }
+        
+        .batch-modal.active {
+            display: flex;
+        }
+        
+        .batch-modal-content {
+            background: linear-gradient(135deg, rgba(30, 30, 40, 0.98), rgba(20, 20, 30, 0.98));
+            border-radius: 15px;
+            padding: 25px;
+            width: 100%;
+            max-width: 500px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.7);
+            border: 3px solid #4CAF50;
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
+        }
+        
+        .batch-modal-title {
+            font-size: 22px;
+            margin-bottom: 20px;
+            color: #4CAF50;
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid rgba(76, 175, 80, 0.3);
+        }
+        
+        .batch-modal-text {
+            margin-bottom: 20px;
+            line-height: 1.6;
+            font-size: 15px;
+        }
+        
+        .batch-modal-warning {
+            background: linear-gradient(135deg, rgba(255, 193, 7, 0.1), rgba(255, 179, 0, 0.1));
+            border: 2px solid rgba(255, 193, 7, 0.4);
+            border-radius: 10px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        
+        .batch-modal-warning h4 {
+            color: #FFC107;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .batch-modal-warning ul {
+            margin-left: 20px;
+            margin-bottom: 10px;
+        }
+        
+        .batch-modal-warning li {
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+        
+        .batch-modal-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .batch-modal-buttons button {
+            flex: 1;
+            padding: 14px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-weight: 600;
+            min-height: 50px;
+        }
+        
+        .batch-modal-confirm {
+            background: linear-gradient(135deg, rgba(76, 175, 80, 0.9), rgba(56, 142, 60, 0.9));
+            color: white;
+            box-shadow: 0 4px 6px rgba(76, 175, 80, 0.3);
+        }
+        
+        .batch-modal-confirm:hover {
+            background: linear-gradient(135deg, rgba(76, 175, 80, 1), rgba(56, 142, 60, 1));
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(76, 175, 80, 0.4);
+        }
+        
+        .batch-modal-cancel {
+            background: linear-gradient(135deg, rgba(244, 67, 54, 0.9), rgba(210, 45, 32, 0.9));
+            color: white;
+            box-shadow: 0 4px 6px rgba(244, 67, 54, 0.3);
+        }
+        
+        .batch-modal-cancel:hover {
+            background: linear-gradient(135deg, rgba(244, 67, 54, 1), rgba(210, 45, 32, 1));
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(244, 67, 54, 0.4);
+        }
+        
+        /* 选中文件列表 - 优化样式 */
+        .selected-list {
+            max-height: 200px;
+            overflow-y: auto;
+            background: rgba(20, 20, 30, 0.7);
+            border-radius: 8px;
+            padding: 10px;
+            margin: 15px 0;
+            border: 2px solid rgba(76, 175, 80, 0.3);
+        }
+        
+        .selected-list::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .selected-list::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+        }
+        
+        .selected-list::-webkit-scrollbar-thumb {
+            background: #4CAF50;
+            border-radius: 3px;
+        }
+        
+        .selected-item {
+            padding: 10px;
+            margin-bottom: 8px;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02));
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border-left: 3px solid #4CAF50;
+            animation: slideIn 0.3s ease;
+        }
+        
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(-10px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        
+        .selected-item:last-child {
+            margin-bottom: 0;
+        }
+        
+        .selected-item i {
+            color: #4CAF50;
+            font-size: 14px;
+        }
+        
+        .selected-item span {
+            flex: 1;
+            font-size: 14px;
+            word-break: break-all;
+        }
+        
+        /* 下载进度提示 */
+        .download-progress {
+            display: none;
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(30, 30, 40, 0.95);
+            border: 2px solid #4CAF50;
+            border-radius: 10px;
+            padding: 15px 20px;
+            z-index: 1000;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+            max-width: 300px;
+        }
+        
+        .download-progress.active {
+            display: block;
+            animation: slideUp 0.3s ease;
+        }
+        
+        @keyframes slideUp {
+            from { transform: translateY(100%); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        
+        .progress-title {
+            color: #4CAF50;
+            font-weight: 600;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4CAF50, #2E7D32);
+            border-radius: 3px;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        
+        .progress-text {
+            font-size: 12px;
+            color: #aaa;
+            text-align: center;
+        }
+        
+        /* 响应式调整 - 重点优化移动端 */
+        @media (max-width: 768px) {
+            .batch-controls {
+                flex-direction: column;
+            }
+            
+            .batch-btn {
+                width: 100%;
+                justify-content: center;
+                padding: 14px 20px;
+                font-size: 15px;
+            }
+            
+            .batch-toolbar {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 15px;
+                padding: 20px;
+                border-radius: 10px;
+            }
+            
+            .batch-info {
+                justify-content: center;
+                font-size: 15px;
+            }
+            
+            .batch-actions {
+                width: 100%;
+                justify-content: space-between;
+            }
+            
+            .batch-modal-content {
+                padding: 20px;
+                margin: 10px;
+                max-height: 85vh;
+                border-radius: 12px;
+            }
+            
+            .batch-modal-title {
+                font-size: 18px;
+                flex-direction: column;
+                gap: 5px;
+            }
+            
+            .batch-modal-text {
+                font-size: 14px;
+            }
+            
+            .batch-modal-warning {
+                padding: 12px;
+            }
+            
+            .batch-modal-warning li {
+                font-size: 13px;
+            }
+            
+            .batch-modal-buttons {
+                flex-direction: column;
+                gap: 8px;
+            }
+            
+            .batch-modal-buttons button {
+                padding: 16px;
+                min-height: 55px;
+                font-size: 16px;
+            }
+            
+            .selected-list {
+                max-height: 150px;
+            }
+            
+            .download-progress {
+                bottom: 10px;
+                right: 10px;
+                left: 10px;
+                max-width: none;
+            }
+            
+            /* 手机端文件列表调整为2列 */
+            .file-list {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 15px;
+            }
+            
+            .file-item {
+                padding: 12px;
+            }
+            
+            .file-name {
+                font-size: 13px;
+            }
+            
+            .file-details {
+                font-size: 11px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .file-list {
+                grid-template-columns: 1fr;
+            }
+            
+            .batch-modal-content {
+                padding: 15px;
+                margin: 5px;
+                border-width: 2px;
+            }
+            
+            .batch-modal-title {
+                font-size: 16px;
+            }
+            
+            .selected-item {
+                padding: 8px;
+                font-size: 13px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <!-- 批量下载弹窗 -->
+    <div class="batch-modal" id="batchDownloadModal">
+        <div class="batch-modal-content">
+            <h2 class="batch-modal-title">
+                <i class="fas fa-download"></i> 批量下载
+            </h2>
+            <div class="batch-modal-text">
+                <p>您选择了 <span id="selectedCount" style="color: #4CAF50; font-weight: bold;">0</span> 个文件进行批量下载。</p>
+                
+                <div class="batch-modal-warning">
+                    <h4><i class="fas fa-exclamation-triangle"></i> 重要提示</h4>
+                    <p><strong>为了获得最佳的下载体验：</strong></p>
+                    <ul>
+                        <li>使用 <strong>Google Chrome（谷歌浏览器）</strong> 进行批量下载</li>
+                        <li>Edge、Firefox等浏览器可能会拦截同时打开的多个窗口</li>
+                        <li>如果下载被拦截，请允许弹出窗口</li>
+                        <li>建议一次下载不超过10个文件</li>
+                    </ul>
+                </div>
+                
+                <div class="selected-list" id="selectedFilesList">
+                    <!-- 选中的文件列表将在这里动态生成 -->
+                </div>
+                
+                <p style="color: #aaa; font-size: 14px; text-align: center;">
+                    <i class="fas fa-lightbulb"></i> 如果浏览器提示"阻止了多个弹出窗口"，请点击地址栏旁边的图标并选择"始终允许"
+                </p>
+            </div>
+            <div class="batch-modal-buttons">
+                <button class="batch-modal-confirm" id="confirmBatchDownload">
+                    <i class="fas fa-check"></i> 确认下载
+                </button>
+                <button class="batch-modal-cancel" id="cancelBatchDownload">
+                    <i class="fas fa-times"></i> 取消
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 下载进度提示 -->
+    <div class="download-progress" id="downloadProgress">
+        <div class="progress-title">
+            <i class="fas fa-download"></i> 批量下载进度
+        </div>
+        <div class="progress-bar">
+            <div class="progress-fill" id="progressFill"></div>
+        </div>
+        <div class="progress-text" id="progressText">
+            准备下载...
+        </div>
+    </div>
+
+    <div class="container">
+        <header>
+            <div class="header-controls">
+                <button class="nav-toggle" id="navToggle">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <button class="back-button" id="backButton">
+                    <i class="fas fa-arrow-left"></i>
+                </button>
+                <button class="forward-button" id="forwardButton">
+                    <i class="fas fa-arrow-right"></i>
+                </button>
+            </div>
+            <h1 class="site-title">小众资源库</h1>
+        </header>
+        
+        <div class="main-content">
+            <div class="sidebar" id="sidebar">
+                <ul class="nav-menu">
+                    <li class="nav-item">
+                        <a href="index.html" class="nav-link">
+                            <i class="fas fa-user"></i> 关于作者
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="resources.html" class="nav-link">
+                            <i class="fas fa-folder"></i> 资源库
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="mailto:cn.2345.com@outlook.com" class="nav-link">
+                            <i class="fas fa-envelope"></i> 联系作者
+                        </a>
+                    </li>
+                </ul>
+            </div>
+            
+            <div class="content-area">
+                <h2>Windows病毒库</h2>
+                
+                <!-- 文件统计信息 -->
+                <div class="file-stats">
+                    <i class="fas fa-chart-bar" style="color: #4CAF50; margin-right: 8px;"></i>
+                    <strong>文件统计：</strong> 当前共有 <span style="color: #4CAF50; font-weight: bold;">187</span> 个文件
+                    <span style="margin-left: 20px; color: #aaa; font-size: 13px;">
+                        <i class="fas fa-mouse-pointer"></i> 支持多选批量下载
+                    </span>
+                </div>
+                
+                <!-- 正确的面包屑导航 -->
+                <div class="breadcrumb">
+                    <div class="breadcrumb-item">
+                        <a href="index.html">首页</a>
+                    </div>
+                    <span class="breadcrumb-separator">></span>
+                    
+                    <div class="breadcrumb-item">
+                        <a href="resources.html">资源库</a>
+                    </div>
+                    <span class="breadcrumb-separator">></span>
+                    
+                    <div class="breadcrumb-item">
+                        <a href="main-resources.html">小众资源库</a>
+                    </div>
+                    <span class="breadcrumb-separator">></span>
+                    
+                    <div class="breadcrumb-item active">
+                        <a href="#">Windows病毒库</a>
+                    </div>
+                </div>
+                
+                <!-- 多选操作按钮 - 优化颜色 -->
+                <div class="batch-controls">
+                    <button class="batch-btn" id="selectModeBtn">
+                        <i class="fas fa-check-square"></i> 进入多选模式
+                    </button>
+                    <button class="batch-btn" id="selectAllBtn" style="display: none;">
+                        <i class="fas fa-check-double"></i> 全选
+                    </button>
+                    <button class="batch-btn warning" id="downloadSelectedBtn" style="display: none;">
+                        <i class="fas fa-download"></i> 下载选中文件 <span class="selected-count">(0)</span>
+                    </button>
+                </div>
+                
+                <!-- 批量操作工具栏 -->
+                <div class="batch-toolbar" id="batchToolbar">
+                    <div class="batch-info">
+                        <i class="fas fa-check-circle"></i> 已选择 <strong id="selectedCounter">0</strong> 个文件
+                    </div>
+                    <div class="batch-actions">
+                        <button class="batch-btn" id="selectAllToolbarBtn">
+                            <i class="fas fa-check-double"></i> 全选
+                        </button>
+                        <button class="batch-btn" id="clearSelectionBtn">
+                            <i class="fas fa-broom"></i> 清空选择
+                        </button>
+                        <button class="batch-btn danger" id="exitSelectModeBtn">
+                            <i class="fas fa-times-circle"></i> 退出多选
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- 搜索功能 -->
+                <div class="search-container">
+                    <button class="search-icon" id="searchToggle">
+                        <i class="fas fa-search"></i>
+                    </button>
+                    <div class="search-bar" id="searchBar">
+                        <input type="text" class="search-input" placeholder="搜索文件或文件夹..." id="searchInput">
+                    </div>
+                </div>
+                
+                <div class="search-results" id="searchResults">
+                    <h3>搜索结果</h3>
+                    <div class="file-list" id="resultsList"></div>
+                </div>
+                
+                <!-- 完整文件列表 - 187个文件（完整版） -->
+                <div class="file-list" id="virusFilesList">
+                    <!-- 第1组 (1-30) -->
+                    <a href="Windows病毒库/0KBAttack.exe.rar" class="download-link" download="0KBAttack.exe.rar">
+                        <div class="file-item selectable" data-name="0KBAttack.exe" data-filename="0KBAttack.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">0KBAttack.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/000.exe.rar" class="download-link" download="000.exe.rar">
+                        <div class="file-item selectable" data-name="000.exe" data-filename="000.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">000.exe</div>
+                            <div class="file-details">大小: 111 KB | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/16-9计算器.exe.rar" class="download-link" download="16-9计算器.exe.rar">
+                        <div class="file-item selectable" data-name="16-9计算器.exe" data-filename="16-9计算器.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">16-9计算器.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/45.exe.rar" class="download-link" download="45.exe.rar">
+                        <div class="file-item selectable" data-name="45.exe" data-filename="45.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">45.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/49.exe.rar" class="download-link" download="49.exe.rar">
+                        <div class="file-item selectable" data-name="49.exe" data-filename="49.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">49.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/666.exe.rar" class="download-link" download="666.exe.rar">
+                        <div class="file-item selectable" data-name="666.exe" data-filename="666.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">666.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/Abantes.exe.rar" class="download-link" download="Abantes.exe.rar">
+                        <div class="file-item selectable" data-name="Abantes.exe" data-filename="Abantes.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">Abantes.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/AdvancedTex.exe.rar" class="download-link" download="AdvancedTex.exe.rar">
+                        <div class="file-item selectable" data-name="AdvancedTex.exe" data-filename="AdvancedTex.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">AdvancedTex.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/Airoutix.exe.rar" class="download-link" download="Airoutix.exe.rar">
+                        <div class="file-item selectable" data-name="Airoutix.exe" data-filename="Airoutix.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">Airoutix.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/Argon.exe.rar" class="download-link" download="Argon.exe.rar">
+                        <div class="file-item selectable" data-name="Argon.exe" data-filename="Argon.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">Argon.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/Argon-safety.exe.rar" class="download-link" download="Argon-safety.exe.rar">
+                        <div class="file-item selectable" data-name="Argon-safety.exe" data-filename="Argon-safety.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">Argon-safety.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/auspicious.exe.rar" class="download-link" download="auspicious.exe.rar">
+                        <div class="file-item selectable" data-name="auspicious.exe" data-filename="auspicious.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">auspicious.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/avif.exe.rar" class="download-link" download="avif.exe.rar">
+                        <div class="file-item selectable" data-name="avif.exe" data-filename="avif.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">avif.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/avif.GDIOnly.exe.rar" class="download-link" download="avif.GDIOnly.exe.rar">
+                        <div class="file-item selectable" data-name="avif.GDIOnly.exe" data-filename="avif.GDIOnly.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">avif.GDIOnly.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/bad_apple.exe.rar" class="download-link" download="bad_apple.exe.rar">
+                        <div class="file-item selectable" data-name="bad_apple.exe" data-filename="bad_apple.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">bad_apple.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/BUG32.exe.rar" class="download-link" download="BUG32.exe.rar">
+                        <div class="file-item selectable" data-name="BUG32.exe" data-filename="BUG32.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">BUG32.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/ChilledWindows(无害).exe.rar" class="download-link" download="ChilledWindows(无害).exe.rar">
+                        <div class="file-item selectable" data-name="ChilledWindows(无害).exe" data-filename="ChilledWindows(无害).exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">ChilledWindows(无害).exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/ChorumeDestructive.exe.rar" class="download-link" download="ChorumeDestructive.exe.rar">
+                        <div class="file-item selectable" data-name="ChorumeDestructive.exe" data-filename="ChorumeDestructive.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">ChorumeDestructive.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/DcRAT.exe.rar" class="download-link" download="DcRAT.exe.rar">
+                        <div class="file-item selectable" data-name="DcRAT.exe" data-filename="DcRAT.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">DcRAT.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/Dead Fish.exe.rar" class="download-link" download="Dead Fish.exe.rar">
+                        <div class="file-item selectable" data-name="Dead Fish.exe" data-filename="Dead Fish.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">Dead Fish.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/Death.exe.rar" class="download-link" download="Death.exe.rar">
+                        <div class="file-item selectable" data-name="Death.exe" data-filename="Death.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">Death.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/denoweniw0-safety.exe.rar" class="download-link" download="denoweniw0-safety.exe.rar">
+                        <div class="file-item selectable" data-name="denoweniw0-safety.exe" data-filename="denoweniw0-safety.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">denoweniw0-safety.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/denoweniw0.exe.rar" class="download-link" download="denoweniw0.exe.rar">
+                        <div class="file-item selectable" data-name="denoweniw0.exe" data-filename="denoweniw0.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">denoweniw0.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/Dichloromethylhexane.exe.rar" class="download-link" download="Dichloromethylhexane.exe.rar">
+                        <div class="file-item selectable" data-name="Dichloromethylhexane.exe" data-filename="Dichloromethylhexane.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">Dichloromethylhexane.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/Dicolactor.exe.rar" class="download-link" download="Dicolactor.exe.rar">
+                        <div class="file-item selectable" data-name="Dicolactor.exe" data-filename="Dicolactor.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">Dicolactor.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/dimethylamine.exe.rar" class="download-link" download="dimethylamine.exe.rar">
+                        <div class="file-item selectable" data-name="dimethylamine.exe" data-filename="dimethylamine.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">dimethylamine.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/dimethylamine-safety.exe.rar" class="download-link" download="dimethylamine-safety.exe.rar">
+                        <div class="file-item selectable" data-name="dimethylamine-safety.exe" data-filename="dimethylamine-safety.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">dimethylamine-safety.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/DISK MURDERER 2.0.bat.rar" class="download-link" download="DISK MURDERER 2.0.bat.rar">
+                        <div class="file-item selectable" data-name="DISK MURDERER 2.0.bat" data-filename="DISK MURDERER 2.0.bat.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">DISK MURDERER 2.0.bat</div>
+                            <div class="file-details">大小: 未知 | 类型: BAT批处理文件 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/Disk Terminator.exe.rar" class="download-link" download="Disk Terminator.exe.rar">
+                        <div class="file-item selectable" data-name="Disk Terminator.exe" data-filename="Disk Terminator.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">Disk Terminator.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/Disunited.exe.rar" class="download-link" download="Disunited.exe.rar">
+                        <div class="file-item selectable" data-name="Disunited.exe" data-filename="Disunited.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">Disunited.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <!-- 第2组 (31-60) -->
+                    <a href="Windows病毒库/ED54 SpeedHacker.exe.rar" class="download-link" download="ED54 SpeedHacker.exe.rar">
+                        <div class="file-item selectable" data-name="ED54 SpeedHacker.exe" data-filename="ED54 SpeedHacker.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">ED54 SpeedHacker.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/effectsnamoxider（升级版）.exe.rar" class="download-link" download="effectsnamoxider（升级版）.exe.rar">
+                        <div class="file-item selectable" data-name="effectsnamoxider（升级版）.exe" data-filename="effectsnamoxider（升级版）.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">effectsnamoxider（升级版）.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/FakeMrsMajor3.0.exe.rar" class="download-link" download="FakeMrsMajor3.0.exe.rar">
+                        <div class="file-item selectable" data-name="FakeMrsMajor3.0.exe" data-filename="FakeMrsMajor3.0.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">FakeMrsMajor3.0.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/FormBook窃密木马.exe.rar" class="download-link" download="FormBook窃密木马.exe.rar">
+                        <div class="file-item selectable" data-name="FormBook窃密木马.exe" data-filename="FormBook窃密木马.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">FormBook窃密木马.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/GameSetup（熊猫烧香）.exe.rar" class="download-link" download="GameSetup（熊猫烧香）.exe.rar">
+                        <div class="file-item selectable" data-name="GameSetup（熊猫烧香）.exe" data-filename="GameSetup（熊猫烧香）.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">GameSetup（熊猫烧香）.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/grass脱盒v1.2.exe.rar" class="download-link" download="grass脱盒v1.2.exe.rar">
+                        <div class="file-item selectable" data-name="grass脱盒v1.2.exe" data-filename="grass脱盒v1.2.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">grass脱盒v1.2.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/HappyTime(快乐时光病毒).vbs.rar" class="download-link" download="HappyTime(快乐时光病毒).vbs.rar">
+                        <div class="file-item selectable" data-name="HappyTime(快乐时光病毒).vbs" data-filename="HappyTime(快乐时光病毒).vbs.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">HappyTime(快乐时光病毒).vbs</div>
+                            <div class="file-details">大小: 未知 | 类型: VBS脚本文件 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/HBRSB.exe.rar" class="download-link" download="HBRSB.exe.rar">
+                        <div class="file-item selectable" data-name="HBRSB.exe" data-filename="HBRSB.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">HBRSB.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/Heptoxide.exe.rar" class="download-link" download="Heptoxide.exe.rar">
+                        <div class="file-item selectable" data-name="Heptoxide.exe" data-filename="Heptoxide.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">Heptoxide.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/Heptoxide-safety.exe.rar" class="download-link" download="Heptoxide-safety.exe.rar">
+                        <div class="file-item selectable" data-name="Heptoxide-safety.exe" data-filename="Heptoxide-safety.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">Heptoxide-safety.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/hexoputon - destructive.exe.rar" class="download-link" download="hexoputon - destructive.exe.rar">
+                        <div class="file-item selectable" data-name="hexoputon - destructive.exe" data-filename="hexoputon - destructive.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">hexoputon - destructive.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/hexoputon - safety.exe.rar" class="download-link" download="hexoputon - safety.exe.rar">
+                        <div class="file-item selectable" data-name="hexoputon - safety.exe" data-filename="hexoputon - safety.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">hexoputon - safety.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/HipsMain（火绒安全病毒2.0）.exe.rar" class="download-link" download="HipsMain（火绒安全病毒2.0）.exe.rar">
+                        <div class="file-item selectable" data-name="HipsMain（火绒安全病毒2.0）.exe" data-filename="HipsMain（火绒安全病毒2.0）.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">HipsMain（火绒安全病毒2.0）.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/HMCL_Virus.exe.rar" class="download-link" download="HMCL_Virus.exe.rar">
+                        <div class="file-item selectable" data-name="HMCL_Virus.exe" data-filename="HMCL_Virus.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">HMCL_Virus.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/hollywoodium.exe.rar" class="download-link" download="hollywoodium.exe.rar">
+                        <div class="file-item selectable" data-name="hollywoodium.exe" data-filename="hollywoodium.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">hollywoodium.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/hollywoodium-safety.exe.rar" class="download-link" download="hollywoodium-safety.exe.rar">
+                        <div class="file-item selectable" data-name="hollywoodium-safety.exe" data-filename="hollywoodium-safety.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">hollywoodium-safety.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/Holzer.exe.rar" class="download-link" download="Holzer.exe.rar">
+                        <div class="file-item selectable" data-name="Holzer.exe" data-filename="Holzer.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">Holzer.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/hydrogen.exe.rar" class="download-link" download="hydrogen.exe.rar">
+                        <div class="file-item selectable" data-name="hydrogen.exe" data-filename="hydrogen.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">hydrogen.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/ico.exe.rar" class="download-link" download="ico.exe.rar">
+                        <div class="file-item selectable" data-name="ico.exe" data-filename="ico.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">ico.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/ico_GDIOnly.exe.rar" class="download-link" download="ico_GDIOnly.exe.rar">
+                        <div class="file-item selectable" data-name="ico_GDIOnly.exe" data-filename="ico_GDIOnly.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">ico_GDIOnly.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/IKUN-KILLER.exe.rar" class="download-link" download="IKUN-KILLER.exe.rar">
+                        <div class="file-item selectable" data-name="IKUN-KILLER.exe" data-filename="IKUN-KILLER.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">IKUN-KILLER.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/incaseformat.exe.rar" class="download-link" download="incaseformat.exe.rar">
+                        <div class="file-item selectable" data-name="incaseformat.exe" data-filename="incaseformat.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">incaseformat.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/Info_Update(Harmless).exe.rar" class="download-link" download="Info_Update(Harmless).exe.rar">
+                        <div class="file-item selectable" data-name="Info_Update(Harmless).exe" data-filename="Info_Update(Harmless).exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">Info_Update(Harmless).exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/jfif.exe.rar" class="download-link" download="jfif.exe.rar">
+                        <div class="file-item selectable" data-name="jfif.exe" data-filename="jfif.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">jfif.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/JJY.exe.rar" class="download-link" download="JJY.exe.rar">
+                        <div class="file-item selectable" data-name="JJY.exe" data-filename="JJY.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">JJY.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/jpg.exe.rar" class="download-link" download="jpg.exe.rar">
+                        <div class="file-item selectable" data-name="jpg.exe" data-filename="jpg.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">jpg.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/JSONx64-safety.exe.rar" class="download-link" download="JSONx64-safety.exe.rar">
+                        <div class="file-item selectable" data-name="JSONx64-safety.exe" data-filename="JSONx64-safety.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">JSONx64-safety.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/JSONx64.exe.rar" class="download-link" download="JSONx64.exe.rar">
+                        <div class="file-item selectable" data-name="JSONx64.exe" data-filename="JSONx64.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">JSONx64.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/JSONx86-safety.exe.rar" class="download-link" download="JSONx86-safety.exe.rar">
+                        <div class="file-item selectable" data-name="JSONx86-safety.exe" data-filename="JSONx86-safety.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">JSONx86-safety.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/JSONx86.exe.rar" class="download-link" download="JSONx86.exe.rar">
+                        <div class="file-item selectable" data-name="JSONx86.exe" data-filename="JSONx86.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">JSONx86.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <!-- 第3组 (61-90) -->
+                    <a href="Windows病毒库/Lost.exe.rar" class="download-link" download="Lost.exe.rar">
+                        <div class="file-item selectable" data-name="Lost.exe" data-filename="Lost.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">Lost.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/M0dules.exe.rar" class="download-link" download="M0dules.exe.rar">
+                        <div class="file-item selectable" data-name="M0dules.exe" data-filename="M0dules.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">M0dules.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/M0dules_GDIOnly.exe.rar" class="download-link" download="M0dules_GDIOnly.exe.rar">
+                        <div class="file-item selectable" data-name="M0dules_GDIOnly.exe" data-filename="M0dules_GDIOnly.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">M0dules_GDIOnly.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/Mandela.exe.rar" class="download-link" download="Mandela.exe.rar">
+                        <div class="file-item selectable" data-name="Mandela.exe" data-filename="Mandela.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">Mandela.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/Microsoft Paint15.1.1.exe.rar" class="download-link" download="Microsoft Paint15.1.1.exe.rar">
+                        <div class="file-item selectable" data-name="Microsoft Paint15.1.1.exe" data-filename="Microsoft Paint15.1.1.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">Microsoft Paint15.1.1.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/Microsoft Paint15.3.2.exe.rar" class="download-link" download="Microsoft Paint15.3.2.exe.rar">
+                        <div class="file-item selectable" data-name="Microsoft Paint15.3.2.exe" data-filename="Microsoft Paint15.3.2.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">Microsoft Paint15.3.2.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/ModifiedEnternalred.exe.rar" class="download-link" download="ModifiedEnternalred.exe.rar">
+                        <div class="file-item selectable" data-name="ModifiedEnternalred.exe" data-filename="ModifiedEnternalred.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">ModifiedEnternalred.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/ModifiedEnternalred-safety.exe.rar" class="download-link" download="ModifiedEnternalred-safety.exe.rar">
+                        <div class="file-item selectable" data-name="ModifiedEnternalred-safety.exe" data-filename="ModifiedEnternalred-safety.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">ModifiedEnternalred-safety.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/ModifiedPurgatorium.exe.rar" class="download-link" download="ModifiedPurgatorium.exe.rar">
+                        <div class="file-item selectable" data-name="ModifiedPurgatorium.exe" data-filename="ModifiedPurgatorium.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">ModifiedPurgatorium.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/Monoxidex64.exe.rar" class="download-link" download="Monoxidex64.exe.rar">
+                        <div class="file-item selectable" data-name="Monoxidex64.exe" data-filename="Monoxidex64.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">Monoxidex64.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/Monoxidex86.exe.rar" class="download-link" download="Monoxidex86.exe.rar">
+                        <div class="file-item selectable" data-name="Monoxidex86.exe" data-filename="Monoxidex86.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">Monoxidex86.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/MrsMajor 2.0.exe.rar" class="download-link" download="MrsMajor 2.0.exe.rar">
+                        <div class="file-item selectable" data-name="MrsMajor 2.0.exe" data-filename="MrsMajor 2.0.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">MrsMajor 2.0.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/MrsMajor 3.0.exe.rar" class="download-link" download="MrsMajor 3.0.exe.rar">
+                        <div class="file-item selectable" data-name="MrsMajor 3.0.exe" data-filename="MrsMajor 3.0.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">MrsMajor 3.0.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/Musubi.exe.rar" class="download-link" download="Musubi.exe.rar">
+                        <div class="file-item selectable" data-name="Musubi.exe" data-filename="Musubi.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">Musubi.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/nepotonod.exe.rar" class="download-link" download="nepotonod.exe.rar">
+                        <div class="file-item selectable" data-name="nepotonod.exe" data-filename="nepotonod.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">nepotonod.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/Office 2023专业增强版Setup(易语言程序).exe.rar" class="download-link" download="Office 2023专业增强版Setup(易语言程序).exe.rar">
+                        <div class="file-item selectable" data-name="Office 2023专业增强版Setup(易语言程序).exe" data-filename="Office 2023专业增强版Setup(易语言程序).exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">Office 2023专业增强版Setup(易语言程序).exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/Oganesson.exe.rar" class="download-link" download="Oganesson.exe.rar">
+                        <div class="file-item selectable" data-name="Oganesson.exe" data-filename="Oganesson.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">Oganesson.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/Oganesson.harmless.exe.rar" class="download-link" download="Oganesson.harmless.exe.rar">
+                        <div class="file-item selectable" data-name="Oganesson.harmless.exe" data-filename="Oganesson.harmless.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">Oganesson.harmless.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/PAINT.exe.rar" class="download-link" download="PAINT.exe.rar">
+                        <div class="file-item selectable" data-name="PAINT.exe" data-filename="PAINT.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">PAINT.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/Parasite 2.0.exe.rar" class="download-link" download="Parasite 2.0.exe.rar">
+                        <div class="file-item selectable" data-name="Parasite 2.0.exe" data-filename="Parasite 2.0.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">Parasite 2.0.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/PasswordHacker.exe.rar" class="download-link" download="PasswordHacker.exe.rar">
+                        <div class="file-item selectable" data-name="PasswordHacker.exe" data-filename="PasswordHacker.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">PasswordHacker.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/PCManager·报废.exe.rar" class="download-link" download="PCManager·报废.exe.rar">
+                        <div class="file-item selectable" data-name="PCManager·报废.exe" data-filename="PCManager·报废.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">PCManager·报废.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/pcTNT.exe.rar" class="download-link" download="pcTNT.exe.rar">
+                        <div class="file-item selectable" data-name="pcTNT.exe" data-filename="pcTNT.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">pcTNT.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/Pertechnetate.exe.rar" class="download-link" download="Pertechnetate.exe.rar">
+                        <div class="file-item selectable" data-name="Pertechnetate.exe" data-filename="Pertechnetate.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">Pertechnetate.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/Pet.exe.rar" class="download-link" download="Pet.exe.rar">
+                        <div class="file-item selectable" data-name="Pet.exe" data-filename="Pet.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">Pet.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/PhantasmA.exe.rar" class="download-link" download="PhantasmA.exe.rar">
+                        <div class="file-item selectable" data-name="PhantasmA.exe" data-filename="PhantasmA.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">PhantasmA.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/Phosgene.exe.rar" class="download-link" download="Phosgene.exe.rar">
+                        <div class="file-item selectable" data-name="Phosgene.exe" data-filename="Phosgene.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">Phosgene.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/PlayingWithCitlali.exe.rar" class="download-link" download="PlayingWithCitlali.exe.rar">
+                        <div class="file-item selectable" data-name="PlayingWithCitlali.exe" data-filename="PlayingWithCitlali.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">PlayingWithCitlali.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/png.exe.rar" class="download-link" download="png.exe.rar">
+                        <div class="file-item selectable" data-name="png.exe" data-filename="png.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">png.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/png_GDIOnly.exe.rar" class="download-link" download="png_GDIOnly.exe.rar">
+                        <div class="file-item selectable" data-name="png_GDIOnly.exe" data-filename="png_GDIOnly.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">png_GDIOnly.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <!-- 第4组 (91-120) -->
+                    <a href="Windows病毒库/png_Win8-11_GDIOnly.exe.rar" class="download-link" download="png_Win8-11_GDIOnly.exe.rar">
+                        <div class="file-item selectable" data-name="png_Win8-11_GDIOnly.exe" data-filename="png_Win8-11_GDIOnly.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">png_Win8-11_GDIOnly.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/q2oic2i0b.exe.rar" class="download-link" download="q2oic2i0b.exe.rar">
+                        <div class="file-item selectable" data-name="q2oic2i0b.exe" data-filename="q2oic2i0b.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">q2oic2i0b.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/Quadrioxide.exe.rar" class="download-link" download="Quadrioxide.exe.rar">
+                        <div class="file-item selectable" data-name="Quadrioxide.exe" data-filename="Quadrioxide.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">Quadrioxide.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/quantizer.exe.rar" class="download-link" download="quantizer.exe.rar">
+                        <div class="file-item selectable" data-name="quantizer.exe" data-filename="quantizer.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">quantizer.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/radiance_harmful.exe.rar" class="download-link" download="radiance_harmful.exe.rar">
+                        <div class="file-item selectable" data-name="radiance_harmful.exe" data-filename="radiance_harmful.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">radiance_harmful.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/radiance_harmless.exe.rar" class="download-link" download="radiance_harmless.exe.rar">
+                        <div class="file-item selectable" data-name="radiance_harmless.exe" data-filename="radiance_harmless.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">radiance_harmless.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/Ramnit蠕虫病毒.vbs.rar" class="download-link" download="Ramnit蠕虫病毒.vbs.rar">
+                        <div class="file-item selectable" data-name="Ramnit蠕虫病毒.vbs" data-filename="Ramnit蠕虫病毒.vbs.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">Ramnit蠕虫病毒.vbs</div>
+                            <div class="file-details">大小: 未知 | 类型: VBS脚本文件 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/RedEye.exe.rar" class="download-link" download="RedEye.exe.rar">
+                        <div class="file-item selectable" data-name="RedEye.exe" data-filename="RedEye.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">RedEye.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/REMCOS远控.exe.rar" class="download-link" download="REMCOS远控.exe.rar">
+                        <div class="file-item selectable" data-name="REMCOS远控.exe" data-filename="REMCOS远控.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">REMCOS远控.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/Ripples.exe.rar" class="download-link" download="Ripples.exe.rar">
+                        <div class="file-item selectable" data-name="Ripples.exe" data-filename="Ripples.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">Ripples.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/RoobDesktopAssistant(摧毁者).exe.rar" class="download-link" download="RoobDesktopAssistant(摧毁者).exe.rar">
+                        <div class="file-item selectable" data-name="RoobDesktopAssistant(摧毁者).exe" data-filename="RoobDesktopAssistant(摧毁者).exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">RoobDesktopAssistant(摧毁者).exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/Rover.exe.rar" class="download-link" download="Rover.exe.rar">
+                        <div class="file-item selectable" data-name="Rover.exe" data-filename="Rover.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">Rover.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/Rover beta1.2.exe.rar" class="download-link" download="Rover beta1.2.exe.rar">
+                        <div class="file-item selectable" data-name="Rover beta1.2.exe" data-filename="Rover beta1.2.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">Rover beta1.2.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/salinewin.exe.rar" class="download-link" download="salinewin.exe.rar">
+                        <div class="file-item selectable" data-name="salinewin.exe" data-filename="salinewin.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">salinewin.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/salinewin-safety.exe.rar" class="download-link" download="salinewin-safety.exe.rar">
+                        <div class="file-item selectable" data-name="salinewin-safety.exe" data-filename="salinewin-safety.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">salinewin-safety.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/SecurityVirus(安全者).exe.rar" class="download-link" download="SecurityVirus(安全者).exe.rar">
+                        <div class="file-item selectable" data-name="SecurityVirus(安全者).exe" data-filename="SecurityVirus(安全者).exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">SecurityVirus(安全者).exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/Spark.exe.rar" class="download-link" download="Spark.exe.rar">
+                        <div class="file-item selectable" data-name="Spark.exe" data-filename="Spark.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">Spark.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/SparkPro.exe.rar" class="download-link" download="SparkPro.exe.rar">
+                        <div class="file-item selectable" data-name="SparkPro.exe" data-filename="SparkPro.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">SparkPro.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/Sulfoxide.exe.rar" class="download-link" download="Sulfoxide.exe.rar">
+                        <div class="file-item selectable" data-name="Sulfoxide.exe" data-filename="Sulfoxide.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">Sulfoxide.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/Sustain Epic.exe.rar" class="download-link" download="Sustain Epic.exe.rar">
+                        <div class="file-item selectable" data-name="Sustain Epic.exe" data-filename="Sustain Epic.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">Sustain Epic.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/Synaptics.exe.rar" class="download-link" download="Synaptics.exe.rar">
+                        <div class="file-item selectable" data-name="Synaptics.exe" data-filename="Synaptics.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">Synaptics.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/SystemKiller.exe.rar" class="download-link" download="SystemKiller.exe.rar">
+                        <div class="file-item selectable" data-name="SystemKiller.exe" data-filename="SystemKiller.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">SystemKiller.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/SystemKiller_x32.exe.rar" class="download-link" download="SystemKiller_x32.exe.rar">
+                        <div class="file-item selectable" data-name="SystemKiller_x32.exe" data-filename="SystemKiller_x32.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">SystemKiller_x32.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/SystemKiller_x64.exe.rar" class="download-link" download="SystemKiller_x64.exe.rar">
+                        <div class="file-item selectable" data-name="SystemKiller_x64.exe" data-filename="SystemKiller_x64.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">SystemKiller_x64.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/Technetium.exe.rar" class="download-link" download="Technetium.exe.rar">
+                        <div class="file-item selectable" data-name="Technetium.exe" data-filename="Technetium.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">Technetium.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/Technetium-safety.exe.rar" class="download-link" download="Technetium-safety.exe.rar">
+                        <div class="file-item selectable" data-name="Technetium-safety.exe" data-filename="Technetium-safety.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">Technetium-safety.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/tendows.exe.rar" class="download-link" download="tendows.exe.rar">
+                        <div class="file-item selectable" data-name="tendows.exe" data-filename="tendows.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">tendows.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/Tera Bonus.exe.rar" class="download-link" download="Tera Bonus.exe.rar">
+                        <div class="file-item selectable" data-name="Tera Bonus.exe" data-filename="Tera Bonus.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">Tera Bonus.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/Tera Bonus-GDIOnly.exe.rar" class="download-link" download="Tera Bonus-GDIOnly.exe.rar">
+                        <div class="file-item selectable" data-name="Tera Bonus-GDIOnly.exe" data-filename="Tera Bonus-GDIOnly.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">Tera Bonus-GDIOnly.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/Termi_1.2.exe.rar" class="download-link" download="Termi_1.2.exe.rar">
+                        <div class="file-item selectable" data-name="Termi_1.2.exe" data-filename="Termi_1.2.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">Termi_1.2.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <!-- 第5组 (121-150) -->
+                    <a href="Windows病毒库/Terminator3.1.exe.rar" class="download-link" download="Terminator3.1.exe.rar">
+                        <div class="file-item selectable" data-name="Terminator3.1.exe" data-filename="Terminator3.1.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">Terminator3.1.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/Tetroxidex64.exe.rar" class="download-link" download="Tetroxidex64.exe.rar">
+                        <div class="file-item selectable" data-name="Tetroxidex64.exe" data-filename="Tetroxidex64.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">Tetroxidex64.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/Tetroxidex86.exe.rar" class="download-link" download="Tetroxidex86.exe.rar">
+                        <div class="file-item selectable" data-name="Tetroxidex86.exe" data-filename="Tetroxidex86.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">Tetroxidex86.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/tin.exe.rar" class="download-link" download="tin.exe.rar">
+                        <div class="file-item selectable" data-name="tin.exe" data-filename="tin.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">tin.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/trichloromethane.exe.rar" class="download-link" download="trichloromethane.exe.rar">
+                        <div class="file-item selectable" data-name="trichloromethane.exe" data-filename="trichloromethane.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">trichloromethane.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/trichloromethane-safety.exe.rar" class="download-link" download="trichloromethane-safety.exe.rar">
+                        <div class="file-item selectable" data-name="trichloromethane-safety.exe" data-filename="trichloromethane-safety.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">trichloromethane-safety.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/Tubejamming.exe.rar" class="download-link" download="Tubejamming.exe.rar">
+                        <div class="file-item selectable" data-name="Tubejamming.exe" data-filename="Tubejamming.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">Tubejamming.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/Undulations.exe.rar" class="download-link" download="Undulations.exe.rar">
+                        <div class="file-item selectable" data-name="Undulations.exe" data-filename="Undulations.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">Undulations.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/Unfixable.exe.rar" class="download-link" download="Unfixable.exe.rar">
+                        <div class="file-item selectable" data-name="Unfixable.exe" data-filename="Unfixable.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">Unfixable.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/u某病毒1.1（作者一流）.exe.rar" class="download-link" download="u某病毒1.1（作者一流）.exe.rar">
+                        <div class="file-item selectable" data-name="u某病毒1.1（作者一流）.exe" data-filename="u某病毒1.1（作者一流）.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">u某病毒1.1（作者一流）.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/VIDAR.exe.rar" class="download-link" download="VIDAR.exe.rar">
+                        <div class="file-item selectable" data-name="VIDAR.exe" data-filename="VIDAR.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">VIDAR.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/warp.exe.rar" class="download-link" download="warp.exe.rar">
+                        <div class="file-item selectable" data-name="warp.exe" data-filename="warp.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">warp.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/Wewe_1.3.exe.rar" class="download-link" download="Wewe_1.3.exe.rar">
+                        <div class="file-item selectable" data-name="Wewe_1.3.exe" data-filename="Wewe_1.3.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">Wewe_1.3.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/Windows-advanced-Winkiller-NoDisk-NoBOOT-Pro.exe.rar" class="download-link" download="Windows-advanced-Winkiller-NoDisk-NoBOOT-Pro.exe.rar">
+                        <div class="file-item selectable" data-name="Windows-advanced-Winkiller-NoDisk-NoBOOT-Pro.exe" data-filename="Windows-advanced-Winkiller-NoDisk-NoBOOT-Pro.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">Windows-advanced-Winkiller-NoDisk-NoBOOT-Pro.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/WINKILLER.exe.rar" class="download-link" download="WINKILLER.exe.rar">
+                        <div class="file-item selectable" data-name="WINKILLER.exe" data-filename="WINKILLER.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">WINKILLER.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/WinKiller 2.0.0.2f.exe.rar" class="download-link" download="WinKiller 2.0.0.2f.exe.rar">
+                        <div class="file-item selectable" data-name="WinKiller 2.0.0.2f.exe" data-filename="WinKiller 2.0.0.2f.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">WinKiller 2.0.0.2f.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/WinRGBDestructive.exe.rar" class="download-link" download="WinRGBDestructive.exe.rar">
+                        <div class="file-item selectable" data-name="WinRGBDestructive.exe" data-filename="WinRGBDestructive.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">WinRGBDestructive.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/YellowSkull 2.0.exe.rar" class="download-link" download="YellowSkull 2.0.exe.rar">
+                        <div class="file-item selectable" data-name="YellowSkull 2.0.exe" data-filename="YellowSkull 2.0.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">YellowSkull 2.0.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/yesgntgfrf.exe.rar" class="download-link" download="yesgntgfrf.exe.rar">
+                        <div class="file-item selectable" data-name="yesgntgfrf.exe" data-filename="yesgntgfrf.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">yesgntgfrf.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/yesgntgfrf-safety.exe.rar" class="download-link" download="yesgntgfrf-safety.exe.rar">
+                        <div class="file-item selectable" data-name="yesgntgfrf-safety.exe" data-filename="yesgntgfrf-safety.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">yesgntgfrf-safety.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/Zoxazolamine.exe.rar" class="download-link" download="Zoxazolamine.exe.rar">
+                        <div class="file-item selectable" data-name="Zoxazolamine.exe" data-filename="Zoxazolamine.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">Zoxazolamine.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/《与雾雨魔理沙一起偷重要的东西》游戏外挂win7版.exe.rar" class="download-link" download="《与雾雨魔理沙一起偷重要的东西》游戏外挂win7版.exe.rar">
+                        <div class="file-item selectable" data-name="《与雾雨魔理沙一起偷重要的东西》游戏外挂win7版.exe" data-filename="《与雾雨魔理沙一起偷重要的东西》游戏外挂win7版.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">《与雾雨魔理沙一起偷重要的东西》游戏外挂win7版.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/《与雾雨魔理沙一起偷重要的东西》游戏外挂win8.x版.exe.rar" class="download-link" download="《与雾雨魔理沙一起偷重要的东西》游戏外挂win8.x版.exe.rar">
+                        <div class="file-item selectable" data-name="《与雾雨魔理沙一起偷重要的东西》游戏外挂win8.x版.exe" data-filename="《与雾雨魔理沙一起偷重要的东西》游戏外挂win8.x版.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">《与雾雨魔理沙一起偷重要的东西》游戏外挂win8.x版.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/《与雾雨魔理沙一起偷重要的东西》游戏外挂win10+版.exe.rar" class="download-link" download="《与雾雨魔理沙一起偷重要的东西》游戏外挂win10+版.exe.rar">
+                        <div class="file-item selectable" data-name="《与雾雨魔理沙一起偷重要的东西》游戏外挂win10+版.exe" data-filename="《与雾雨魔理沙一起偷重要的东西》游戏外挂win10+版.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">《与雾雨魔理沙一起偷重要的东西》游戏外挂win10+版.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/【php.shell病毒】东莞市机电工程学校机房电脑壁纸.jpg.rar" class="download-link" download="【php.shell病毒】东莞市机电工程学校机房电脑壁纸.jpg.rar">
+                        <div class="file-item selectable" data-name="【php.shell病毒】东莞市机电工程学校机房电脑壁纸.jpg" data-filename="【php.shell病毒】东莞市机电工程学校机房电脑壁纸.jpg.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">【php.shell病毒】东莞市机电工程学校机房电脑壁纸.jpg</div>
+                            <div class="file-details">大小: 未知 | 类型: JPG图片文件 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/【Synaptics】HMCL(2).exe.rar" class="download-link" download="【Synaptics】HMCL(2).exe.rar">
+                        <div class="file-item selectable" data-name="【Synaptics】HMCL(2).exe" data-filename="【Synaptics】HMCL(2).exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">【Synaptics】HMCL(2).exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/奥利给病毒.exe.rar" class="download-link" download="奥利给病毒.exe.rar">
+                        <div class="file-item selectable" data-name="奥利给病毒.exe" data-filename="奥利给病毒.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">奥利给病毒.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/病名は愛だつた.A.exe.rar" class="download-link" download="病名は愛だつた.A.exe.rar">
+                        <div class="file-item selectable" data-name="病名は愛だつた.A.exe" data-filename="病名は愛だつた.A.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">病名は愛だつた.A.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/病名は愛だつた.B.exe.rar" class="download-link" download="病名は愛だつた.B.exe.rar">
+                        <div class="file-item selectable" data-name="病名は愛だつた.B.exe" data-filename="病名は愛だつた.B.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">病名は愛だつた.B.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/不乖巧的毒.exe.rar" class="download-link" download="不乖巧的毒.exe.rar">
+                        <div class="file-item selectable" data-name="不乖巧的毒.exe" data-filename="不乖巧的毒.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">不乖巧的毒.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <!-- 第6组 (151-180) -->
+                    <a href="Windows病毒库/钉钉(呵呵一笑).exe.rar" class="download-link" download="钉钉(呵呵一笑).exe.rar">
+                        <div class="file-item selectable" data-name="钉钉(呵呵一笑).exe" data-filename="钉钉(呵呵一笑).exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">钉钉(呵呵一笑).exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/高考成绩查询.exe.rar" class="download-link" download="高考成绩查询.exe.rar">
+                        <div class="file-item selectable" data-name="高考成绩查询.exe" data-filename="高考成绩查询.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">高考成绩查询.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/高能弹窗.exe.rar" class="download-link" download="高能弹窗.exe.rar">
+                        <div class="file-item selectable" data-name="高能弹窗.exe" data-filename="高能弹窗.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">高能弹窗.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/黑人抬棺病毒，第七版编译2.0.exe.rar" class="download-link" download="黑人抬棺病毒，第七版编译2.0.exe.rar">
+                        <div class="file-item selectable" data-name="黑人抬棺病毒，第七版编译2.0.exe" data-filename="黑人抬棺病毒，第七版编译2.0.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">黑人抬棺病毒，第七版编译2.0.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/滑稽病毒.exe.rar" class="download-link" download="滑稽病毒.exe.rar">
+                        <div class="file-item selectable" data-name="滑稽病毒.exe" data-filename="滑稽病毒.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">滑稽病毒.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/灰鸽子后门木马.exe.rar" class="download-link" download="灰鸽子后门木马.exe.rar">
+                        <div class="file-item selectable" data-name="灰鸽子后门木马.exe" data-filename="灰鸽子后门木马.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">灰鸽子后门木马.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/火绒危险.exe.rar" class="download-link" download="火绒危险.exe.rar">
+                        <div class="file-item selectable" data-name="火绒危险.exe" data-filename="火绒危险.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">火绒危险.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/金坷垃病毒最终完成版3.0.exe.rar" class="download-link" download="金坷垃病毒最终完成版3.0.exe.rar">
+                        <div class="file-item selectable" data-name="金坷垃病毒最终完成版3.0.exe" data-filename="金坷垃病毒最终完成版3.0.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">金坷垃病毒最终完成版3.0.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/老帝病毒.exe.rar" class="download-link" download="老帝病毒.exe.rar">
+                        <div class="file-item selectable" data-name="老帝病毒.exe" data-filename="老帝病毒.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">老帝病毒.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/卢本伟病毒.exe.rar" class="download-link" download="卢本伟病毒.exe.rar">
+                        <div class="file-item selectable" data-name="卢本伟病毒.exe" data-filename="卢本伟病毒.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">卢本伟病毒.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/迷你世界.exe.rar" class="download-link" download="迷你世界.exe.rar">
+                        <div class="file-item selectable" data-name="迷你世界.exe" data-filename="迷你世界.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">迷你世界.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/迷你世界超级外挂.exe.rar" class="download-link" download="迷你世界超级外挂.exe.rar">
+                        <div class="file-item selectable" data-name="迷你世界超级外挂.exe" data-filename="迷你世界超级外挂.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">迷你世界超级外挂.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/某科学的超virus.exe.rar" class="download-link" download="某科学的超virus.exe.rar">
+                        <div class="file-item selectable" data-name="某科学的超virus.exe" data-filename="某科学的超virus.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">某科学的超virus.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/潘嘎之交.exe.rar" class="download-link" download="潘嘎之交.exe.rar">
+                        <div class="file-item selectable" data-name="潘嘎之交.exe" data-filename="潘嘎之交.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">潘嘎之交.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/如何吸旺仔牛奶.exe.rar" class="download-link" download="如何吸旺仔牛奶.exe.rar">
+                        <div class="file-item selectable" data-name="如何吸旺仔牛奶.exe" data-filename="如何吸旺仔牛奶.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">如何吸旺仔牛奶.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/赛博灯泡病毒.exe.rar" class="download-link" download="赛博灯泡病毒.exe.rar">
+                        <div class="file-item selectable" data-name="赛博灯泡病毒.exe" data-filename="赛博灯泡病毒.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">赛博灯泡病毒.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/斯大林病毒.exe.rar" class="download-link" download="斯大林病毒.exe.rar">
+                        <div class="file-item selectable" data-name="斯大林病毒.exe" data-filename="斯大林病毒.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">斯大林病毒.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/王境泽病毒.exe.rar" class="download-link" download="王境泽病毒.exe.rar">
+                        <div class="file-item selectable" data-name="王境泽病毒.exe" data-filename="王境泽病毒.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">王境泽病毒.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/王境泽病毒(2.0版).exe.rar" class="download-link" download="王境泽病毒(2.0版).exe.rar">
+                        <div class="file-item selectable" data-name="王境泽病毒(2.0版).exe" data-filename="王境泽病毒(2.0版).exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">王境泽病毒(2.0版).exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/喜之郎鬼畜v2.0.exe.rar" class="download-link" download="喜之郎鬼畜v2.0.exe.rar">
+                        <div class="file-item selectable" data-name="喜之郎鬼畜v2.0.exe" data-filename="喜之郎鬼畜v2.0.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">喜之郎鬼畜v2.0.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/喜之郎鬼畜病毒v3.0.exe.rar" class="download-link" download="喜之郎鬼畜病毒v3.0.exe.rar">
+                        <div class="file-item selectable" data-name="喜之郎鬼畜病毒v3.0.exe" data-filename="喜之郎鬼畜病毒v3.0.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">喜之郎鬼畜病毒v3.0.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/仙女CXK.exe.rar" class="download-link" download="仙女CXK.exe.rar">
+                        <div class="file-item selectable" data-name="仙女CXK.exe" data-filename="仙女CXK.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">仙女CXK.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/印尼宽带病毒.exe.rar" class="download-link" download="印尼宽带病毒.exe.rar">
+                        <div class="file-item selectable" data-name="印尼宽带病毒.exe" data-filename="印尼宽带病毒.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">印尼宽带病毒.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/硬件病毒(XP运行).exe.rar" class="download-link" download="硬件病毒(XP运行).exe.rar">
+                        <div class="file-item selectable" data-name="硬件病毒(XP运行).exe" data-filename="硬件病毒(XP运行).exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">硬件病毒(XP运行).exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/俞飞鸿病毒1.4.exe.rar" class="download-link" download="俞飞鸿病毒1.4.exe.rar">
+                        <div class="file-item selectable" data-name="俞飞鸿病毒1.4.exe" data-filename="俞飞鸿病毒1.4.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">俞飞鸿病毒1.4.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/原神.exe.rar" class="download-link" download="原神.exe.rar">
+                        <div class="file-item selectable" data-name="原神.exe" data-filename="原神.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">原神.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/再见，世界.exe.rar" class="download-link" download="再见，世界.exe.rar">
+                        <div class="file-item selectable" data-name="再见，世界.exe" data-filename="再见，世界.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">再见，世界.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/浙江温州病毒（滑稽制作）.exe.rar" class="download-link" download="浙江温州病毒（滑稽制作）.exe.rar">
+                        <div class="file-item selectable" data-name="浙江温州病毒（滑稽制作）.exe" data-filename="浙江温州病毒（滑稽制作）.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">浙江温州病毒（滑稽制作）.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/支付宝集福增强工具.exe.rar" class="download-link" download="支付宝集福增强工具.exe.rar">
+                        <div class="file-item selectable" data-name="支付宝集福增强工具.exe" data-filename="支付宝集福增强工具.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">支付宝集福增强工具.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/中华黑豹升级版.exe.rar" class="download-link" download="中华黑豹升级版.exe.rar">
+                        <div class="file-item selectable" data-name="中华黑豹升级版.exe" data-filename="中华黑豹升级版.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">中华黑豹升级版.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <!-- 第7组 (181-187) -->
+                    <a href="Windows病毒库/中华黑豹增强版.exe.rar" class="download-link" download="中华黑豹增强版.exe.rar">
+                        <div class="file-item selectable" data-name="中华黑豹增强版.exe" data-filename="中华黑豹增强版.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">中华黑豹增强版.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/ë.exe.rar" class="download-link" download="ë.exe.rar">
+                        <div class="file-item selectable" data-name="ë.exe" data-filename="ë.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">ë.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/ß.exe.rar" class="download-link" download="ß.exe.rar">
+                        <div class="file-item selectable" data-name="ß.exe" data-filename="ß.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">ß.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/ü.exe.rar" class="download-link" download="ü.exe.rar">
+                        <div class="file-item selectable" data-name="ü.exe" data-filename="ü.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">ü.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/π.exe.rar" class="download-link" download="π.exe.rar">
+                        <div class="file-item selectable" data-name="π.exe" data-filename="π.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">π.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/ю.exe.rar" class="download-link" download="ю.exe.rar">
+                        <div class="file-item selectable" data-name="ю.exe" data-filename="ю.exe.rar">
+                            <div class="file-icon"></div>
+                            <div class="file-name">ю.exe</div>
+                            <div class="file-details">大小: 未知 | 类型: EXE应用程序 | 点击下载</div>
+                        </div>
+                    </a>
+                    
+                    <a href="Windows病毒库/点开必看.txt" class="download-link" download="点开必看.txt">
+                        <div class="file-item selectable" data-name="点开必看.txt" data-filename="点开必看.txt">
+                            <div class="file-icon"></div>
+                            <div class="file-name">点开必看.txt</div>
+                            <div class="file-details">大小: 未知 | 类型: 文本文件 | 点击下载</div>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/main.js"></script>
+    <script>
+        // ========== 优化版多选批量下载功能 ==========
+        document.addEventListener('DOMContentLoaded', function() {
+            // 状态变量
+            let isSelectMode = false;
+            let selectedFiles = new Map(); // 使用Map存储选中文件，key为filename
+            
+            // 获取所有DOM元素
+            const selectModeBtn = document.getElementById('selectModeBtn');
+            const selectAllBtn = document.getElementById('selectAllBtn');
+            const selectAllToolbarBtn = document.getElementById('selectAllToolbarBtn');
+            const clearSelectionBtn = document.getElementById('clearSelectionBtn');
+            const downloadSelectedBtn = document.getElementById('downloadSelectedBtn');
+            const exitSelectModeBtn = document.getElementById('exitSelectModeBtn');
+            const batchToolbar = document.getElementById('batchToolbar');
+            const selectedCounter = document.getElementById('selectedCounter');
+            
+            // 弹窗相关元素
+            const batchDownloadModal = document.getElementById('batchDownloadModal');
+            const selectedCount = document.getElementById('selectedCount');
+            const selectedFilesList = document.getElementById('selectedFilesList');
+            const confirmBatchDownload = document.getElementById('confirmBatchDownload');
+            const cancelBatchDownload = document.getElementById('cancelBatchDownload');
+            
+            // 进度相关元素
+            const downloadProgress = document.getElementById('downloadProgress');
+            const progressFill = document.getElementById('progressFill');
+            const progressText = document.getElementById('progressText');
+            
+            // 获取所有文件项
+            const fileItems = document.querySelectorAll('.file-item.selectable');
+            
+            // ========== 核心功能函数 ==========
+            
+            // 进入/退出多选模式
+            function toggleSelectMode() {
+                isSelectMode = !isSelectMode;
+                
+                if (isSelectMode) {
+                    // 进入多选模式
+                    document.body.classList.add('select-mode');
+                    selectModeBtn.innerHTML = '<i class="fas fa-times"></i> 退出多选';
+                    selectModeBtn.classList.add('active');
+                    
+                    // 显示工具栏和按钮
+                    batchToolbar.classList.add('active');
+                    selectAllBtn.style.display = 'flex';
+                    downloadSelectedBtn.style.display = 'flex';
+                    
+                    // 启用文件选择
+                    enableFileSelection();
+                } else {
+                    // 退出多选模式
+                    document.body.classList.remove('select-mode');
+                    selectModeBtn.innerHTML = '<i class="fas fa-check-square"></i> 进入多选模式';
+                    selectModeBtn.classList.remove('active');
+                    
+                    // 隐藏工具栏和按钮
+                    batchToolbar.classList.remove('active');
+                    selectAllBtn.style.display = 'none';
+                    downloadSelectedBtn.style.display = 'none';
+                    
+                    // 清除选择
+                    clearSelection();
+                }
+                
+                updateCounter();
+            }
+            
+            // 启用文件选择功能
+            function enableFileSelection() {
+                fileItems.forEach(item => {
+                    // 移除旧的点击事件
+                    item.removeEventListener('click', handleFileClick);
+                    // 添加新的点击事件
+                    item.addEventListener('click', handleFileClick);
+                });
+            }
+            
+            // 处理文件点击
+            function handleFileClick(e) {
+                if (!isSelectMode) return;
+                
+                e.preventDefault();
+                e.stopPropagation();
+                
+                const filename = this.dataset.filename;
+                const name = this.dataset.name;
+                const link = this.parentElement.href;
+                
+                if (selectedFiles.has(filename)) {
+                    // 取消选择
+                    selectedFiles.delete(filename);
+                    this.classList.remove('selected');
+                } else {
+                    // 选择文件
+                    selectedFiles.set(filename, {
+                        name: name,
+                        href: link,
+                        element: this
+                    });
+                    this.classList.add('selected');
+                }
+                
+                updateCounter();
+            }
+            
+            // 全选功能
+            function selectAllFiles() {
+                selectedFiles.clear();
+                fileItems.forEach(item => {
+                    const filename = item.dataset.filename;
+                    const name = item.dataset.name;
+                    const link = item.parentElement.href;
+                    
+                    selectedFiles.set(filename, {
+                        name: name,
+                        href: link,
+                        element: item
+                    });
+                    item.classList.add('selected');
+                });
+                updateCounter();
+                
+                // 显示全选成功提示
+                showTempMessage('已选择所有文件', 'success');
+            }
+            
+            // 清空选择
+            function clearSelection() {
+                selectedFiles.clear();
+                fileItems.forEach(item => {
+                    item.classList.remove('selected');
+                });
+                updateCounter();
+            }
+            
+            // 更新计数器
+            function updateCounter() {
+                const count = selectedFiles.size;
+                selectedCounter.textContent = count;
+                selectedCounter.style.color = count > 0 ? '#4CAF50' : '#fff';
+                
+                // 更新下载按钮文本
+                if (count > 0) {
+                    downloadSelectedBtn.disabled = false;
+                    downloadSelectedBtn.innerHTML = `<i class="fas fa-download"></i> 下载选中文件 <span class="selected-count">(${count})</span>`;
+                    downloadSelectedBtn.querySelector('.selected-count').style.cssText = `
+                        background: #4CAF50;
+                        color: white;
+                        padding: 2px 8px;
+                        border-radius: 12px;
+                        font-size: 12px;
+                        margin-left: 5px;
+                    `;
+                } else {
+                    downloadSelectedBtn.disabled = true;
+                    downloadSelectedBtn.innerHTML = `<i class="fas fa-download"></i> 下载选中文件 <span class="selected-count">(0)</span>`;
+                }
+            }
+            
+            // 显示批量下载弹窗
+            function showBatchDownloadModal() {
+                if (selectedFiles.size === 0) {
+                    showTempMessage('请先选择要下载的文件！', 'error');
+                    return;
+                }
+                
+                // 更新选中数量
+                selectedCount.textContent = selectedFiles.size;
+                selectedCount.style.fontSize = '18px';
+                selectedCount.style.color = '#4CAF50';
+                
+                // 更新文件列表
+                selectedFilesList.innerHTML = '';
+                selectedFiles.forEach((fileInfo, filename) => {
+                    const listItem = document.createElement('div');
+                    listItem.className = 'selected-item';
+                    listItem.innerHTML = `
+                        <i class="fas fa-file"></i>
+                        <span>${fileInfo.name}</span>
+                    `;
+                    selectedFilesList.appendChild(listItem);
+                });
+                
+                // 显示弹窗
+                batchDownloadModal.classList.add('active');
+                document.body.style.overflow = 'hidden'; // 防止背景滚动
+            }
+            
+            // 执行批量下载
+            function executeBatchDownload() {
+                if (selectedFiles.size === 0) return;
+                
+                // 关闭弹窗
+                batchDownloadModal.classList.remove('active');
+                document.body.style.overflow = ''; // 恢复滚动
+                
+                // 显示下载进度
+                downloadProgress.classList.add('active');
+                progressFill.style.width = '0%';
+                progressText.textContent = '准备下载...';
+                
+                // 获取所有选中的下载链接
+                const fileArray = Array.from(selectedFiles.values());
+                const totalFiles = fileArray.length;
+                let downloadedCount = 0;
+                
+                // 显示开始下载提示
+                setTimeout(() => {
+                    // 逐个下载文件
+                    fileArray.forEach((fileInfo, index) => {
+                        setTimeout(() => {
+                            // 更新进度
+                            downloadedCount++;
+                            const progress = Math.round((downloadedCount / totalFiles) * 100);
+                            progressFill.style.width = progress + '%';
+                            progressText.textContent = `正在下载: ${fileInfo.name} (${downloadedCount}/${totalFiles})`;
+                            
+                            // 打开下载链接
+                            try {
+                                const downloadWindow = window.open(fileInfo.href, '_blank');
+                                if (!downloadWindow) {
+                                    progressText.textContent = `被拦截: ${fileInfo.name} - 请允许弹出窗口`;
+                                }
+                            } catch (e) {
+                                console.error('下载出错:', e);
+                            }
+                            
+                            // 如果是最后一个文件，显示完成提示
+                            if (downloadedCount === totalFiles) {
+                                setTimeout(() => {
+                                    progressText.textContent = `下载完成！共下载 ${totalFiles} 个文件`;
+                                    
+                                    // 3秒后隐藏进度条
+                                    setTimeout(() => {
+                                        downloadProgress.classList.remove('active');
+                                        
+                                        // 显示完成提示
+                                        showTempMessage(`批量下载完成！共下载 ${totalFiles} 个文件`, 'success');
+                                        
+                                        // 退出选择模式
+                                        setTimeout(() => {
+                                            toggleSelectMode();
+                                        }, 500);
+                                    }, 3000);
+                                }, 500);
+                            }
+                        }, index * 500); // 500ms间隔，避免被浏览器拦截
+                    });
+                }, 300);
+            }
+            
+            // 显示临时消息提示
+            function showTempMessage(message, type = 'info') {
+                // 移除现有的提示
+                const existingMessage = document.querySelector('.temp-message');
+                if (existingMessage) {
+                    existingMessage.remove();
+                }
+                
+                // 创建新的提示
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `temp-message ${type}`;
+                messageDiv.textContent = message;
+                messageDiv.style.cssText = `
+                    position: fixed;
+                    top: 20px;
+                    right: 20px;
+                    background: ${type === 'error' ? '#ff5252' : type === 'success' ? '#4CAF50' : '#2196F3'};
+                    color: white;
+                    padding: 12px 20px;
+                    border-radius: 8px;
+                    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+                    z-index: 9999;
+                    animation: slideInRight 0.3s ease;
+                    font-weight: 600;
+                    max-width: 300px;
+                `;
+                
+                document.body.appendChild(messageDiv);
+                
+                // 3秒后自动移除
+                setTimeout(() => {
+                    messageDiv.style.animation = 'slideOutRight 0.3s ease';
+                    setTimeout(() => {
+                        messageDiv.remove();
+                    }, 300);
+                }, 3000);
+                
+                // 添加动画关键帧
+                if (!document.querySelector('#messageAnimations')) {
+                    const style = document.createElement('style');
+                    style.id = 'messageAnimations';
+                    style.textContent = `
+                        @keyframes slideInRight {
+                            from { transform: translateX(100%); opacity: 0; }
+                            to { transform: translateX(0); opacity: 1; }
+                        }
+                        @keyframes slideOutRight {
+                            from { transform: translateX(0); opacity: 1; }
+                            to { transform: translateX(100%); opacity: 0; }
+                        }
+                    `;
+                    document.head.appendChild(style);
+                }
+            }
+            
+            // ========== 事件监听 ==========
+            
+            // 进入/退出多选模式
+            selectModeBtn.addEventListener('click', toggleSelectMode);
+            
+            // 全选按钮
+            selectAllBtn.addEventListener('click', selectAllFiles);
+            selectAllToolbarBtn.addEventListener('click', selectAllFiles);
+            
+            // 清空选择
+            clearSelectionBtn.addEventListener('click', clearSelection);
+            
+            // 下载选中文件
+            downloadSelectedBtn.addEventListener('click', showBatchDownloadModal);
+            
+            // 退出多选模式
+            exitSelectModeBtn.addEventListener('click', toggleSelectMode);
+            
+            // 批量下载弹窗
+            confirmBatchDownload.addEventListener('click', executeBatchDownload);
+            cancelBatchDownload.addEventListener('click', function() {
+                batchDownloadModal.classList.remove('active');
+                document.body.style.overflow = '';
+            });
+            
+            // 点击弹窗外部关闭
+            batchDownloadModal.addEventListener('click', function(e) {
+                if (e.target === this) {
+                    this.classList.remove('active');
+                    document.body.style.overflow = '';
+                }
+            });
+            
+            // ESC键关闭弹窗
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    if (batchDownloadModal.classList.contains('active')) {
+                        batchDownloadModal.classList.remove('active');
+                        document.body.style.overflow = '';
+                    }
+                }
+                
+                // Ctrl+A 全选（只在选择模式下有效）
+                if (e.ctrlKey && e.key === 'a' && isSelectMode) {
+                    e.preventDefault();
+                    selectAllFiles();
+                }
+            });
+            
+            // 初始更新计数器
+            updateCounter();
+            
+            // 添加文件项点击反馈
+            fileItems.forEach(item => {
+                item.addEventListener('mousedown', function() {
+                    if (isSelectMode) {
+                        this.style.transform = 'scale(0.98)';
+                    }
+                });
+                
+                item.addEventListener('mouseup', function() {
+                    if (isSelectMode) {
+                        setTimeout(() => {
+                            this.style.transform = '';
+                        }, 150);
+                    }
+                });
+                
+                item.addEventListener('touchstart', function() {
+                    if (isSelectMode) {
+                        this.style.transform = 'scale(0.98)';
+                    }
+                });
+                
+                item.addEventListener('touchend', function() {
+                    if (isSelectMode) {
+                        setTimeout(() => {
+                            this.style.transform = '';
+                        }, 150);
+                    }
+                });
+            });
+            
+            // 移动端长按提示
+            let touchTimer;
+            fileItems.forEach(item => {
+                item.addEventListener('touchstart', function(e) {
+                    if (!isSelectMode) {
+                        touchTimer = setTimeout(() => {
+                            showTempMessage('长按可进入多选模式，点击上方按钮进入', 'info');
+                        }, 1000);
+                    }
+                });
+                
+                item.addEventListener('touchend', function() {
+                    clearTimeout(touchTimer);
+                });
+            });
+            
+            // 检测移动端并显示提示
+            if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+                setTimeout(() => {
+                    if (!isSelectMode) {
+                        showTempMessage('提示：点击"进入多选模式"可批量选择文件下载', 'info');
+                    }
+                }, 2000);
+            }
+        });
+    </script>
+</body>
+</html>

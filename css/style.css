@@ -485,3 +485,399 @@ header {
         padding: 20px;
     }
 }
+/* ========== 多选功能新增样式 ========== */
+
+/* 临时消息提示 */
+.temp-message {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: #4CAF50;
+    color: white;
+    padding: 12px 20px;
+    border-radius: 8px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    z-index: 9999;
+    animation: slideInRight 0.3s ease;
+    font-weight: 600;
+    max-width: 300px;
+}
+
+.temp-message.error {
+    background: #ff5252;
+}
+
+.temp-message.success {
+    background: #4CAF50;
+}
+
+.temp-message.info {
+    background: #2196F3;
+}
+
+/* 选中计数徽章 */
+.selected-count {
+    background: #4CAF50;
+    color: white;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    margin-left: 5px;
+}
+
+/* 进度条相关 */
+.download-progress {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: rgba(30, 30, 40, 0.95);
+    border: 2px solid #4CAF50;
+    border-radius: 10px;
+    padding: 15px 20px;
+    z-index: 1000;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+    max-width: 300px;
+    display: none;
+}
+
+.download-progress.active {
+    display: block;
+}
+
+.progress-bar {
+    width: 100%;
+    height: 6px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
+    overflow: hidden;
+    margin: 10px 0;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #4CAF50, #2E7D32);
+    border-radius: 3px;
+    width: 0%;
+    transition: width 0.3s ease;
+}
+
+.progress-title {
+    color: #4CAF50;
+    font-weight: 600;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.progress-text {
+    font-size: 12px;
+    color: #aaa;
+    text-align: center;
+}
+
+/* 动画关键帧 */
+@keyframes slideInRight {
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes slideOutRight {
+    from { transform: translateX(0); opacity: 1; }
+    to { transform: translateX(100%); opacity: 0; }
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.02); }
+    100% { transform: scale(1); }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideUp {
+    from { transform: translateY(100%); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes slideIn {
+    from { opacity: 0; transform: translateX(-10px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+
+/* ========== 移动端优化补充样式 ========== */
+@media (max-width: 768px) {
+    .download-progress {
+        bottom: 10px;
+        right: 10px;
+        left: 10px;
+        max-width: none;
+    }
+    
+    .temp-message {
+        top: 10px;
+        right: 10px;
+        left: 10px;
+        max-width: none;
+        text-align: center;
+    }
+}
+
+/* ========== 批量操作按钮状态 ========== */
+.batch-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.batch-btn:disabled:hover {
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+/* ========== 选中状态增强 ========== */
+.select-mode .file-item.selectable.selected .file-icon {
+    filter: brightness(1.2);
+}
+
+.select-mode .file-item.selectable.selected .file-name {
+    color: #4CAF50;
+    font-weight: bold;
+}
+
+/* ========== 弹窗背景锁定 ========== */
+body.modal-open {
+    overflow: hidden;
+}
+
+/* ========== 滚动条美化 ========== */
+.batch-modal-content::-webkit-scrollbar,
+.selected-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+.batch-modal-content::-webkit-scrollbar-track,
+.selected-list::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
+}
+
+.batch-modal-content::-webkit-scrollbar-thumb,
+.selected-list::-webkit-scrollbar-thumb {
+    background: #4CAF50;
+    border-radius: 3px;
+}
+
+.batch-modal-content::-webkit-scrollbar-thumb:hover,
+.selected-list::-webkit-scrollbar-thumb:hover {
+    background: #2E7D32;
+}
+
+/* ========== 工具栏响应式 ========== */
+@media (max-width: 480px) {
+    .batch-toolbar {
+        padding: 15px !important;
+    }
+    
+    .batch-actions {
+        gap: 5px !important;
+    }
+    
+    .batch-btn {
+        padding: 10px 15px !important;
+        font-size: 14px !important;
+    }
+}
+
+/* ========== 文件项选中动画 ========== */
+@keyframes checkmark {
+    0% { transform: scale(0); opacity: 0; }
+    50% { transform: scale(1.2); opacity: 1; }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+.select-mode .file-item.selectable.selected::after {
+    animation: checkmark 0.3s ease-out;
+}
+
+/* ========== 加载状态 ========== */
+.loading {
+    position: relative;
+    pointer-events: none;
+}
+
+.loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 20px;
+    height: 20px;
+    margin: -10px 0 0 -10px;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-top-color: #4CAF50;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* ========== 文件统计样式增强 ========== */
+.file-stats i {
+    animation: pulse 2s infinite;
+}
+
+.file-stats strong {
+    color: #4CAF50;
+}
+
+.file-stats span {
+    transition: all 0.3s;
+}
+
+.file-stats:hover span {
+    color: #4CAF50;
+}
+
+/* ========== 面包屑导航增强 ========== */
+.breadcrumb-item a:hover {
+    background: rgba(76, 175, 80, 0.2);
+}
+
+.breadcrumb-item.active a {
+    background: rgba(76, 175, 80, 0.3);
+}
+
+/* ========== 搜索框优化 ========== */
+.search-input:focus {
+    outline: none;
+    border-color: #4CAF50;
+    box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.2);
+}
+
+/* ========== 文件图标选中状态 ========== */
+.select-mode .file-item.selectable.selected .file-icon::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(76, 175, 80, 0.1);
+    border-radius: 5px;
+}
+
+/* ========== 按钮组间距优化 ========== */
+.batch-controls button:not(:last-child) {
+    margin-right: 0;
+}
+
+/* ========== 工具提示 ========== */
+[title] {
+    position: relative;
+}
+
+[title]:hover::after {
+    content: attr(title);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0,0,0,0.8);
+    color: white;
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    white-space: nowrap;
+    z-index: 1000;
+    margin-bottom: 5px;
+}
+
+[title]:hover::before {
+    content: '';
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 5px solid transparent;
+    border-top-color: rgba(0,0,0,0.8);
+    margin-bottom: -5px;
+    z-index: 1000;
+}
+
+/* ========== 文件列表悬停效果 ========== */
+.file-item:not(.selected):hover .file-name {
+    color: #4CAF50;
+}
+
+/* ========== 批量下载按钮悬停 ========== */
+.batch-btn.warning:hover .selected-count {
+    background: #F57C00;
+}
+
+/* ========== 响应式文件网格 ========== */
+@media (max-width: 600px) {
+    .file-list {
+        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    }
+}
+
+@media (max-width: 400px) {
+    .file-list {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ========== 键盘焦点样式 ========== */
+.batch-btn:focus,
+.search-input:focus,
+.file-item.selectable:focus {
+    outline: 2px solid #4CAF50;
+    outline-offset: 2px;
+}
+
+/* ========== 禁用状态 ========== */
+.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+/* ========== 成功/错误状态 ========== */
+.state-success {
+    color: #4CAF50;
+    border-color: #4CAF50;
+}
+
+.state-error {
+    color: #f44336;
+    border-color: #f44336;
+}
+
+.state-warning {
+    color: #ff9800;
+    border-color: #ff9800;
+}
+
+/* ========== 过渡动画 ========== */
+.fade-enter {
+    opacity: 0;
+}
+
+.fade-enter-active {
+    opacity: 1;
+    transition: opacity 300ms;
+}
+
+.fade-exit {
+    opacity: 1;
+}
+
+.fade-exit-active {
+    opacity: 0;
+    transition: opacity 300ms;
+}

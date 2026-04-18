@@ -1,0 +1,60 @@
+name: 每日更新缓存
+
+on:
+  schedule:
+    - cron: '0 16 * * *'
+  workflow_dispatch:
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: 获取并解码 Release 数据
+        run: |
+          curl -H "Accept: application/vnd.github.v3+json" \
+               "https://api.github.com/repos/xiaozhongziyuanku2025/xiaozhongziyuanku2025/releases/tags/Windows病毒库" \
+               > /tmp/release.json
+          
+          node -e '
+            const fs = require("fs");
+            const data = JSON.parse(fs.readFileSync("/tmp/release.json", "utf8"));
+            
+            function decodeFilename(encoded) {
+              try {
+                let base64 = encoded.replace(/-/g, "+").replace(/_/g, "/");
+                while (base64.length % 4) base64 += "=";
+                let decoded = atob(base64);
+                return decodeURIComponent(escape(decoded));
+              } catch(e) {
+                return encoded;
+              }
+            }
+            
+            const decodedAssets = data.assets.map(asset => ({
+              name: decodeFilename(asset.name),
+              original_name: asset.name,
+              size: asset.size,
+              download_url: asset.browser_download_url,
+              created_at: asset.created_at,
+              updated_at: asset.updated_at
+            }));
+            
+            fs.writeFileSync("release-cache.json", JSON.stringify({
+              release_name: data.name,
+              release_tag: data.tag_name,
+              published_at: data.published_at,
+              assets: decodedAssets
+            }, null, 2));
+          '
+      
+      - name: 提交并推送
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add release-cache.json
+          git diff --staged --quiet || git commit -m "自动更新缓存 $(date '+%Y-%m-%d')"
+          git push

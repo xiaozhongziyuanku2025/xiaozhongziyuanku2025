@@ -16,7 +16,7 @@ jobs:
       - name: 获取并解码 Release 数据
         run: |
           curl -H "Accept: application/vnd.github.v3+json" \
-               "https://api.github.com/repos/xiaozhongziyuanku2025/xiaozhongziyuanku2025/releases/tags/Windows病毒库" \
+               "https://api.github.com/repos/${{ github.repository }}/releases/tags/Windows病毒库" \
                > /tmp/release.json
           
           node -e '
@@ -25,10 +25,16 @@ jobs:
             
             function decodeFilename(encoded) {
               try {
-                let base64 = encoded.replace(/-/g, "+").replace(/_/g, "/");
-                while (base64.length % 4) base64 += "=";
-                let decoded = atob(base64);
-                return decodeURIComponent(escape(decoded));
+                let base64 = encoded;
+                let lastDot = base64.lastIndexOf(".");
+                let ext = lastDot > 0 ? base64.substring(lastDot) : "";
+                let name = lastDot > 0 ? base64.substring(0, lastDot) : base64;
+                
+                name = name.replace(/-/g, "+").replace(/_/g, "/");
+                while (name.length % 4) name += "=";
+                let decoded = atob(name);
+                decoded = decodeURIComponent(escape(decoded));
+                return decoded + ext;
               } catch(e) {
                 return encoded;
               }

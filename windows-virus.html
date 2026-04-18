@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Windows病毒库 - 小众资源库</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        /* 样式代码与之前相同，省略... */
+        .file-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 15px; margin-top: 20px; }
+        .file-item { background: rgba(30,30,40,0.8); border-radius: 10px; padding: 15px; cursor: pointer; transition: 0.3s; }
+        .file-item:hover { transform: translateY(-3px); background: rgba(40,40,50,0.9); }
+        .file-name { font-size: 16px; font-weight: 600; word-break: break-all; }
+        .file-details { font-size: 12px; color: #aaa; margin-top: 8px; }
+        .loading, .error { text-align: center; padding: 60px; }
+        .batch-toolbar, .batch-modal { /* 与之前相同 */ }
+        @media (max-width: 768px) { .file-list { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header><h1>小众资源库</h1></header>
+        <div class="content-area">
+            <h2>Windows病毒库</h2>
+            <div class="file-list" id="fileList"><div class="loading">加载中...</div></div>
+        </div>
+    </div>
+
+    <script>
+        const REPO = 'xiaozhongziyuanku2025/xiaozhongziyuanku2025';
+        const RELEASE_TAG = 'Windows病毒库';
+        const CACHE_KEY = 'release-cache.json';
+        
+        async function loadFiles() {
+            const container = document.getElementById('fileList');
+            
+            // 1. 尝试读取现有缓存
+            let cachedData = null;
+            try {
+                const cacheResponse = await fetch(CACHE_KEY);
+                if (cacheResponse.ok) {
+                    cachedData = await cacheResponse.json();
+                    console.log('使用缓存数据');
+                }
+            } catch (e) { console.log('缓存不存在'); }
+            
+            // 2. 如果缓存有效且非空，直接显示
+            if (cachedData && cachedData.assets && cachedData.assets.length > 0) {
+                renderFiles(cachedData.assets, container);
+                return;
+            }
+            
+            // 3. 缓存为空或不存在，从 API 获取并生成缓存
+            console.log('缓存为空，从 GitHub API 获取...');
+            container.innerHTML = '<div class="loading">首次加载，正在同步文件列表...</div>';
+            
+            try {
+                const apiUrl = `https://api.github.com/repos/${REPO}/releases/tags/${RELEASE_TAG}`;
+                const response = await fetch(apiUrl);
+                if (!response.ok) throw new Error('API 请求失败');
+                const release = await response.json();
+                const files = release.assets || [];
+                
+                if (files.length === 0) {
+                    container.innerHTML = '<div class="loading">暂无文件，请稍后访问</div>';
+                    return;
+                }
+                
+                // 4. 保存到缓存（通过 API 写入，需要后端支持）
+                await saveCacheToGitHub(release);
+                
+                // 5. 显示文件列表
+                renderFiles(files, container);
+                
+            } catch (error) {
+                container.innerHTML = `<div class="error">加载失败: ${error.message}<br><button onclick="location.reload()">重试</button></div>`;
+            }
+        }
+        
+        // 通过 GitHub API 保存缓存（需要 Token）
+        async function saveCacheToGitHub(releaseData) {
+            // 获取文件内容（Base64 编码）
+            const content = btoa(unescape(encodeURIComponent(JSON.stringify(releaseData, null, 2))));
+            
+            // 尝试通过 GitHub API 写入（需要用户授权）
+            const token = localStorage.getItem('github_token');
+            if (!token) {
+                console.log('未配置 GitHub Token，缓存仅本地保存');
+                localStorage.setItem(CACHE_KEY, JSON.stringify(releaseData));
+                return;
+            }
+            
+            try {
+                await fetch(`https://api.github.com/repos/${REPO}/contents/${CACHE_KEY}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `token ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        message: '自动更新文件缓存',
+                        content: content,
+                        sha: await getFileSha()
+                    })
+                });
+                console.log('缓存已保存到 GitHub');
+            } catch (e) { console.log('保存缓存失败', e); }
+        }
+        
+        async function getFileSha() {
+            try {
+                const res = await fetch(`https://api.github.com/repos/${REPO}/contents/${CACHE_KEY}`);
+                if (res.ok) return (await res.json()).sha;
+            } catch (e) { return null; }
+        }
+        
+        function renderFiles(files, container) {
+            if (!files.length) {
+                container.innerHTML = '<div class="loading">暂无文件</div>';
+                return;
+            }
+            container.innerHTML = files.map(file => `
+                <div class="file-item" onclick="window.open('${file.browser_download_url}', '_blank')">
+                    <div class="file-name">${escapeHtml(file.name)}</div>
+                    <div class="file-details">大小: ${formatSize(file.size)} | 点击下载</div>
+                </div>
+            `).join('');
+        }
+        
+        function formatSize(bytes) {
+            if (!bytes) return '未知';
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+            return (bytes / 1048576).toFixed(1) + ' MB';
+        }
+        
+        function escapeHtml(str) {
+            return str.replace(/[&<>]/g, function(m) {
+                return { '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m];
+            });
+        }
+        
+        loadFiles();
+    </script>
+</body>
+</html>

@@ -25,14 +25,12 @@ jobs:
             
             function decodeFilename(encoded) {
               try {
-                let base64 = encoded;
-                let lastDot = base64.lastIndexOf(".");
-                let ext = lastDot > 0 ? base64.substring(lastDot) : "";
-                let name = lastDot > 0 ? base64.substring(0, lastDot) : base64;
-                
-                name = name.replace(/-/g, "+").replace(/_/g, "/");
-                while (name.length % 4) name += "=";
-                let decoded = atob(name);
+                let lastDot = encoded.lastIndexOf(".");
+                let ext = lastDot > 0 ? encoded.substring(lastDot) : "";
+                let nameWithoutExt = lastDot > 0 ? encoded.substring(0, lastDot) : encoded;
+                let base64 = nameWithoutExt.replace(/-/g, "+").replace(/_/g, "/");
+                while (base64.length % 4) base64 += "=";
+                let decoded = atob(base64);
                 decoded = decodeURIComponent(escape(decoded));
                 return decoded + ext;
               } catch(e) {

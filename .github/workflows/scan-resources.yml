@@ -1,0 +1,54 @@
+name: 自动扫描资源包
+
+on:
+  schedule:
+    - cron: '0 16 * * *'
+  workflow_dispatch:
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: 扫描所有资源包
+        run: |
+          cat > search-index.json << 'EOF'
+          {
+            "files": [],
+            "folders": []
+          }
+          EOF
+          
+          # 扫描 Windows病毒库 文件
+          if [ -d "Windows病毒库" ]; then
+            for file in Windows病毒库/*.7z; do
+              if [ -f "$file" ]; then
+                name=$(basename "$file" .7z)
+                echo "找到文件: $name"
+              fi
+            done
+          fi
+          
+          # 扫描安卓病毒样本
+          if [ -d "安卓病毒样本" ]; then
+            for file in 安卓病毒样本/*.apk; do
+              if [ -f "$file" ]; then
+                name=$(basename "$file")
+                echo "找到文件: $name"
+              fi
+            done
+          fi
+          
+          # 生成 JSON
+          echo '{"files": [], "folders": []}' > search-index.json
+      
+      - name: 提交更新
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add search-index.json
+          git diff --staged --quiet || git commit -m "自动扫描资源包 $(date '+%Y-%m-%d')"
+          git push

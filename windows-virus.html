@@ -7,45 +7,19 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="css/style.css">
     <style>
-        /* 面包屑导航样式 - 绿色 */
-        .breadcrumb {
-            margin-bottom: 20px;
-            display: flex;
-            align-items: center;
-            flex-wrap: wrap;
-            background: rgba(20, 20, 30, 0.7);
-            padding: 12px 20px;
-            border-radius: 8px;
-            border: 1px solid rgba(76, 175, 80, 0.3);
-        }
-        .breadcrumb-item { color: #4CAF50; margin-right: 8px; }
-        .breadcrumb-item a { color: #4CAF50; text-decoration: none; padding: 4px 8px; border-radius: 4px; }
-        .breadcrumb-item a:hover { background: rgba(76, 175, 80, 0.2); text-decoration: underline; }
-        .breadcrumb-item.active a { color: #fff; cursor: default; }
-        .breadcrumb-separator { color: #aaa; margin: 0 8px; }
-        
-        /* 文件列表样式 */
         .file-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 15px; margin-top: 20px; }
         .file-item { background: rgba(30, 30, 40, 0.8); border-radius: 10px; padding: 15px; transition: all 0.3s; cursor: pointer; border: 2px solid transparent; }
         .file-item:hover { transform: translateY(-3px); background: rgba(40, 40, 50, 0.9); }
-        .file-item.selected { border-color: #4CAF50; background: rgba(76, 175, 80, 0.15); position: relative; }
-        .file-item.selected::after { content: "✓"; position: absolute; top: 10px; right: 10px; width: 24px; height: 24px; background: #4CAF50; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; }
+        .file-item.selected { border-color: #4CAF50; background: rgba(76, 175, 80, 0.15); }
+        .file-item.selected::after { content: "✓"; position: absolute; top: 10px; right: 10px; width: 24px; height: 24px; background: #4CAF50; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
         .file-name { font-size: 16px; font-weight: 600; word-break: break-all; margin-bottom: 8px; }
         .file-details { font-size: 12px; color: #aaa; }
-        .file-icon { width: 60px; height: 60px; margin: 0 auto 10px; background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23667eea"><path d="M6 2c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6H6zm7 7V3.5L18.5 9H13z"/></svg>') no-repeat center; background-size: contain; }
-        
-        /* 统计栏 */
+        .file-icon { width: 60px; height: 60px; margin: 0 auto 10px; background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23667eea"><path d="M6 2c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6H6z"/></svg>') no-repeat center; background-size: contain; }
         .file-stats { background: rgba(20, 20, 30, 0.7); padding: 15px; border-radius: 8px; margin: 20px 0; border: 1px solid rgba(76, 175, 80, 0.3); }
-        
-        /* 按钮样式 */
         .batch-controls { display: flex; gap: 10px; margin: 20px 0; flex-wrap: wrap; }
-        .batch-btn { padding: 12px 20px; border: none; border-radius: 8px; background: linear-gradient(135deg, #4CAF50, #2E7D32); color: white; cursor: pointer; font-size: 16px; display: flex; align-items: center; gap: 8px; font-weight: 600; }
-        .batch-btn.warning { background: linear-gradient(135deg, #ff9800, #f57c00); }
-        .batch-btn.danger { background: linear-gradient(135deg, #f44336, #d32f2f); }
+        .batch-btn { padding: 12px 20px; border: none; border-radius: 8px; background: #4CAF50; color: white; cursor: pointer; display: flex; align-items: center; gap: 8px; }
         .batch-toolbar { display: none; background: rgba(76, 175, 80, 0.15); padding: 15px; border-radius: 10px; margin: 15px 0; justify-content: space-between; flex-wrap: wrap; }
         .batch-toolbar.active { display: flex; }
-        
-        /* 搜索框 */
         .search-container { margin: 20px 0; display: flex; justify-content: flex-end; }
         .search-icon { background: rgba(76, 175, 80, 0.2); border: none; color: #4CAF50; font-size: 18px; padding: 10px 15px; border-radius: 8px; cursor: pointer; }
         .search-bar { display: none; width: 300px; margin-left: 10px; }
@@ -53,356 +27,149 @@
         .search-input { width: 100%; padding: 10px 15px; border: 1px solid rgba(76, 175, 80, 0.5); border-radius: 8px; background: rgba(20, 20, 30, 0.9); color: #fff; }
         .search-results { margin-top: 20px; display: none; }
         .search-results.active { display: block; }
-        
-        /* 弹窗 */
-        .batch-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 2000; align-items: center; justify-content: center; }
-        .batch-modal.active { display: flex; }
-        .batch-modal-content { background: #1e1e2e; border-radius: 15px; padding: 25px; max-width: 500px; width: 90%; border: 2px solid #4CAF50; max-height: 90vh; overflow-y: auto; }
-        .selected-list { max-height: 200px; overflow-y: auto; background: rgba(20,20,30,0.7); border-radius: 8px; padding: 10px; margin: 15px 0; }
-        .selected-item { padding: 8px; margin-bottom: 5px; background: rgba(255,255,255,0.05); border-radius: 6px; border-left: 3px solid #4CAF50; }
-        .download-progress { display: none; position: fixed; bottom: 20px; right: 20px; background: #1e1e2e; border: 2px solid #4CAF50; border-radius: 10px; padding: 15px; z-index: 1000; min-width: 250px; }
-        .download-progress.active { display: block; }
-        .progress-bar { width: 100%; height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; overflow: hidden; margin: 10px 0; }
-        .progress-fill { height: 100%; background: #4CAF50; width: 0%; transition: width 0.3s; }
-        .loading, .error { text-align: center; padding: 60px; font-size: 18px; }
-        
+        .batch-modal, .download-progress { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 2000; align-items: center; justify-content: center; }
+        .batch-modal.active, .download-progress.active { display: flex; }
+        .batch-modal-content { background: #1e1e2e; border-radius: 15px; padding: 25px; max-width: 500px; width: 90%; border: 2px solid #4CAF50; }
+        .loading, .error { text-align: center; padding: 60px; }
         @media (max-width: 768px) { .file-list { grid-template-columns: 1fr; } .batch-controls { flex-direction: column; } .batch-btn { width: 100%; justify-content: center; } }
     </style>
 </head>
 <body>
-    <div class="sidebar-overlay" id="sidebarOverlay"></div>
-
-    <div class="batch-modal" id="batchModal">
-        <div class="batch-modal-content">
-            <h3 style="color:#4CAF50; margin-bottom:15px"><i class="fas fa-download"></i> 批量下载</h3>
-            <p>将下载 <span id="modalSelectedCount">0</span> 个文件</p>
-            <div class="selected-list" id="modalFileList"></div>
-            <div style="display:flex; gap:10px; margin-top:20px">
-                <button class="batch-btn" id="confirmDownload" style="flex:1">确认下载</button>
-                <button class="batch-btn" id="cancelDownload" style="flex:1; background:#f44336">取消</button>
+<div class="container">
+    <header>
+        <button class="nav-toggle" id="navToggle"><i class="fas fa-bars"></i></button>
+        <h1 class="site-title">小众资源库</h1>
+    </header>
+    <div class="main-content">
+        <div class="sidebar" id="sidebar">
+            <ul class="nav-menu">
+                <li><a href="index.html">关于作者</a></li>
+                <li><a href="resources.html">资源库</a></li>
+                <li><a href="mailto:cn.2345.com@outlook.com">联系作者</a></li>
+            </ul>
+        </div>
+        <div class="content-area">
+            <h2>Windows病毒库</h2>
+            <div class="file-stats" id="fileStats">加载中...</div>
+            <div class="breadcrumb"><a href="index.html">首页</a> > <a href="resources.html">资源库</a> > <a href="main-resources.html">小众资源库</a> > <span style="color:#4CAF50">Windows病毒库</span></div>
+            
+            <div class="batch-controls">
+                <button class="batch-btn" id="selectModeBtn">多选模式</button>
+                <button class="batch-btn" id="downloadSelectedBtn" style="display:none">下载选中</button>
             </div>
+            <div class="batch-toolbar" id="batchToolbar">
+                <span>已选择 <strong id="selectedCounter">0</strong> 个文件</span>
+                <button class="batch-btn" id="selectAllBtn">全选</button>
+                <button class="batch-btn" id="clearSelectionBtn">清空</button>
+                <button class="batch-btn" id="exitSelectModeBtn">退出多选</button>
+            </div>
+            
+            <div class="search-container">
+                <button class="search-icon" id="searchToggle"><i class="fas fa-search"></i></button>
+                <div class="search-bar" id="searchBar"><input type="text" class="search-input" id="searchInput" placeholder="搜索文件..."></div>
+            </div>
+            <div class="search-results" id="searchResults"><div class="file-list" id="resultsList"></div></div>
+            <div class="file-list" id="fileList"><div class="loading">加载中...</div></div>
         </div>
     </div>
+</div>
 
-    <div class="download-progress" id="progressBar">
-        <div class="progress-title"><i class="fas fa-download"></i> 下载进度</div>
-        <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
-        <div class="progress-text" id="progressText">准备下载...</div>
-    </div>
+<script>
+// ========== 数据 ==========
+let allFiles = [], selectedFiles = new Set(), selectMode = false;
 
-    <div class="container">
-        <header>
-            <div class="header-controls">
-                <button class="nav-toggle" id="navToggle"><i class="fas fa-bars"></i></button>
-                <button class="back-button" id="backButton"><i class="fas fa-arrow-left"></i></button>
-                <button class="forward-button" id="forwardButton"><i class="fas fa-arrow-right"></i></button>
-            </div>
-            <h1 class="site-title">小众资源库</h1>
-        </header>
-        
-        <div class="main-content">
-            <div class="sidebar" id="sidebar">
-                <ul class="nav-menu">
-                    <li class="nav-item"><a href="index.html" class="nav-link"><i class="fas fa-user"></i> 关于作者</a></li>
-                    <li class="nav-item"><a href="resources.html" class="nav-link"><i class="fas fa-folder"></i> 资源库</a></li>
-                    <li class="nav-item"><a href="mailto:cn.2345.com@outlook.com" class="nav-link"><i class="fas fa-envelope"></i> 联系作者</a></li>
-                </ul>
-            </div>
-            
-            <div class="content-area">
-                <h2>Windows病毒库</h2>
-                
-                <div class="file-stats" id="fileStats">正在加载...</div>
-                
-                <div class="breadcrumb">
-                    <div class="breadcrumb-item"><a href="index.html">首页</a></div>
-                    <span class="breadcrumb-separator">></span>
-                    <div class="breadcrumb-item"><a href="resources.html">资源库</a></div>
-                    <span class="breadcrumb-separator">></span>
-                    <div class="breadcrumb-item"><a href="main-resources.html">小众资源库</a></div>
-                    <span class="breadcrumb-separator">></span>
-                    <div class="breadcrumb-item active"><a href="#">Windows病毒库</a></div>
-                </div>
-                
-                <div class="batch-controls">
-                    <button class="batch-btn" id="selectModeBtn"><i class="fas fa-check-square"></i> 进入多选模式</button>
-                    <button class="batch-btn warning" id="downloadSelectedBtn" style="display:none"><i class="fas fa-download"></i> 下载选中 (<span id="selectedCount">0</span>)</button>
-                </div>
-                
-                <div class="batch-toolbar" id="batchToolbar">
-                    <span>已选择 <strong id="selectedCounter">0</strong> 个文件</span>
-                    <div>
-                        <button class="batch-btn" id="selectAllBtn">全选</button>
-                        <button class="batch-btn" id="clearSelectionBtn">清空</button>
-                        <button class="batch-btn danger" id="exitSelectModeBtn">退出多选</button>
-                    </div>
-                </div>
-                
-                <div class="search-container">
-                    <button class="search-icon" id="searchToggle"><i class="fas fa-search"></i></button>
-                    <div class="search-bar" id="searchBar"><input type="text" class="search-input" placeholder="搜索文件..." id="searchInput"></div>
-                </div>
-                
-                <div class="search-results" id="searchResults">
-                    <h3>搜索结果</h3>
-                    <div class="file-list" id="resultsList"></div>
-                </div>
-                
-                <div class="file-list" id="fileList"><div class="loading"><i class="fas fa-spinner fa-pulse"></i> 正在加载文件列表...</div></div>
-            </div>
+// ========== 解码 ==========
+function decodeFilename(encoded) {
+    try {
+        let lastDot = encoded.lastIndexOf('.');
+        let ext = lastDot > 0 ? encoded.substring(lastDot) : '';
+        let name = lastDot > 0 ? encoded.substring(0, lastDot) : encoded;
+        let base64 = name.replace(/-/g, '+').replace(/_/g, '/');
+        while (base64.length % 4) base64 += '=';
+        let decoded = atob(base64);
+        decoded = decodeURIComponent(escape(decoded));
+        return decoded + ext;
+    } catch(e) { return encoded; }
+}
+
+function formatSize(b) { return b ? (b<1024?b+' B':b<1048576?(b/1024).toFixed(1)+' KB':(b/1048576).toFixed(1)+' MB') : '未知'; }
+
+// ========== 渲染 ==========
+function render() {
+    let container = document.getElementById('fileList');
+    if (!allFiles.length) { container.innerHTML = '<div class="loading">暂无文件</div>'; return; }
+    container.innerHTML = allFiles.map(f => `
+        <div class="file-item ${selectMode ? 'selectable' : ''} ${selectedFiles.has(f) ? 'selected' : ''}" data-name="${f.name}" data-url="${f.download_url}">
+            <div class="file-icon"></div>
+            <div class="file-name">${f.name}</div>
+            <div class="file-details">${formatSize(f.size)} | ${selectMode ? '点击选中' : '点击下载'}</div>
         </div>
-    </div>
+    `).join('');
+    document.querySelectorAll('.file-item').forEach(el => el.onclick = (e) => {
+        if (selectMode) {
+            let name = el.dataset.name;
+            if (selectedFiles.has(name)) selectedFiles.delete(name);
+            else selectedFiles.add(name);
+            el.classList.toggle('selected');
+            updateUI();
+        } else window.open(el.dataset.url, '_blank');
+    });
+    document.getElementById('fileStats').innerHTML = `<i class="fas fa-chart-bar"></i> 共 ${allFiles.length} 个文件`;
+}
 
-    <script src="js/main.js"></script>
-    <script>
-        // ========== 配置 ==========
-        let allFiles = [];
-        let selectedFiles = new Set();
-        let selectMode = false;
-        
-        // ========== 解码函数（修复版） ==========
-        function decodeFilename(encoded) {
-            if (!encoded) return encoded;
-            try {
-                // 处理多个点的文件名：最后一个点之后是后缀
-                let lastDot = encoded.lastIndexOf('.');
-                let ext = lastDot > 0 ? encoded.substring(lastDot) : '';
-                let nameWithoutExt = lastDot > 0 ? encoded.substring(0, lastDot) : encoded;
-                
-                // 还原 Base64
-                let base64 = nameWithoutExt.replace(/-/g, '+').replace(/_/g, '/');
-                while (base64.length % 4) base64 += '=';
-                let decoded = atob(base64);
-                decoded = decodeURIComponent(escape(decoded));
-                return decoded + ext;
-            } catch(e) {
-                console.warn('解码失败:', encoded);
-                return encoded;
-            }
-        }
-        
-        function formatSize(bytes) {
-            if (!bytes) return '未知';
-            if (bytes < 1024) return bytes + ' B';
-            if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
-            return (bytes / 1048576).toFixed(1) + ' MB';
-        }
-        
-        function escapeHtml(str) {
-            if (!str) return '';
-            return str.replace(/[&<>]/g, function(m) {
-                return { '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m];
-            });
-        }
-        
-        function downloadFile(url, filename) {
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = filename;
-            a.target = '_blank';
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-        }
-        
-        function renderFiles() {
-            const container = document.getElementById('fileList');
-            const statsDiv = document.getElementById('fileStats');
-            
-            if (!allFiles.length) {
-                container.innerHTML = '<div class="loading">暂无文件</div>';
-                statsDiv.innerHTML = '📁 暂无文件';
-                return;
-            }
-            
-            statsDiv.innerHTML = `<i class="fas fa-chart-bar"></i> 共 ${allFiles.length} 个文件 | 实时同步自 GitHub Release`;
-            
-            container.innerHTML = allFiles.map(file => {
-                const isSelected = selectedFiles.has(file);
-                return `
-                    <div class="file-item ${selectMode ? 'selectable' : ''} ${isSelected ? 'selected' : ''}" 
-                         data-filename="${escapeHtml(file.name)}"
-                         data-url="${file.download_url}">
-                        <div class="file-icon"></div>
-                        <div class="file-name">${escapeHtml(file.name)}</div>
-                        <div class="file-details">大小: ${formatSize(file.size)} | ${selectMode ? '点击选中' : '点击下载'}</div>
-                    </div>
-                `;
-            }).join('');
-            
-            bindFileEvents();
-        }
-        
-        function bindFileEvents() {
-            document.querySelectorAll('#fileList .file-item').forEach(item => {
-                item.removeEventListener('click', handleFileClick);
-                item.addEventListener('click', handleFileClick);
-            });
-        }
-        
-        function handleFileClick(e) {
-            const item = e.currentTarget;
-            const url = item.dataset.url;
-            const filename = item.dataset.filename;
-            
-            if (selectMode) {
-                const file = allFiles.find(f => f.name === filename);
-                if (selectedFiles.has(file)) {
-                    selectedFiles.delete(file);
-                    item.classList.remove('selected');
-                } else {
-                    selectedFiles.add(file);
-                    item.classList.add('selected');
-                }
-                updateSelectionUI();
-            } else {
-                if (url && filename) downloadFile(url, filename);
-            }
-        }
-        
-        function updateSelectionUI() {
-            const count = selectedFiles.size;
-            document.getElementById('selectedCounter').innerText = count;
-            document.getElementById('selectedCount').innerText = count;
-            const downloadBtn = document.getElementById('downloadSelectedBtn');
-            if (downloadBtn) downloadBtn.style.display = count > 0 ? 'flex' : 'none';
-        }
-        
-        function enterSelectMode() {
-            selectMode = true;
-            document.body.classList.add('select-mode');
-            document.getElementById('selectModeBtn').style.display = 'none';
-            document.getElementById('downloadSelectedBtn').style.display = selectedFiles.size > 0 ? 'flex' : 'none';
-            document.getElementById('batchToolbar').classList.add('active');
-            renderFiles();
-        }
-        
-        function exitSelectMode() {
-            selectMode = false;
-            selectedFiles.clear();
-            document.body.classList.remove('select-mode');
-            document.getElementById('selectModeBtn').style.display = 'flex';
-            document.getElementById('downloadSelectedBtn').style.display = 'none';
-            document.getElementById('batchToolbar').classList.remove('active');
-            renderFiles();
-            updateSelectionUI();
-        }
-        
-        function selectAll() { allFiles.forEach(f => selectedFiles.add(f)); renderFiles(); updateSelectionUI(); }
-        function clearSelection() { selectedFiles.clear(); renderFiles(); updateSelectionUI(); }
-        
-        function showBatchModal() {
-            if (selectedFiles.size === 0) return;
-            document.getElementById('modalSelectedCount').innerText = selectedFiles.size;
-            document.getElementById('modalFileList').innerHTML = Array.from(selectedFiles).map(f => 
-                `<div class="selected-item"><i class="fas fa-file"></i> ${escapeHtml(f.name)}</div>`
-            ).join('');
-            document.getElementById('batchModal').classList.add('active');
-        }
-        
-        function closeModal() { document.getElementById('batchModal').classList.remove('active'); }
-        
-        async function batchDownload() {
-            const files = Array.from(selectedFiles);
-            if (files.length === 0) return;
-            const progressDiv = document.getElementById('progressBar');
-            const progressFill = document.getElementById('progressFill');
-            const progressText = document.getElementById('progressText');
-            progressDiv.classList.add('active');
-            let completed = 0;
-            for (let i = 0; i < files.length; i++) {
-                setTimeout(() => {
-                    downloadFile(files[i].download_url, files[i].name);
-                    completed++;
-                    progressFill.style.width = `${(completed / files.length) * 100}%`;
-                    progressText.innerText = `已下载 ${completed}/${files.length} 个文件`;
-                    if (completed === files.length) setTimeout(() => progressDiv.classList.remove('active'), 2000);
-                }, i * 300);
-            }
-            closeModal();
-            exitSelectMode();
-        }
-        
-        async function loadFiles() {
-            const container = document.getElementById('fileList');
-            try {
-                const cacheResponse = await fetch('release-cache.json?_=' + Date.now());
-                if (cacheResponse.ok) {
-                    const cached = await cacheResponse.json();
-                    if (cached.assets && cached.assets.length) {
-                        // 如果缓存中的文件名还是编码的，解码一次
-                        allFiles = cached.assets.map(asset => ({
-                            ...asset,
-                            name: decodeFilename(asset.name)
-                        }));
-                        renderFiles();
-                        return;
-                    }
-                }
-                throw new Error('缓存不存在');
-            } catch (error) {
-                container.innerHTML = `<div class="error">加载失败，请刷新重试</div>`;
-                document.getElementById('fileStats').innerHTML = '加载失败';
-            }
-        }
-        
-        function initSearch() {
-            const searchToggle = document.getElementById('searchToggle');
-            const searchBar = document.getElementById('searchBar');
-            const searchInput = document.getElementById('searchInput');
-            const searchResults = document.getElementById('searchResults');
-            const resultsList = document.getElementById('resultsList');
-            const fileListDiv = document.getElementById('fileList');
-            
-            searchToggle.addEventListener('click', () => {
-                searchBar.classList.toggle('active');
-                if (searchBar.classList.contains('active')) searchInput.focus();
-                else {
-                    searchInput.value = '';
-                    searchResults.classList.remove('active');
-                    fileListDiv.style.display = 'grid';
-                }
-            });
-            
-            searchInput.addEventListener('input', () => {
-                const keyword = searchInput.value.toLowerCase().trim();
-                if (keyword === '') {
-                    searchResults.classList.remove('active');
-                    fileListDiv.style.display = 'grid';
-                    return;
-                }
-                fileListDiv.style.display = 'none';
-                searchResults.classList.add('active');
-                const matched = allFiles.filter(f => f.name.toLowerCase().includes(keyword));
-                if (matched.length) {
-                    resultsList.innerHTML = matched.map(f => `
-                        <div class="file-item" onclick="downloadFile('${f.download_url}', '${f.name}')">
-                            <div class="file-icon"></div>
-                            <div class="file-name">${escapeHtml(f.name)}</div>
-                            <div class="file-details">大小: ${formatSize(f.size)} | 点击下载</div>
-                        </div>
-                    `).join('');
-                } else {
-                    resultsList.innerHTML = '<div style="text-align:center;padding:40px">😔 没有找到相关文件</div>';
-                }
-            });
-        }
-        
-        // 侧边栏切换
-        document.getElementById('navToggle').onclick = () => document.getElementById('sidebar').classList.toggle('active');
-        document.getElementById('backButton').onclick = () => history.back();
-        document.getElementById('forwardButton').onclick = () => history.forward();
-        
-        document.getElementById('selectModeBtn').onclick = enterSelectMode;
-        document.getElementById('exitSelectModeBtn').onclick = exitSelectMode;
-        document.getElementById('selectAllBtn').onclick = selectAll;
-        document.getElementById('clearSelectionBtn').onclick = clearSelection;
-        document.getElementById('downloadSelectedBtn').onclick = showBatchModal;
-        document.getElementById('confirmDownload').onclick = batchDownload;
-        document.getElementById('cancelDownload').onclick = closeModal;
-        
-        loadFiles();
-        initSearch();
-    </script>
+function updateUI() {
+    let c = selectedFiles.size;
+    document.getElementById('selectedCounter').innerText = c;
+    document.getElementById('downloadSelectedBtn').style.display = c ? 'flex' : 'none';
+}
+function enterSelectMode() { selectMode = true; document.body.classList.add('select-mode'); document.getElementById('selectModeBtn').style.display = 'none'; document.getElementById('batchToolbar').classList.add('active'); render(); }
+function exitSelectMode() { selectMode = false; selectedFiles.clear(); document.body.classList.remove('select-mode'); document.getElementById('selectModeBtn').style.display = 'flex'; document.getElementById('batchToolbar').classList.remove('active'); render(); updateUI(); }
+function selectAll() { allFiles.forEach(f => selectedFiles.add(f)); render(); updateUI(); }
+function clearSelection() { selectedFiles.clear(); render(); updateUI(); }
+
+// ========== 加载 ==========
+async function load() {
+    try {
+        let r = await fetch('release-cache.json?_=' + Date.now());
+        if (r.ok) { let d = await r.json(); allFiles = d.assets || []; render(); return; }
+    } catch(e) {}
+    document.getElementById('fileList').innerHTML = '<div class="error">加载失败</div>';
+}
+
+// ========== 搜索 ==========
+let searchIndex = null;
+async function loadSearchIndex() {
+    try { let r = await fetch('search-index.json?_=' + Date.now()); if (r.ok) searchIndex = await r.json(); } catch(e) {}
+}
+function searchAll(kw) {
+    let res = [], low = kw.toLowerCase();
+    if (searchIndex?.files) searchIndex.files.forEach(f => { if (f.name.toLowerCase().includes(low)) res.push({...f, type:'file'}); });
+    if (searchIndex?.folders) searchIndex.folders.forEach(f => { if (f.name.toLowerCase().includes(low)) res.push({...f, type:'folder'}); });
+    return res;
+}
+
+// ========== 事件绑定 ==========
+document.getElementById('navToggle').onclick = () => document.getElementById('sidebar').classList.toggle('active');
+document.getElementById('selectModeBtn').onclick = enterSelectMode;
+document.getElementById('exitSelectModeBtn').onclick = exitSelectMode;
+document.getElementById('selectAllBtn').onclick = selectAll;
+document.getElementById('clearSelectionBtn').onclick = clearSelection;
+document.getElementById('downloadSelectedBtn').onclick = () => { if(selectedFiles.size) Array.from(selectedFiles).forEach(f => window.open(f.download_url, '_blank')); exitSelectMode(); };
+
+// 搜索
+let st = document.getElementById('searchToggle'), sb = document.getElementById('searchBar'), si = document.getElementById('searchInput'), sr = document.getElementById('searchResults'), rl = document.getElementById('resultsList'), fl = document.getElementById('fileList');
+st.onclick = () => { sb.classList.toggle('active'); if(sb.classList.contains('active')) si.focus(); else { si.value = ''; sr.classList.remove('active'); fl.style.display = 'grid'; } };
+si.oninput = () => {
+    let kw = si.value.trim().toLowerCase();
+    if (!kw) { sr.classList.remove('active'); fl.style.display = 'grid'; return; }
+    let res = searchAll(kw);
+    if (res.length) {
+        fl.style.display = 'none'; sr.classList.add('active');
+        rl.innerHTML = res.map(r => `<div class="file-item" onclick="location.href='${r.path}'">📁 ${r.name}<div class="file-details">${r.type === 'folder' ? '点击进入' : '大小: '+(r.size||'未知')}</div></div>`).join('');
+    } else { rl.innerHTML = '<div style="text-align:center;padding:40px">无结果</div>'; sr.classList.add('active'); fl.style.display = 'none'; }
+};
+
+load(); loadSearchIndex();
+</script>
 </body>
 </html>

@@ -24,12 +24,17 @@ jobs:
             const data = JSON.parse(fs.readFileSync("/tmp/release.json", "utf8"));
             
             function decodeFilename(encoded) {
+              if (!encoded) return encoded;
               try {
+                // 找到最后一个点的位置
                 let lastDot = encoded.lastIndexOf(".");
                 let ext = lastDot > 0 ? encoded.substring(lastDot) : "";
                 let nameWithoutExt = lastDot > 0 ? encoded.substring(0, lastDot) : encoded;
+                
+                // 替换 URL-safe 字符并补齐
                 let base64 = nameWithoutExt.replace(/-/g, "+").replace(/_/g, "/");
                 while (base64.length % 4) base64 += "=";
+                
                 let decoded = atob(base64);
                 decoded = decodeURIComponent(escape(decoded));
                 return decoded + ext;

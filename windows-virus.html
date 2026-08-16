@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="css/style.css">
     <style>
-        /* ========== 仅保留必要的布局样式（不覆盖全局主题） ========== */
+        /* ========== 仅保留功能相关样式，不覆盖全局主题 ========== */
         .file-list {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -57,7 +57,7 @@
         .file-details { font-size: 12px; color: #aaa; }
         .loading, .error { text-align: center; padding: 60px; font-size: 18px; }
         
-        /* 批量操作按钮（与全局 batch-btn 风格一致） */
+        /* 批量操作按钮 */
         .batch-controls { display: flex; gap: 10px; margin: 20px 0; flex-wrap: wrap; }
         .batch-btn {
             padding: 12px 20px;
@@ -205,7 +205,7 @@
                 
                 <div class="file-stats" id="fileStats">正在加载...</div>
                 
-                <!-- 面包屑导航（完全继承全局样式） -->
+                <!-- 面包屑导航：完全继承全局样式，绿色主题 -->
                 <div class="breadcrumb">
                     <div class="breadcrumb-item"><a href="index.html">首页</a></div>
                     <span class="breadcrumb-separator">></span>
@@ -230,7 +230,7 @@
                     </div>
                 </div>
                 
-                <!-- 搜索功能（完全继承全局样式） -->
+                <!-- 搜索功能 -->
                 <div class="search-container">
                     <button class="search-icon" id="searchToggle"><i class="fas fa-search"></i></button>
                     <div class="search-bar" id="searchBar"><input type="text" class="search-input" id="searchInput" placeholder="搜索文件..."></div>
@@ -413,7 +413,7 @@
             exitSelectMode();
         }
         
-        // ========== 加载文件（读取缓存） ==========
+        // ========== 加载文件 ==========
         async function loadFiles() {
             const container = document.getElementById('fileList');
             try {

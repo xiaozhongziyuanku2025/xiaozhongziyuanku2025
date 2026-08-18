@@ -12,54 +12,11 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v4
-      
-      - name: 获取并解码 Release 数据
+      - name: 获取 Release 数据
         run: |
           curl -H "Accept: application/vnd.github.v3+json" \
                "https://api.github.com/repos/${{ github.repository }}/releases/tags/Windows病毒库" \
-               > /tmp/release.json
-          
-          node -e '
-            const fs = require("fs");
-            const data = JSON.parse(fs.readFileSync("/tmp/release.json", "utf8"));
-            
-            function decodeFilename(encoded) {
-              if (!encoded) return encoded;
-              try {
-                // 找到最后一个点的位置
-                let lastDot = encoded.lastIndexOf(".");
-                let ext = lastDot > 0 ? encoded.substring(lastDot) : "";
-                let nameWithoutExt = lastDot > 0 ? encoded.substring(0, lastDot) : encoded;
-                
-                // 替换 URL-safe 字符并补齐
-                let base64 = nameWithoutExt.replace(/-/g, "+").replace(/_/g, "/");
-                while (base64.length % 4) base64 += "=";
-                
-                let decoded = atob(base64);
-                decoded = decodeURIComponent(escape(decoded));
-                return decoded + ext;
-              } catch(e) {
-                return encoded;
-              }
-            }
-            
-            const decodedAssets = data.assets.map(asset => ({
-              name: decodeFilename(asset.name),
-              original_name: asset.name,
-              size: asset.size,
-              download_url: asset.browser_download_url,
-              created_at: asset.created_at,
-              updated_at: asset.updated_at
-            }));
-            
-            fs.writeFileSync("release-cache.json", JSON.stringify({
-              release_name: data.name,
-              release_tag: data.tag_name,
-              published_at: data.published_at,
-              assets: decodedAssets
-            }, null, 2));
-          '
-      
+               > release-cache.json
       - name: 提交并推送
         run: |
           git config user.name "github-actions[bot]"

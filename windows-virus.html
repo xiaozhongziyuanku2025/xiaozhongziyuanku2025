@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Windows病毒库 - 小众资源库</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        /* -------- 全局与布局样式 -------- */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #0f0f1a; color: #e0e0e0; font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; min-height: 100vh; }
+        .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
+        header { display: flex; justify-content: space-between; align-items: center; padding: 15px 0; border-bottom: 1px solid rgba(76,175,80,0.3); margin-bottom: 25px; flex-wrap: wrap; gap: 15px; }
+        .site-title { font-size: 1.8rem; background: linear-gradient(135deg, #4CAF50, #8BC34A); -webkit-background-clip: text; background-clip: text; color: transparent; }
+        .header-controls { display: flex; gap: 10px; }
+        .nav-toggle, .back-button, .forward-button { background: rgba(76,175,80,0.2); border: none; color: #4CAF50; padding: 10px 15px; border-radius: 8px; cursor: pointer; font-size: 18px; }
+        .main-content { display: flex; gap: 25px; flex-wrap: wrap; }
+        .sidebar { width: 250px; background: rgba(20,20,30,0.6); border-radius: 12px; padding: 20px; backdrop-filter: blur(10px); }
+        .nav-menu { list-style: none; }
+        .nav-item { margin-bottom: 15px; }
+        .nav-link { color: #e0e0e0; text-decoration: none; display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 8px; transition: all 0.3s; }
+        .nav-link:hover, .nav-link.active { background: rgba(76,175,80,0.2); color: #4CAF50; }
+        .content-area { flex: 1; min-width: 280px; background: rgba(20,20,30,0.4); border-radius: 12px; padding: 20px; }
+        .breadcrumb { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; padding: 12px 0; margin-bottom: 20px; border-bottom: 1px solid rgba(76,175,80,0.3); }
+        .breadcrumb a { color: #4CAF50; text-decoration: none; }
+        .breadcrumb a:hover { text-decoration: underline; }
+        .breadcrumb-separator { color: #aaa; }
+
+        /* -------- 文件列表样式 -------- */
+        .file-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 15px; margin-top: 20px; }
+        .file-item { background: rgba(30,30,40,0.8); border-radius: 10px; padding: 15px; transition: all 0.3s; cursor: pointer; border: 2px solid transparent; position: relative; }
+        .file-item:hover { transform: translateY(-3px); background: rgba(40,40,50,0.9); }
+        .file-item.selected { border-color: #4CAF50; background: rgba(76,175,80,0.15); }
+        .file-item.selected::after { content: "✓"; position: absolute; top: 10px; right: 10px; width: 24px; height: 24px; background: #4CAF50; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 14px; }
+        .file-icon { width: 60px; height: 60px; margin: 0 auto 10px; background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23667eea"><path d="M6 2c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6H6z"/></svg>') no-repeat center; background-size: contain; }
+        .file-name { font-size: 16px; font-weight: 600; word-break: break-all; margin-bottom: 8px; }
+        .file-details { font-size: 12px; color: #aaa; }
+        .loading, .error { text-align: center; padding: 60px; font-size: 18px; }
+
+        /* -------- 批量操作 -------- */
+        .batch-controls { display: flex; gap: 10px; margin: 20px 0; flex-wrap: wrap; align-items: center; }
+        .batch-btn { padding: 12px 20px; border: none; border-radius: 8px; background: linear-gradient(135deg, #4CAF50, #2E7D32); color: white; cursor: pointer; font-size: 16px; display: inline-flex; align-items: center; gap: 8px; font-weight: 600; transition: 0.3s; }
+        .batch-btn:hover { transform: translateY(-2px); opacity: 0.9; }
+        .batch-btn.warning { background: linear-gradient(135deg, #ff9800, #f57c00); }
+        .batch-btn.danger { background: linear-gradient(135deg, #f44336, #d32f2f); }
+        .batch-btn.small { padding: 6px 15px; font-size: 14px; }
+        .batch-toolbar { display: none; background: rgba(76,175,80,0.15); padding: 15px; border-radius: 10px; margin: 15px 0; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
+        .batch-toolbar.active { display: flex; }
+        .file-stats { background: rgba(20,20,30,0.7); padding: 15px; border-radius: 8px; margin: 20px 0; border: 1px solid rgba(76,175,80,0.3); }
+
+        /* -------- Aria2 配置 & 压缩下载 -------- */
+        .aria2-config { background: rgba(20,20,30,0.7); padding: 12px 20px; border-radius: 8px; margin: 10px 0; display: flex; align-items: center; gap: 15px; flex-wrap: wrap; }
+        .aria2-config label { color: #aaa; font-size: 14px; }
+        .aria2-config input { background: rgba(0,0,0,0.4); border: 1px solid #4CAF50; color: #fff; padding: 6px 12px; border-radius: 4px; flex: 1; min-width: 200px; }
+        .zip-buttons { display: flex; gap: 10px; margin: 10px 0; flex-wrap: wrap; align-items: center; }
+        .zip-btn { background: rgba(255,152,0,0.2); border: 1px solid #ff9800; color: #ff9800; padding: 8px 16px; border-radius: 6px; cursor: pointer; transition: 0.3s; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; font-size: 14px; }
+        .zip-btn:hover { background: rgba(255,152,0,0.4); }
+
+        /* -------- 弹窗 & 进度 -------- */
+        .batch-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 2000; align-items: center; justify-content: center; }
+        .batch-modal.active { display: flex; }
+        .batch-modal-content { background: #1e1e2e; border-radius: 15px; padding: 25px; max-width: 500px; width: 90%; border: 2px solid #4CAF50; max-height: 90vh; overflow-y: auto; }
+        .selected-list { max-height: 200px; overflow-y: auto; background: rgba(20,20,30,0.7); border-radius: 8px; padding: 10px; margin: 15px 0; }
+        .selected-item { padding: 8px; margin-bottom: 5px; background: rgba(255,255,255,0.05); border-radius: 6px; border-left: 3px solid #4CAF50; }
+        .download-progress { display: none; position: fixed; bottom: 20px; right: 20px; background: #1e1e2e; border: 2px solid #4CAF50; border-radius: 10px; padding: 15px; z-index: 1000; min-width: 250px; }
+        .download-progress.active { display: block; }
+        .progress-bar { width: 100%; height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; overflow: hidden; margin: 10px 0; }
+        .progress-fill { height: 100%; background: #4CAF50; width: 0%; transition: width 0.3s; }
+
+        /* -------- 搜索 -------- */
+        .search-container { margin: 20px 0; display: flex; justify-content: flex-end; }
+        .search-icon { background: rgba(76,175,80,0.2); border: none; color: #4CAF50; font-size: 18px; padding: 10px 15px; border-radius: 8px; cursor: pointer; }
+        .search-bar { display: none; width: 300px; margin-left: 10px; }
+        .search-bar.active { display: block; }
+        .search-input { width: 100%; padding: 10px 15px; border: 1px solid rgba(76,175,80,0.5); border-radius: 8px; background: rgba(20,20,30,0.9); color: #fff; }
+        .search-results { margin-top: 20px; display: none; }
+        .search-results.active { display: block; }
+
+        @media (max-width: 768px) { .sidebar { display: none; } .sidebar.active { display: block; position: fixed; top: 0; left: 0; height: 100%; z-index: 1000; width: 280px; } .file-list { grid-template-columns: 1fr; } .batch-controls { flex-direction: column; } .batch-btn { width: 100%; justify-content: center; } }
+    </style>
+</head>
+<body>
+    <!-- 侧边栏遮罩 -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <!-- 批量下载弹窗 -->
+    <div class="batch-modal" id="batchModal">
+        <div class="batch-modal-content">
+            <h3 style="color:#4CAF50; margin-bottom:15px"><i class="fas fa-download"></i> 批量下载</h3>
+            <p>将下载 <span id="modalSelectedCount">0</span> 个文件</p>
+            <div class="selected-list" id="modalFileList"></div>
+            <div style="display:flex; gap:10px; margin-top:20px">
+                <button class="batch-btn" id="confirmDownload" style="flex:1">确认下载</button>
+                <button class="batch-btn" id="cancelDownload" style="flex:1; background:#f44336">取消</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 下载进度 -->
+    <div class="download-progress" id="progressBar">
+        <div class="progress-title"><i class="fas fa-download"></i> 下载进度</div>
+        <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+        <div class="progress-text" id="progressText">准备下载...</div>
+    </div>
+
+    <!-- 主容器 -->
+    <div class="container">
+        <header>
+            <div class="header-controls">
+                <button class="nav-toggle" id="navToggle"><i class="fas fa-bars"></i></button>
+                <button class="back-button" id="backButton"><i class="fas fa-arrow-left"></i></button>
+                <button class="forward-button" id="forwardButton"><i class="fas fa-arrow-right"></i></button>
+            </div>
+            <h1 class="site-title">小众资源库</h1>
+        </header>
+
+        <div class="main-content">
+            <!-- 侧边栏 -->
+            <div class="sidebar" id="sidebar">
+                <ul class="nav-menu">
+                    <li class="nav-item"><a href="index.html" class="nav-link"><i class="fas fa-user"></i> 关于作者</a></li>
+                    <li class="nav-item"><a href="resources.html" class="nav-link"><i class="fas fa-folder"></i> 资源库</a></li>
+                    <li class="nav-item"><a href="mailto:cn.2345.com@outlook.com" class="nav-link"><i class="fas fa-envelope"></i> 联系作者</a></li>
+                </ul>
+            </div>
+
+            <!-- 内容区域 -->
+            <div class="content-area">
+                <h2>Windows病毒库</h2>
+
+                <!-- 统计 -->
+                <div class="file-stats" id="fileStats">正在加载...</div>
+
+                <!-- 面包屑 -->
+                <div class="breadcrumb">
+                    <a href="index.html">首页</a>
+                    <span class="breadcrumb-separator">></span>
+                    <a href="resources.html">资源库</a>
+                    <span class="breadcrumb-separator">></span>
+                    <a href="main-resources.html">小众资源库</a>
+                    <span class="breadcrumb-separator">></span>
+                    <span style="color:#4CAF50">Windows病毒库</span>
+                </div>
+
+                <!-- 批量操作栏 -->
+                <div class="batch-controls">
+                    <button class="batch-btn" id="selectModeBtn"><i class="fas fa-check-square"></i> 多选模式</button>
+                    <button class="batch-btn warning" id="downloadSelectedBtn" style="display:none"><i class="fas fa-download"></i> 下载选中 (<span id="selectedCount">0</span>)</button>
+                    <button class="batch-btn warning" id="aria2SelectedBtn" style="display:none"><i class="fas fa-cloud-upload-alt"></i> 发送到 Aria2</button>
+                    <button class="batch-btn" id="zipDownloadBtn" style="display:none"><i class="fas fa-file-archive"></i> 压缩下载</button>
+                </div>
+
+                <!-- Aria2 配置 -->
+                <div class="aria2-config">
+                    <label><i class="fas fa-server"></i> Aria2 RPC:</label>
+                    <input type="text" id="aria2Rpc" value="http://localhost:6800/jsonrpc" placeholder="http://localhost:6800/jsonrpc">
+                    <label><i class="fas fa-key"></i> 密钥(可选):</label>
+                    <input type="text" id="aria2Secret" placeholder="留空">
+                </div>
+
+                <!-- 压缩下载 -->
+                <div class="zip-buttons">
+                    <span style="color:#aaa;">下载源码包：</span>
+                    <a class="zip-btn" id="zipLink" href="#" target="_blank"><i class="fas fa-file-archive"></i> .zip</a>
+                    <a class="zip-btn" id="tarLink" href="#" target="_blank"><i class="fas fa-file-archive"></i> .tar.gz</a>
+                </div>
+
+                <!-- 搜索 -->
+                <div class="search-container">
+                    <button class="search-icon" id="searchToggle"><i class="fas fa-search"></i></button>
+                    <div class="search-bar" id="searchBar">
+                        <input type="text" class="search-input" id="searchInput" placeholder="搜索文件...">
+                    </div>
+                </div>
+                <div class="search-results" id="searchResults">
+                    <h3>搜索结果</h3>
+                    <div class="file-list" id="resultsList"></div>
+                </div>
+
+                <!-- 文件列表容器 -->
+                <div class="file-list" id="fileList">
+                    <div class="loading"><i class="fas fa-spinner fa-pulse"></i> 加载中...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/main.js"></script>
+    <script>
+        // ===================== 配置 =====================
+        const PROXY_LIST = [
+            'https://ghproxy.net/',
+            'https://gh-proxy.com/',
+            'https://ghproxy.cc/'
+        ];
+        let currentProxyIndex = 0;
+        let userCountry = 'OTHER';
+        let allFiles = [];
+        let selectedFiles = new Set();
+        let selectMode = false;
+
+        // ===================== 解码 =====================
+        function decodeFilename(encoded) {
+            if (!encoded) return encoded;
+            try {
+                let lastDot = encoded.lastIndexOf('.');
+                let ext = lastDot > 0 ? encoded.substring(lastDot) : '';
+                let name = lastDot > 0 ? encoded.substring(0, lastDot) : encoded;
+                let base64 = name.replace(/-/g, '+').replace(/_/g, '/');
+                while (base64.length % 4) base64 += '=';
+                let decoded = atob(base64);
+                decoded = decodeURIComponent(escape(decoded));
+                return decoded + ext;
+            } catch(e) {
+                return encoded;
+            }
+        }
+
+        function formatSize(bytes) {
+            if (!bytes) return '未知';
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+            return (bytes / 1048576).toFixed(1) + ' MB';
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/[&<>]/g, function(m) {
+                return { '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m];
+            });
+        }
+
+        // ===================== IP 检测 =====================
+        async function detectCountry() {
+            try {
+                const res = await fetch('https://ip-api.com/json/');
+                const data = await res.json();
+                if (data.status === 'success' && data.countryCode === 'CN') {
+                    userCountry = 'CN';
+                } else {
+                    userCountry = 'OTHER';
+                }
+            } catch(e) {
+                userCountry = 'OTHER';
+            }
+            console.log('用户区域:', userCountry === 'CN' ? '🇨🇳 国内 (启用代理)' : '🌍 国外 (直连)');
+        }
+
+        // ===================== 代理获取 =====================
+        function getProxyPrefix() {
+            const p = PROXY_LIST[currentProxyIndex % PROXY_LIST.length];
+            currentProxyIndex++;
+            return p;
+        }
+
+        function getDownloadUrl(originalUrl) {
+            if (userCountry === 'CN') {
+                return getProxyPrefix() + originalUrl;
+            }
+            return originalUrl;
+        }
+
+        // ===================== 下载 =====================
+        function downloadFile(url, encodedName) {
+            const decoded = decodeFilename(encodedName);
+            const finalUrl = getDownloadUrl(url);
+            const a = document.createElement('a');
+            a.href = finalUrl;
+            a.download = decoded;
+            a.target = '_blank';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        }
+
+        // ===================== 渲染 =====================
+        function renderFiles() {
+            const container = document.getElementById('fileList');
+            const statsDiv = document.getElementById('fileStats');
+
+            if (!allFiles.length) {
+                container.innerHTML = '<div class="loading">📁 暂无文件</div>';
+                statsDiv.innerHTML = '📁 暂无文件';
+                return;
+            }
+
+            statsDiv.innerHTML = '<i class="fas fa-chart-bar"></i> 共 ' + allFiles.length + ' 个文件';
+
+            container.innerHTML = allFiles.map(function(file) {
+                const decoded = decodeFilename(file.name);
+                const isSel = selectedFiles.has(file);
+                const url = getDownloadUrl(file.browser_download_url);
+                return '<div class="file-item ' + (selectMode ? 'selectable' : '') + (isSel ? ' selected' : '') + '" data-filename="' + escapeHtml(file.name) + '" data-url="' + escapeHtml(url) + '"><div class="file-icon"></div><div class="file-name">' + escapeHtml(decoded) + '</div><div class="file-details">' + formatSize(file.size) + (selectMode ? ' | 点击选中' : ' | 点击下载') + '</div></div>';
+            }).join('');
+
+            bindEvents();
+        }
+
+        function bindEvents() {
+            document.querySelectorAll('#fileList .file-item').forEach(function(item) {
+                item.removeEventListener('click', handleClick);
+                item.addEventListener('click', handleClick);
+            });
+        }
+
+        function handleClick(e) {
+            var item = e.currentTarget;
+            var url = item.dataset.url;
+            var filename = item.dataset.filename;
+
+            if (selectMode) {
+                var file = allFiles.find(function(f) { return f.name === filename; });
+                if (selectedFiles.has(file)) {
+                    selectedFiles.delete(file);
+                    item.classList.remove('selected');
+                } else {
+                    selectedFiles.add(file);
+                    item.classList.add('selected');
+                }
+                updateUI();
+            } else {
+                if (url && filename) downloadFile(url, filename);
+            }
+        }
+
+        // ===================== 多选 =====================
+        function updateUI() {
+            var count = selectedFiles.size;
+            document.getElementById('selectedCounter').innerText = count;
+            document.getElementById('selectedCount').innerText = count;
+            var btn = document.getElementById('downloadSelectedBtn');
+            var btn2 = document.getElementById('aria2SelectedBtn');
+            if (btn) btn.style.display = count > 0 ? 'flex' : 'none';
+            if (btn2) btn2.style.display = count > 0 ? 'flex' : 'none';
+        }
+
+        function enterSelectMode() {
+            selectMode = true;
+            document.body.classList.add('select-mode');
+            document.getElementById('selectModeBtn').style.display = 'none';
+            document.getElementById('batchToolbar').classList.add('active');
+            renderFiles();
+            updateUI();
+        }
+
+        function exitSelectMode() {
+            selectMode = false;
+            selectedFiles.clear();
+            document.body.classList.remove('select-mode');
+            document.getElementById('selectModeBtn').style.display = 'flex';
+            document.getElementById('batchToolbar').classList.remove('active');
+            renderFiles();
+            updateUI();
+        }
+
+        function selectAll() {
+            allFiles.forEach(function(f) { selectedFiles.add(f); });
+            renderFiles();
+            updateUI();
+        }
+
+        function clearSel() {
+            selectedFiles.clear();
+            renderFiles();
+            updateUI();
+        }
+
+        // ===================== 批量下载（浏览器） =====================
+        function batchDownloadBrowser() {
+            var files = Array.from(selectedFiles);
+            if (files.length === 0) return;
+            var progressDiv = document.getElementById('progressBar');
+            var progressFill = document.getElementById('progressFill');
+            var progressText = document.getElementById('progressText');
+            progressDiv.classList.add('active');
+            var completed = 0;
+            files.forEach(function(file, i) {
+                setTimeout(function() {
+                    var url = getDownloadUrl(file.browser_download_url);
+                    var decoded = decodeFilename(file.name);
+                    var a = document.createElement('a');
+                    a.href = url;
+                    a.download = decoded;
+                    a.target = '_blank';
+                    a.click();
+                    completed++;
+                    progressFill.style.width = (completed / files.length * 100) + '%';
+                    progressText.innerText = '已下载 ' + completed + '/' + files.length + ' 个文件';
+                    if (completed === files.length) {
+                        setTimeout(function() { progressDiv.classList.remove('active'); }, 2000);
+                    }
+                }, i * 400);
+            });
+            closeModal();
+            exitSelectMode();
+        }
+
+        // ===================== Aria2 =====================
+        function sendToAria2() {
+            var files = Array.from(selectedFiles);
+            if (files.length === 0) return;
+            var rpcUrl = document.getElementById('aria2Rpc').value.trim();
+            var secret = document.getElementById('aria2Secret').value.trim();
+            if (!rpcUrl) { alert('请填写 Aria2 RPC 地址'); return; }
+
+            files.forEach(function(file, idx) {
+                var url = getDownloadUrl(file.browser_download_url);
+                var decoded = decodeFilename(file.name);
+                var payload = {
+                    jsonrpc: '2.0',
+                    method: 'aria2.addUri',
+                    id: 'aria2_' + idx,
+                    params: [
+                        [url],
+                        { out: decoded }
+                    ]
+                };
+                if (secret) {
+                    payload.params.push({ secret: secret });
+                }
+                fetch(rpcUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                }).then(function(res) { return res.json(); }).then(function(data) {
+                    if (data.error) console.error('Aria2 错误:', data.error);
+                    else console.log('✅ 已发送: ' + decoded);
+                }).catch(function(e) { console.error('发送失败:', e); });
+            });
+            alert('已发送 ' + files.length + ' 个文件到 Aria2');
+            exitSelectMode();
+        }
+
+        // ===================== 压缩下载 =====================
+        function setupZipLinks() {
+            var base = 'https://github.com/xiaozhongziyuanku2025/xiaozhongziyuanku2025/archive/refs/heads/main';
+            var zip = document.getElementById('zipLink');
+            var tar = document.getElementById('tarLink');
+            if (userCountry === 'CN') {
+                zip.href = getProxyPrefix() + base + '.zip';
+                tar.href = getProxyPrefix() + base + '.tar.gz';
+            } else {
+                zip.href = base + '.zip';
+                tar.href = base + '.tar.gz';
+            }
+        }
+
+        // ===================== 弹窗 =====================
+        function showModal() {
+            if (selectedFiles.size === 0) return;
+            document.getElementById('modalSelectedCount').innerText = selectedFiles.size;
+            var list = document.getElementById('modalFileList');
+            list.innerHTML = '';
+            selectedFiles.forEach(function(f) {
+                var div = document.createElement('div');
+                div.className = 'selected-item';
+                div.innerHTML = '<i class="fas fa-file"></i> ' + escapeHtml(decodeFilename(f.name));
+                list.appendChild(div);
+            });
+            document.getElementById('batchModal').classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('batchModal').classList.remove('active');
+        }
+
+        // ===================== 加载文件 =====================
+        async function loadFiles() {
+            var container = document.getElementById('fileList');
+            try {
+                var res = await fetch('release-cache.json?_=' + Date.now());
+                if (res.ok) {
+                    var data = await res.json();
+                    if (data.assets && data.assets.length) {
+                        allFiles = data.assets;
+                        renderFiles();
+                        return;
+                    }
+                }
+                throw new Error('缓存不可用');
+            } catch(e) {
+                container.innerHTML = '<div class="error">加载失败，请刷新重试</div>';
+                document.getElementById('fileStats').innerHTML = '加载失败';
+            }
+        }
+
+        // ===================== 搜索 =====================
+        function initSearch() {
+            var toggle = document.getElementById('searchToggle');
+            var bar = document.getElementById('searchBar');
+            var input = document.getElementById('searchInput');
+            var results = document.getElementById('searchResults');
+            var list = document.getElementById('resultsList');
+            var mainList = document.getElementById('fileList');
+
+            toggle.addEventListener('click', function() {
+                bar.classList.toggle('active');
+                if (bar.classList.contains('active')) input.focus();
+                else {
+                    input.value = '';
+                    results.classList.remove('active');
+                    mainList.style.display = 'grid';
+                }
+            });
+
+            input.addEventListener('input', function() {
+                var kw = this.value.toLowerCase().trim();
+                if (!kw) {
+                    results.classList.remove('active');
+                    mainList.style.display = 'grid';
+                    return;
+                }
+                mainList.style.display = 'none';
+                results.classList.add('active');
+                var matched = allFiles.filter(function(f) {
+                    return decodeFilename(f.name).toLowerCase().includes(kw);
+                });
+                if (matched.length) {
+                    list.innerHTML = matched.map(function(f) {
+                        var url = getDownloadUrl(f.browser_download_url);
+                        return '<div class="file-item" onclick="downloadFile(\'' + f.browser_download_url + '\', \'' + f.name + '\')"><div class="file-icon"></div><div class="file-name">' + escapeHtml(decodeFilename(f.name)) + '</div><div class="file-details">' + formatSize(f.size) + ' | 点击下载</div></div>';
+                    }).join('');
+                } else {
+                    list.innerHTML = '<div style="text-align:center;padding:40px">😔 没有找到相关文件</div>';
+                }
+            });
+        }
+
+        // ===================== 导航 =====================
+        document.getElementById('navToggle').onclick = function() {
+            document.getElementById('sidebar').classList.toggle('active');
+        };
+        document.getElementById('backButton').onclick = function() { history.back(); };
+        document.getElementById('forwardButton').onclick = function() { history.forward(); };
+
+        // ===================== 绑定按钮 =====================
+        document.getElementById('selectModeBtn').onclick = enterSelectMode;
+        document.getElementById('exitSelectModeBtn').onclick = exitSelectMode;
+        document.getElementById('selectAllBtn').onclick = selectAll;
+        document.getElementById('clearSelectionBtn').onclick = clearSel;
+        document.getElementById('downloadSelectedBtn').onclick = showModal;
+        document.getElementById('aria2SelectedBtn').onclick = sendToAria2;
+        document.getElementById('confirmDownload').onclick = batchDownloadBrowser;
+        document.getElementById('cancelDownload').onclick = closeModal;
+
+        // ===================== 启动 =====================
+        (async function init() {
+            await detectCountry();
+            await loadFiles();
+            initSearch();
+            setupZipLinks();
+            // 压缩下载按钮展开/收起（简单处理）
+            document.getElementById('zipDownloadBtn').onclick = function() {
+                var btns = document.querySelector('.zip-buttons');
+                if (btns.style.display === 'none' || !btns.style.display) {
+                    btns.style.display = 'flex';
+                } else {
+                    btns.style.display = 'none';
+              }
+            };
+          })();
+    </script>
+</body>
+</html>

@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="css/style.css">
     <style>
-        /* -------- 全局与布局样式 -------- */
+        /* -------- 全局与布局 -------- */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { background: #0f0f1a; color: #e0e0e0; font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; min-height: 100vh; }
         .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
@@ -17,6 +17,8 @@
         .nav-toggle, .back-button, .forward-button { background: rgba(76,175,80,0.2); border: none; color: #4CAF50; padding: 10px 15px; border-radius: 8px; cursor: pointer; font-size: 18px; }
         .main-content { display: flex; gap: 25px; flex-wrap: wrap; }
         .sidebar { width: 250px; background: rgba(20,20,30,0.6); border-radius: 12px; padding: 20px; backdrop-filter: blur(10px); }
+        .sidebar-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 999; }
+        .sidebar-overlay.active { display: block; }
         .nav-menu { list-style: none; }
         .nav-item { margin-bottom: 15px; }
         .nav-link { color: #e0e0e0; text-decoration: none; display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 8px; transition: all 0.3s; }
@@ -26,8 +28,9 @@
         .breadcrumb a { color: #4CAF50; text-decoration: none; }
         .breadcrumb a:hover { text-decoration: underline; }
         .breadcrumb-separator { color: #aaa; }
+        .file-stats { background: rgba(20,20,30,0.7); padding: 15px; border-radius: 8px; margin: 20px 0; border: 1px solid rgba(76,175,80,0.3); }
 
-        /* -------- 文件列表样式 -------- */
+        /* -------- 文件列表 -------- */
         .file-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 15px; margin-top: 20px; }
         .file-item { background: rgba(30,30,40,0.8); border-radius: 10px; padding: 15px; transition: all 0.3s; cursor: pointer; border: 2px solid transparent; position: relative; }
         .file-item:hover { transform: translateY(-3px); background: rgba(40,40,50,0.9); }
@@ -44,20 +47,10 @@
         .batch-btn:hover { transform: translateY(-2px); opacity: 0.9; }
         .batch-btn.warning { background: linear-gradient(135deg, #ff9800, #f57c00); }
         .batch-btn.danger { background: linear-gradient(135deg, #f44336, #d32f2f); }
-        .batch-btn.small { padding: 6px 15px; font-size: 14px; }
         .batch-toolbar { display: none; background: rgba(76,175,80,0.15); padding: 15px; border-radius: 10px; margin: 15px 0; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
         .batch-toolbar.active { display: flex; }
-        .file-stats { background: rgba(20,20,30,0.7); padding: 15px; border-radius: 8px; margin: 20px 0; border: 1px solid rgba(76,175,80,0.3); }
 
-        /* -------- Aria2 配置 & 压缩下载 -------- */
-        .aria2-config { background: rgba(20,20,30,0.7); padding: 12px 20px; border-radius: 8px; margin: 10px 0; display: flex; align-items: center; gap: 15px; flex-wrap: wrap; }
-        .aria2-config label { color: #aaa; font-size: 14px; }
-        .aria2-config input { background: rgba(0,0,0,0.4); border: 1px solid #4CAF50; color: #fff; padding: 6px 12px; border-radius: 4px; flex: 1; min-width: 200px; }
-        .zip-buttons { display: flex; gap: 10px; margin: 10px 0; flex-wrap: wrap; align-items: center; }
-        .zip-btn { background: rgba(255,152,0,0.2); border: 1px solid #ff9800; color: #ff9800; padding: 8px 16px; border-radius: 6px; cursor: pointer; transition: 0.3s; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; font-size: 14px; }
-        .zip-btn:hover { background: rgba(255,152,0,0.4); }
-
-        /* -------- 弹窗 & 进度 -------- */
+        /* -------- 弹窗与进度 -------- */
         .batch-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 2000; align-items: center; justify-content: center; }
         .batch-modal.active { display: flex; }
         .batch-modal-content { background: #1e1e2e; border-radius: 15px; padding: 25px; max-width: 500px; width: 90%; border: 2px solid #4CAF50; max-height: 90vh; overflow-y: auto; }
@@ -77,11 +70,16 @@
         .search-results { margin-top: 20px; display: none; }
         .search-results.active { display: block; }
 
-        @media (max-width: 768px) { .sidebar { display: none; } .sidebar.active { display: block; position: fixed; top: 0; left: 0; height: 100%; z-index: 1000; width: 280px; } .file-list { grid-template-columns: 1fr; } .batch-controls { flex-direction: column; } .batch-btn { width: 100%; justify-content: center; } }
+        @media (max-width: 768px) {
+            .sidebar { display: none; position: fixed; top: 0; left: 0; height: 100%; width: 280px; background: rgba(20,20,30,0.95); z-index: 1000; padding: 20px; overflow-y: auto; }
+            .sidebar.active { display: block; }
+            .file-list { grid-template-columns: 1fr; }
+            .batch-controls { flex-direction: column; }
+            .batch-btn { width: 100%; justify-content: center; }
+        }
     </style>
 </head>
 <body>
-    <!-- 侧边栏遮罩 -->
     <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
     <!-- 批量下载弹窗 -->
@@ -104,7 +102,6 @@
         <div class="progress-text" id="progressText">准备下载...</div>
     </div>
 
-    <!-- 主容器 -->
     <div class="container">
         <header>
             <div class="header-controls">
@@ -116,7 +113,6 @@
         </header>
 
         <div class="main-content">
-            <!-- 侧边栏 -->
             <div class="sidebar" id="sidebar">
                 <ul class="nav-menu">
                     <li class="nav-item"><a href="index.html" class="nav-link"><i class="fas fa-user"></i> 关于作者</a></li>
@@ -125,45 +121,27 @@
                 </ul>
             </div>
 
-            <!-- 内容区域 -->
             <div class="content-area">
                 <h2>Windows病毒库</h2>
-
-                <!-- 统计 -->
                 <div class="file-stats" id="fileStats">正在加载...</div>
-
-                <!-- 面包屑 -->
                 <div class="breadcrumb">
-                    <a href="index.html">首页</a>
-                    <span class="breadcrumb-separator">></span>
-                    <a href="resources.html">资源库</a>
-                    <span class="breadcrumb-separator">></span>
-                    <a href="main-resources.html">小众资源库</a>
-                    <span class="breadcrumb-separator">></span>
+                    <a href="index.html">首页</a><span class="breadcrumb-separator">></span>
+                    <a href="resources.html">资源库</a><span class="breadcrumb-separator">></span>
+                    <a href="main-resources.html">小众资源库</a><span class="breadcrumb-separator">></span>
                     <span style="color:#4CAF50">Windows病毒库</span>
                 </div>
 
-                <!-- 批量操作栏 -->
                 <div class="batch-controls">
                     <button class="batch-btn" id="selectModeBtn"><i class="fas fa-check-square"></i> 多选模式</button>
                     <button class="batch-btn warning" id="downloadSelectedBtn" style="display:none"><i class="fas fa-download"></i> 下载选中 (<span id="selectedCount">0</span>)</button>
-                    <button class="batch-btn warning" id="aria2SelectedBtn" style="display:none"><i class="fas fa-cloud-upload-alt"></i> 发送到 Aria2</button>
-                    <button class="batch-btn" id="zipDownloadBtn" style="display:none"><i class="fas fa-file-archive"></i> 压缩下载</button>
                 </div>
-
-                <!-- Aria2 配置 -->
-                <div class="aria2-config">
-                    <label><i class="fas fa-server"></i> Aria2 RPC:</label>
-                    <input type="text" id="aria2Rpc" value="http://localhost:6800/jsonrpc" placeholder="http://localhost:6800/jsonrpc">
-                    <label><i class="fas fa-key"></i> 密钥(可选):</label>
-                    <input type="text" id="aria2Secret" placeholder="留空">
-                </div>
-
-                <!-- 压缩下载 -->
-                <div class="zip-buttons">
-                    <span style="color:#aaa;">下载源码包：</span>
-                    <a class="zip-btn" id="zipLink" href="#" target="_blank"><i class="fas fa-file-archive"></i> .zip</a>
-                    <a class="zip-btn" id="tarLink" href="#" target="_blank"><i class="fas fa-file-archive"></i> .tar.gz</a>
+                <div class="batch-toolbar" id="batchToolbar">
+                    <span>已选择 <strong id="selectedCounter">0</strong> 个文件</span>
+                    <div>
+                        <button class="batch-btn" id="selectAllBtn">全选</button>
+                        <button class="batch-btn" id="clearSelectionBtn">清空</button>
+                        <button class="batch-btn danger" id="exitSelectModeBtn">退出多选</button>
+                    </div>
                 </div>
 
                 <!-- 搜索 -->
@@ -178,7 +156,6 @@
                     <div class="file-list" id="resultsList"></div>
                 </div>
 
-                <!-- 文件列表容器 -->
                 <div class="file-list" id="fileList">
                     <div class="loading"><i class="fas fa-spinner fa-pulse"></i> 加载中...</div>
                 </div>
@@ -212,9 +189,7 @@
                 let decoded = atob(base64);
                 decoded = decodeURIComponent(escape(decoded));
                 return decoded + ext;
-            } catch(e) {
-                return encoded;
-            }
+            } catch(e) { return encoded; }
         }
 
         function formatSize(bytes) {
@@ -247,7 +222,6 @@
             console.log('用户区域:', userCountry === 'CN' ? '🇨🇳 国内 (启用代理)' : '🌍 国外 (直连)');
         }
 
-        // ===================== 代理获取 =====================
         function getProxyPrefix() {
             const p = PROXY_LIST[currentProxyIndex % PROXY_LIST.length];
             currentProxyIndex++;
@@ -324,15 +298,13 @@
             }
         }
 
-        // ===================== 多选 =====================
+        // ===================== 多选 UI =====================
         function updateUI() {
             var count = selectedFiles.size;
             document.getElementById('selectedCounter').innerText = count;
             document.getElementById('selectedCount').innerText = count;
             var btn = document.getElementById('downloadSelectedBtn');
-            var btn2 = document.getElementById('aria2SelectedBtn');
             if (btn) btn.style.display = count > 0 ? 'flex' : 'none';
-            if (btn2) btn2.style.display = count > 0 ? 'flex' : 'none';
         }
 
         function enterSelectMode() {
@@ -366,7 +338,25 @@
             updateUI();
         }
 
-        // ===================== 批量下载（浏览器） =====================
+        // ===================== 批量下载 =====================
+        function showBatchModal() {
+            if (selectedFiles.size === 0) return;
+            document.getElementById('modalSelectedCount').innerText = selectedFiles.size;
+            var list = document.getElementById('modalFileList');
+            list.innerHTML = '';
+            selectedFiles.forEach(function(f) {
+                var div = document.createElement('div');
+                div.className = 'selected-item';
+                div.innerHTML = '<i class="fas fa-file"></i> ' + escapeHtml(decodeFilename(f.name));
+                list.appendChild(div);
+            });
+            document.getElementById('batchModal').classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('batchModal').classList.remove('active');
+        }
+
         function batchDownloadBrowser() {
             var files = Array.from(selectedFiles);
             if (files.length === 0) return;
@@ -396,79 +386,11 @@
             exitSelectMode();
         }
 
-        // ===================== Aria2 =====================
-        function sendToAria2() {
-            var files = Array.from(selectedFiles);
-            if (files.length === 0) return;
-            var rpcUrl = document.getElementById('aria2Rpc').value.trim();
-            var secret = document.getElementById('aria2Secret').value.trim();
-            if (!rpcUrl) { alert('请填写 Aria2 RPC 地址'); return; }
-
-            files.forEach(function(file, idx) {
-                var url = getDownloadUrl(file.browser_download_url);
-                var decoded = decodeFilename(file.name);
-                var payload = {
-                    jsonrpc: '2.0',
-                    method: 'aria2.addUri',
-                    id: 'aria2_' + idx,
-                    params: [
-                        [url],
-                        { out: decoded }
-                    ]
-                };
-                if (secret) {
-                    payload.params.push({ secret: secret });
-                }
-                fetch(rpcUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                }).then(function(res) { return res.json(); }).then(function(data) {
-                    if (data.error) console.error('Aria2 错误:', data.error);
-                    else console.log('✅ 已发送: ' + decoded);
-                }).catch(function(e) { console.error('发送失败:', e); });
-            });
-            alert('已发送 ' + files.length + ' 个文件到 Aria2');
-            exitSelectMode();
-        }
-
-        // ===================== 压缩下载 =====================
-        function setupZipLinks() {
-            var base = 'https://github.com/xiaozhongziyuanku2025/xiaozhongziyuanku2025/archive/refs/heads/main';
-            var zip = document.getElementById('zipLink');
-            var tar = document.getElementById('tarLink');
-            if (userCountry === 'CN') {
-                zip.href = getProxyPrefix() + base + '.zip';
-                tar.href = getProxyPrefix() + base + '.tar.gz';
-            } else {
-                zip.href = base + '.zip';
-                tar.href = base + '.tar.gz';
-            }
-        }
-
-        // ===================== 弹窗 =====================
-        function showModal() {
-            if (selectedFiles.size === 0) return;
-            document.getElementById('modalSelectedCount').innerText = selectedFiles.size;
-            var list = document.getElementById('modalFileList');
-            list.innerHTML = '';
-            selectedFiles.forEach(function(f) {
-                var div = document.createElement('div');
-                div.className = 'selected-item';
-                div.innerHTML = '<i class="fas fa-file"></i> ' + escapeHtml(decodeFilename(f.name));
-                list.appendChild(div);
-            });
-            document.getElementById('batchModal').classList.add('active');
-        }
-
-        function closeModal() {
-            document.getElementById('batchModal').classList.remove('active');
-        }
-
         // ===================== 加载文件 =====================
         async function loadFiles() {
             var container = document.getElementById('fileList');
             try {
+                // 优先读取缓存
                 var res = await fetch('release-cache.json?_=' + Date.now());
                 if (res.ok) {
                     var data = await res.json();
@@ -478,9 +400,20 @@
                         return;
                     }
                 }
-                throw new Error('缓存不可用');
+                // 缓存无效，回退到 API
+                console.log('缓存无效，尝试从 API 获取...');
+                var apiRes = await fetch('https://api.github.com/repos/xiaozhongziyuanku2025/xiaozhongziyuanku2025/releases/tags/Windows病毒库');
+                if (apiRes.ok) {
+                    var apiData = await apiRes.json();
+                    if (apiData.assets && apiData.assets.length) {
+                        allFiles = apiData.assets;
+                        renderFiles();
+                        return;
+                    }
+                }
+                throw new Error('无数据');
             } catch(e) {
-                container.innerHTML = '<div class="error">加载失败，请刷新重试</div>';
+                container.innerHTML = '<div class="error">加载失败，请刷新或稍后再试</div>';
                 document.getElementById('fileStats').innerHTML = '加载失败';
             }
         }
@@ -527,39 +460,37 @@
             });
         }
 
-        // ===================== 导航 =====================
-        document.getElementById('navToggle').onclick = function() {
-            document.getElementById('sidebar').classList.toggle('active');
-        };
-        document.getElementById('backButton').onclick = function() { history.back(); };
-        document.getElementById('forwardButton').onclick = function() { history.forward(); };
+        // ===================== 导航和菜单 =====================
+        document.getElementById('navToggle').addEventListener('click', function() {
+            var sidebar = document.getElementById('sidebar');
+            var overlay = document.getElementById('sidebarOverlay');
+            sidebar.classList.toggle('active');
+            overlay.classList.toggle('active');
+        });
 
-        // ===================== 绑定按钮 =====================
-        document.getElementById('selectModeBtn').onclick = enterSelectMode;
-        document.getElementById('exitSelectModeBtn').onclick = exitSelectMode;
-        document.getElementById('selectAllBtn').onclick = selectAll;
-        document.getElementById('clearSelectionBtn').onclick = clearSel;
-        document.getElementById('downloadSelectedBtn').onclick = showModal;
-        document.getElementById('aria2SelectedBtn').onclick = sendToAria2;
-        document.getElementById('confirmDownload').onclick = batchDownloadBrowser;
-        document.getElementById('cancelDownload').onclick = closeModal;
+        document.getElementById('sidebarOverlay').addEventListener('click', function() {
+            document.getElementById('sidebar').classList.remove('active');
+            this.classList.remove('active');
+        });
+
+        document.getElementById('backButton').addEventListener('click', function() { history.back(); });
+        document.getElementById('forwardButton').addEventListener('click', function() { history.forward(); });
+
+        // ===================== 按钮绑定 =====================
+        document.getElementById('selectModeBtn').addEventListener('click', enterSelectMode);
+        document.getElementById('exitSelectModeBtn').addEventListener('click', exitSelectMode);
+        document.getElementById('selectAllBtn').addEventListener('click', selectAll);
+        document.getElementById('clearSelectionBtn').addEventListener('click', clearSel);
+        document.getElementById('downloadSelectedBtn').addEventListener('click', showBatchModal);
+        document.getElementById('confirmDownload').addEventListener('click', batchDownloadBrowser);
+        document.getElementById('cancelDownload').addEventListener('click', closeModal);
 
         // ===================== 启动 =====================
         (async function init() {
             await detectCountry();
             await loadFiles();
             initSearch();
-            setupZipLinks();
-            // 压缩下载按钮展开/收起（简单处理）
-            document.getElementById('zipDownloadBtn').onclick = function() {
-                var btns = document.querySelector('.zip-buttons');
-                if (btns.style.display === 'none' || !btns.style.display) {
-                    btns.style.display = 'flex';
-                } else {
-                    btns.style.display = 'none';
-              }
-            };
-          })();
+        })();
     </script>
 </body>
 </html>

@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="css/style.css">
     <style>
-        /* ========== 样式 ========== */
+        /* ========== 样式部分 (保持不变) ========== */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { background: #0f0f1a; color: #e0e0e0; font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; min-height: 100vh; }
         .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
@@ -58,14 +58,14 @@
         .progress-bar { width: 100%; height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; overflow: hidden; margin: 10px 0; }
         .progress-fill { height: 100%; background: #4CAF50; width: 0%; transition: width 0.3s; }
 
-        /* 搜索 */
+        /* ========== 搜索样式 ========== */
         .search-container { margin: 20px 0; display: flex; justify-content: flex-end; align-items: center; gap: 10px; }
         .search-icon { background: rgba(76,175,80,0.2); border: none; color: #4CAF50; font-size: 18px; padding: 10px 15px; border-radius: 8px; cursor: pointer; }
         .search-bar { display: none; width: 300px; }
         .search-bar.active { display: block; }
         .search-input { width: 100%; padding: 10px 15px; border: 1px solid rgba(76,175,80,0.5); border-radius: 8px; background: rgba(20,20,30,0.9); color: #fff; }
         .search-input:focus { outline: none; border-color: #4CAF50; }
-        .search-hint { font-size: 12px; color: #888; }
+        .search-hint { font-size: 12px; color: #888; margin-top: 4px; }
         .search-results { margin-top: 20px; display: none; }
         .search-results.active { display: block; }
 
@@ -87,6 +87,7 @@
 <body>
     <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
+    <!-- 批量下载弹窗 -->
     <div class="batch-modal" id="batchModal">
         <div class="batch-modal-content">
             <h3 style="color:#4CAF50; margin-bottom:15px"><i class="fas fa-download"></i> 批量下载</h3>
@@ -99,6 +100,7 @@
         </div>
     </div>
 
+    <!-- 下载进度 -->
     <div class="download-progress" id="progressBar">
         <div class="progress-title"><i class="fas fa-download"></i> 下载进度</div>
         <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
@@ -134,6 +136,7 @@
                     <span style="color:#4CAF50">Windows病毒库</span>
                 </div>
 
+                <!-- 代理切换 -->
                 <div class="proxy-toggle">
                     <label><i class="fas fa-globe"></i> 加速模式：</label>
                     <select id="proxySelect">
@@ -144,6 +147,7 @@
                     <span id="proxyStatus" style="font-size:12px; color:#aaa;">自动</span>
                 </div>
 
+                <!-- 批量操作 -->
                 <div class="batch-controls">
                     <button class="batch-btn" id="selectModeBtn"><i class="fas fa-check-square"></i> 多选模式</button>
                     <button class="batch-btn warning" id="downloadSelectedBtn" style="display:none"><i class="fas fa-download"></i> 下载选中 (<span id="selectedCount">0</span>)</button>
@@ -157,9 +161,9 @@
                     </div>
                 </div>
 
-                <!-- 搜索 -->
+                <!-- ========== 搜索栏 ========== -->
                 <div class="search-container">
-                    <span class="search-hint" id="searchHint">点击图标搜索</span>
+                    <span id="searchHint" style="color:#888; font-size:14px; cursor:default;" title="点击右侧放大镜展开搜索">点击图标搜索</span>
                     <button class="search-icon" id="searchToggle"><i class="fas fa-search"></i></button>
                     <div class="search-bar" id="searchBar">
                         <input type="text" class="search-input" id="searchInput" placeholder="输入文件名关键词...">
@@ -180,8 +184,9 @@
     <script src="js/main.js"></script>
     <script>
         // ===================== 配置 =====================
-        // 国内加速代理（正确用法：代理域名 + 完整 GitHub 链接）
+        // 使用 gh-proxy.org，直接在原始链接前拼接代理域名
         const PROXY_PREFIX = 'https://gh-proxy.org/';
+
         let userCountry = 'OTHER';
         let allFiles = [];
         let selectedFiles = new Set();
@@ -227,17 +232,17 @@
                     userCountry = 'OTHER';
                 }
             } catch(e) {
-                userCountry = 'CN'; // 默认启用代理
+                userCountry = 'CN';
             }
-            console.log('用户区域:', userCountry === 'CN' ? '🇨🇳 国内' : '🌍 国外');
+            console.log('用户区域:', userCountry === 'CN' ? '🇨🇳 国内 (启用代理)' : '🌍 国外 (直连)');
             updateProxyStatus();
         }
 
-        // ===================== 代理拼接 =====================
+        // ===================== 核心修复：代理拼接 =====================
         function getDownloadUrl(originalUrl) {
             const mode = document.getElementById('proxySelect').value;
+            // 国内加速模式：在原始链接前直接加代理域名
             if (mode === 'cn' || (mode === 'auto' && userCountry === 'CN')) {
-                // 代理前缀 + 完整的原始链接
                 return PROXY_PREFIX + originalUrl;
             }
             return originalUrl;
@@ -442,6 +447,7 @@
             var mainList = document.getElementById('fileList');
             var hint = document.getElementById('searchHint');
 
+            // 点击搜索图标切换搜索框
             toggle.addEventListener('click', function() {
                 bar.classList.toggle('active');
                 if (bar.classList.contains('active')) {
@@ -455,6 +461,19 @@
                 }
             });
 
+            // 鼠标悬停提示
+            hint.addEventListener('mouseenter', function() {
+                if (!bar.classList.contains('active')) {
+                    this.style.color = '#4CAF50';
+                }
+            });
+            hint.addEventListener('mouseleave', function() {
+                if (!bar.classList.contains('active')) {
+                    this.style.color = '#888';
+                }
+            });
+
+            // 实时搜索
             input.addEventListener('input', function() {
                 var kw = this.value.toLowerCase().trim();
                 if (!kw) {

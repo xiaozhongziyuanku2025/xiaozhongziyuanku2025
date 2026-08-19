@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="css/style.css">
     <style>
-        /* ========== 基础重置与布局 ========== */
+        /* 所有样式保持不变，只调整搜索相关 */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { background: #0f0f1a; color: #e0e0e0; font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; min-height: 100vh; }
         .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
@@ -30,7 +30,6 @@
         .breadcrumb-separator { color: #aaa; }
         .file-stats { background: rgba(20,20,30,0.7); padding: 15px; border-radius: 8px; margin: 20px 0; border: 1px solid rgba(76,175,80,0.3); }
 
-        /* ========== 文件列表 ========== */
         .file-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 15px; margin-top: 20px; }
         .file-item { background: rgba(30,30,40,0.8); border-radius: 10px; padding: 15px; transition: all 0.3s; cursor: pointer; border: 2px solid transparent; position: relative; }
         .file-item:hover { transform: translateY(-3px); background: rgba(40,40,50,0.9); }
@@ -41,7 +40,6 @@
         .file-details { font-size: 12px; color: #aaa; }
         .loading, .error { text-align: center; padding: 60px; font-size: 18px; }
 
-        /* ========== 批量操作 ========== */
         .batch-controls { display: flex; gap: 10px; margin: 20px 0; flex-wrap: wrap; align-items: center; }
         .batch-btn { padding: 12px 20px; border: none; border-radius: 8px; background: linear-gradient(135deg, #4CAF50, #2E7D32); color: white; cursor: pointer; font-size: 16px; display: inline-flex; align-items: center; gap: 8px; font-weight: 600; transition: 0.3s; }
         .batch-btn:hover { transform: translateY(-2px); opacity: 0.9; }
@@ -50,7 +48,6 @@
         .batch-toolbar { display: none; background: rgba(76,175,80,0.15); padding: 15px; border-radius: 10px; margin: 15px 0; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
         .batch-toolbar.active { display: flex; }
 
-        /* ========== 弹窗与进度 ========== */
         .batch-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 2000; align-items: center; justify-content: center; }
         .batch-modal.active { display: flex; }
         .batch-modal-content { background: #1e1e2e; border-radius: 15px; padding: 25px; max-width: 500px; width: 90%; border: 2px solid #4CAF50; max-height: 90vh; overflow-y: auto; }
@@ -61,16 +58,18 @@
         .progress-bar { width: 100%; height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; overflow: hidden; margin: 10px 0; }
         .progress-fill { height: 100%; background: #4CAF50; width: 0%; transition: width 0.3s; }
 
-        /* ========== 搜索 ========== */
+        /* 搜索样式 - 修复 */
         .search-container { margin: 20px 0; display: flex; justify-content: flex-end; align-items: center; gap: 10px; }
         .search-icon { background: rgba(76,175,80,0.2); border: none; color: #4CAF50; font-size: 18px; padding: 10px 15px; border-radius: 8px; cursor: pointer; }
         .search-bar { display: none; width: 300px; }
         .search-bar.active { display: block; }
         .search-input { width: 100%; padding: 10px 15px; border: 1px solid rgba(76,175,80,0.5); border-radius: 8px; background: rgba(20,20,30,0.9); color: #fff; }
+        .search-input:focus { outline: none; border-color: #4CAF50; }
+        .search-hint { font-size: 12px; color: #888; margin-top: 4px; display: none; }
+        .search-bar.active + .search-hint { display: block; } /* 当搜索栏显示时提示也显示 */
         .search-results { margin-top: 20px; display: none; }
         .search-results.active { display: block; }
 
-        /* ========== 代理切换 ========== */
         .proxy-toggle { display: flex; align-items: center; gap: 10px; margin: 10px 0; padding: 8px 15px; background: rgba(20,20,30,0.7); border-radius: 8px; flex-wrap: wrap; }
         .proxy-toggle label { color: #aaa; font-size: 14px; }
         .proxy-toggle select { background: rgba(0,0,0,0.4); border: 1px solid #4CAF50; color: #fff; padding: 4px 10px; border-radius: 4px; }
@@ -89,7 +88,6 @@
 <body>
     <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
-    <!-- 批量下载弹窗 -->
     <div class="batch-modal" id="batchModal">
         <div class="batch-modal-content">
             <h3 style="color:#4CAF50; margin-bottom:15px"><i class="fas fa-download"></i> 批量下载</h3>
@@ -102,7 +100,6 @@
         </div>
     </div>
 
-    <!-- 下载进度 -->
     <div class="download-progress" id="progressBar">
         <div class="progress-title"><i class="fas fa-download"></i> 下载进度</div>
         <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
@@ -138,12 +135,11 @@
                     <span style="color:#4CAF50">Windows病毒库</span>
                 </div>
 
-                <!-- 代理切换 -->
                 <div class="proxy-toggle">
                     <label><i class="fas fa-globe"></i> 加速模式：</label>
                     <select id="proxySelect">
                         <option value="auto">自动检测</option>
-                        <option value="cn">国内加速 (代理)</option>
+                        <option value="cn">国内加速 (gh-proxy.com)</option>
                         <option value="global">直连 (无代理)</option>
                     </select>
                     <span id="proxyStatus" style="font-size:12px; color:#aaa;">自动</span>
@@ -162,12 +158,12 @@
                     </div>
                 </div>
 
-                <!-- 搜索 -->
+                <!-- 搜索栏 -->
                 <div class="search-container">
-                    <span style="color:#888; font-size:14px;">点击图标搜索</span>
+                    <span id="searchHint" style="color:#888; font-size:14px; cursor:default;" title="点击右侧放大镜展开搜索">点击图标搜索</span>
                     <button class="search-icon" id="searchToggle"><i class="fas fa-search"></i></button>
                     <div class="search-bar" id="searchBar">
-                        <input type="text" class="search-input" id="searchInput" placeholder="搜索文件...">
+                        <input type="text" class="search-input" id="searchInput" placeholder="输入文件名关键词...">
                     </div>
                 </div>
                 <div class="search-results" id="searchResults">
@@ -185,11 +181,8 @@
     <script src="js/main.js"></script>
     <script>
         // ===================== 配置 =====================
-        const PROXY_LIST = [
-            'https://ghproxy.net/',
-            'https://gh-proxy.com/',
-            'https://ghproxy.cc/'
-        ];
+        // 只使用 gh-proxy.com
+        const PROXY_LIST = ['https://gh-proxy.com/'];
         let currentProxyIndex = 0;
         let userCountry = 'OTHER';
         let allFiles = [];
@@ -243,9 +236,8 @@
         }
 
         function getProxyPrefix() {
-            const p = PROXY_LIST[currentProxyIndex % PROXY_LIST.length];
-            currentProxyIndex++;
-            return p;
+            // 只使用第一个（也是唯一一个）
+            return PROXY_LIST[0];
         }
 
         function getDownloadUrl(originalUrl) {
@@ -266,7 +258,6 @@
 
         document.getElementById('proxySelect').addEventListener('change', function() {
             updateProxyStatus();
-            // 重新渲染文件列表以更新下载链接
             renderFiles();
         });
 
@@ -395,7 +386,6 @@
         function batchDownloadBrowser() {
             var files = Array.from(selectedFiles);
             if (files.length === 0) return;
-            // 提示用户允许弹出窗口
             alert('即将打开 ' + files.length + ' 个下载链接，请允许浏览器弹出窗口。如果被拦截，请点击地址栏旁边的拦截图标选择“允许”。');
             var progressDiv = document.getElementById('progressBar');
             var progressFill = document.getElementById('progressFill');
@@ -415,7 +405,6 @@
                 }, i * 600);
             });
             closeModal();
-            // 不自动退出多选，以便用户继续选择
         }
 
         // ===================== 加载文件 =====================
@@ -456,14 +445,30 @@
             var results = document.getElementById('searchResults');
             var list = document.getElementById('resultsList');
             var mainList = document.getElementById('fileList');
+            var hint = document.getElementById('searchHint');
 
             toggle.addEventListener('click', function() {
                 bar.classList.toggle('active');
-                if (bar.classList.contains('active')) input.focus();
-                else {
+                if (bar.classList.contains('active')) {
+                    input.focus();
+                    hint.style.display = 'none'; // 隐藏提示
+                } else {
                     input.value = '';
                     results.classList.remove('active');
                     mainList.style.display = 'grid';
+                    hint.style.display = 'inline'; // 显示提示
+                }
+            });
+
+            // 鼠标悬停显示提示
+            hint.addEventListener('mouseenter', function() {
+                if (!bar.classList.contains('active')) {
+                    this.style.color = '#4CAF50';
+                }
+            });
+            hint.addEventListener('mouseleave', function() {
+                if (!bar.classList.contains('active')) {
+                    this.style.color = '#888';
                 }
             });
 

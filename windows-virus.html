@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="css/style.css">
     <style>
-        /* 所有样式保持不变，只调整搜索相关 */
+        /* ========== 样式 ========== */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { background: #0f0f1a; color: #e0e0e0; font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; min-height: 100vh; }
         .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
@@ -58,15 +58,14 @@
         .progress-bar { width: 100%; height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; overflow: hidden; margin: 10px 0; }
         .progress-fill { height: 100%; background: #4CAF50; width: 0%; transition: width 0.3s; }
 
-        /* 搜索样式 - 修复 */
+        /* 搜索 */
         .search-container { margin: 20px 0; display: flex; justify-content: flex-end; align-items: center; gap: 10px; }
         .search-icon { background: rgba(76,175,80,0.2); border: none; color: #4CAF50; font-size: 18px; padding: 10px 15px; border-radius: 8px; cursor: pointer; }
         .search-bar { display: none; width: 300px; }
         .search-bar.active { display: block; }
         .search-input { width: 100%; padding: 10px 15px; border: 1px solid rgba(76,175,80,0.5); border-radius: 8px; background: rgba(20,20,30,0.9); color: #fff; }
         .search-input:focus { outline: none; border-color: #4CAF50; }
-        .search-hint { font-size: 12px; color: #888; margin-top: 4px; display: none; }
-        .search-bar.active + .search-hint { display: block; } /* 当搜索栏显示时提示也显示 */
+        .search-hint { font-size: 12px; color: #888; }
         .search-results { margin-top: 20px; display: none; }
         .search-results.active { display: block; }
 
@@ -139,7 +138,7 @@
                     <label><i class="fas fa-globe"></i> 加速模式：</label>
                     <select id="proxySelect">
                         <option value="auto">自动检测</option>
-                        <option value="cn">国内加速 (gh-proxy.com)</option>
+                        <option value="cn">国内加速 (gh-proxy.org)</option>
                         <option value="global">直连 (无代理)</option>
                     </select>
                     <span id="proxyStatus" style="font-size:12px; color:#aaa;">自动</span>
@@ -158,9 +157,9 @@
                     </div>
                 </div>
 
-                <!-- 搜索栏 -->
+                <!-- 搜索 -->
                 <div class="search-container">
-                    <span id="searchHint" style="color:#888; font-size:14px; cursor:default;" title="点击右侧放大镜展开搜索">点击图标搜索</span>
+                    <span class="search-hint" id="searchHint">点击图标搜索</span>
                     <button class="search-icon" id="searchToggle"><i class="fas fa-search"></i></button>
                     <div class="search-bar" id="searchBar">
                         <input type="text" class="search-input" id="searchInput" placeholder="输入文件名关键词...">
@@ -181,9 +180,8 @@
     <script src="js/main.js"></script>
     <script>
         // ===================== 配置 =====================
-        // 只使用 gh-proxy.com
-        const PROXY_LIST = ['https://gh-proxy.com/'];
-        let currentProxyIndex = 0;
+        // 国内加速代理（正确用法：代理域名 + 完整 GitHub 链接）
+        const PROXY_PREFIX = 'https://gh-proxy.org/';
         let userCountry = 'OTHER';
         let allFiles = [];
         let selectedFiles = new Set();
@@ -229,21 +227,18 @@
                     userCountry = 'OTHER';
                 }
             } catch(e) {
-                userCountry = 'CN'; // 默认启用代理（国内用户居多）
+                userCountry = 'CN'; // 默认启用代理
             }
-            console.log('用户区域:', userCountry === 'CN' ? '🇨🇳 国内 (启用代理)' : '🌍 国外 (直连)');
+            console.log('用户区域:', userCountry === 'CN' ? '🇨🇳 国内' : '🌍 国外');
             updateProxyStatus();
         }
 
-        function getProxyPrefix() {
-            // 只使用第一个（也是唯一一个）
-            return PROXY_LIST[0];
-        }
-
+        // ===================== 代理拼接 =====================
         function getDownloadUrl(originalUrl) {
             const mode = document.getElementById('proxySelect').value;
             if (mode === 'cn' || (mode === 'auto' && userCountry === 'CN')) {
-                return getProxyPrefix() + originalUrl;
+                // 代理前缀 + 完整的原始链接
+                return PROXY_PREFIX + originalUrl;
             }
             return originalUrl;
         }
@@ -451,24 +446,12 @@
                 bar.classList.toggle('active');
                 if (bar.classList.contains('active')) {
                     input.focus();
-                    hint.style.display = 'none'; // 隐藏提示
+                    hint.style.display = 'none';
                 } else {
                     input.value = '';
                     results.classList.remove('active');
                     mainList.style.display = 'grid';
-                    hint.style.display = 'inline'; // 显示提示
-                }
-            });
-
-            // 鼠标悬停显示提示
-            hint.addEventListener('mouseenter', function() {
-                if (!bar.classList.contains('active')) {
-                    this.style.color = '#4CAF50';
-                }
-            });
-            hint.addEventListener('mouseleave', function() {
-                if (!bar.classList.contains('active')) {
-                    this.style.color = '#888';
+                    hint.style.display = 'inline';
                 }
             });
 

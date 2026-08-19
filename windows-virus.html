@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="css/style.css">
     <style>
-        /* -------- 全局与布局 -------- */
+        /* ========== 基础重置与布局 ========== */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { background: #0f0f1a; color: #e0e0e0; font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; min-height: 100vh; }
         .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
@@ -30,7 +30,7 @@
         .breadcrumb-separator { color: #aaa; }
         .file-stats { background: rgba(20,20,30,0.7); padding: 15px; border-radius: 8px; margin: 20px 0; border: 1px solid rgba(76,175,80,0.3); }
 
-        /* -------- 文件列表 -------- */
+        /* ========== 文件列表 ========== */
         .file-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 15px; margin-top: 20px; }
         .file-item { background: rgba(30,30,40,0.8); border-radius: 10px; padding: 15px; transition: all 0.3s; cursor: pointer; border: 2px solid transparent; position: relative; }
         .file-item:hover { transform: translateY(-3px); background: rgba(40,40,50,0.9); }
@@ -41,7 +41,7 @@
         .file-details { font-size: 12px; color: #aaa; }
         .loading, .error { text-align: center; padding: 60px; font-size: 18px; }
 
-        /* -------- 批量操作 -------- */
+        /* ========== 批量操作 ========== */
         .batch-controls { display: flex; gap: 10px; margin: 20px 0; flex-wrap: wrap; align-items: center; }
         .batch-btn { padding: 12px 20px; border: none; border-radius: 8px; background: linear-gradient(135deg, #4CAF50, #2E7D32); color: white; cursor: pointer; font-size: 16px; display: inline-flex; align-items: center; gap: 8px; font-weight: 600; transition: 0.3s; }
         .batch-btn:hover { transform: translateY(-2px); opacity: 0.9; }
@@ -50,7 +50,7 @@
         .batch-toolbar { display: none; background: rgba(76,175,80,0.15); padding: 15px; border-radius: 10px; margin: 15px 0; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
         .batch-toolbar.active { display: flex; }
 
-        /* -------- 弹窗与进度 -------- */
+        /* ========== 弹窗与进度 ========== */
         .batch-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 2000; align-items: center; justify-content: center; }
         .batch-modal.active { display: flex; }
         .batch-modal-content { background: #1e1e2e; border-radius: 15px; padding: 25px; max-width: 500px; width: 90%; border: 2px solid #4CAF50; max-height: 90vh; overflow-y: auto; }
@@ -61,14 +61,19 @@
         .progress-bar { width: 100%; height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; overflow: hidden; margin: 10px 0; }
         .progress-fill { height: 100%; background: #4CAF50; width: 0%; transition: width 0.3s; }
 
-        /* -------- 搜索 -------- */
-        .search-container { margin: 20px 0; display: flex; justify-content: flex-end; }
+        /* ========== 搜索 ========== */
+        .search-container { margin: 20px 0; display: flex; justify-content: flex-end; align-items: center; gap: 10px; }
         .search-icon { background: rgba(76,175,80,0.2); border: none; color: #4CAF50; font-size: 18px; padding: 10px 15px; border-radius: 8px; cursor: pointer; }
-        .search-bar { display: none; width: 300px; margin-left: 10px; }
+        .search-bar { display: none; width: 300px; }
         .search-bar.active { display: block; }
         .search-input { width: 100%; padding: 10px 15px; border: 1px solid rgba(76,175,80,0.5); border-radius: 8px; background: rgba(20,20,30,0.9); color: #fff; }
         .search-results { margin-top: 20px; display: none; }
         .search-results.active { display: block; }
+
+        /* ========== 代理切换 ========== */
+        .proxy-toggle { display: flex; align-items: center; gap: 10px; margin: 10px 0; padding: 8px 15px; background: rgba(20,20,30,0.7); border-radius: 8px; flex-wrap: wrap; }
+        .proxy-toggle label { color: #aaa; font-size: 14px; }
+        .proxy-toggle select { background: rgba(0,0,0,0.4); border: 1px solid #4CAF50; color: #fff; padding: 4px 10px; border-radius: 4px; }
 
         @media (max-width: 768px) {
             .sidebar { display: none; position: fixed; top: 0; left: 0; height: 100%; width: 280px; background: rgba(20,20,30,0.95); z-index: 1000; padding: 20px; overflow-y: auto; }
@@ -76,6 +81,8 @@
             .file-list { grid-template-columns: 1fr; }
             .batch-controls { flex-direction: column; }
             .batch-btn { width: 100%; justify-content: center; }
+            .search-bar { width: 100%; }
+            .search-container { flex-wrap: wrap; }
         }
     </style>
 </head>
@@ -131,6 +138,17 @@
                     <span style="color:#4CAF50">Windows病毒库</span>
                 </div>
 
+                <!-- 代理切换 -->
+                <div class="proxy-toggle">
+                    <label><i class="fas fa-globe"></i> 加速模式：</label>
+                    <select id="proxySelect">
+                        <option value="auto">自动检测</option>
+                        <option value="cn">国内加速 (代理)</option>
+                        <option value="global">直连 (无代理)</option>
+                    </select>
+                    <span id="proxyStatus" style="font-size:12px; color:#aaa;">自动</span>
+                </div>
+
                 <div class="batch-controls">
                     <button class="batch-btn" id="selectModeBtn"><i class="fas fa-check-square"></i> 多选模式</button>
                     <button class="batch-btn warning" id="downloadSelectedBtn" style="display:none"><i class="fas fa-download"></i> 下载选中 (<span id="selectedCount">0</span>)</button>
@@ -146,6 +164,7 @@
 
                 <!-- 搜索 -->
                 <div class="search-container">
+                    <span style="color:#888; font-size:14px;">点击图标搜索</span>
                     <button class="search-icon" id="searchToggle"><i class="fas fa-search"></i></button>
                     <div class="search-bar" id="searchBar">
                         <input type="text" class="search-input" id="searchInput" placeholder="搜索文件...">
@@ -217,9 +236,10 @@
                     userCountry = 'OTHER';
                 }
             } catch(e) {
-                userCountry = 'OTHER';
+                userCountry = 'CN'; // 默认启用代理（国内用户居多）
             }
             console.log('用户区域:', userCountry === 'CN' ? '🇨🇳 国内 (启用代理)' : '🌍 国外 (直连)');
+            updateProxyStatus();
         }
 
         function getProxyPrefix() {
@@ -229,11 +249,26 @@
         }
 
         function getDownloadUrl(originalUrl) {
-            if (userCountry === 'CN') {
+            const mode = document.getElementById('proxySelect').value;
+            if (mode === 'cn' || (mode === 'auto' && userCountry === 'CN')) {
                 return getProxyPrefix() + originalUrl;
             }
             return originalUrl;
         }
+
+        function updateProxyStatus() {
+            const status = document.getElementById('proxyStatus');
+            const mode = document.getElementById('proxySelect').value;
+            if (mode === 'cn') status.textContent = '代理模式 (强制)';
+            else if (mode === 'global') status.textContent = '直连模式';
+            else status.textContent = userCountry === 'CN' ? '代理模式 (自动)' : '直连模式 (自动)';
+        }
+
+        document.getElementById('proxySelect').addEventListener('change', function() {
+            updateProxyStatus();
+            // 重新渲染文件列表以更新下载链接
+            renderFiles();
+        });
 
         // ===================== 下载 =====================
         function downloadFile(url, encodedName) {
@@ -360,6 +395,8 @@
         function batchDownloadBrowser() {
             var files = Array.from(selectedFiles);
             if (files.length === 0) return;
+            // 提示用户允许弹出窗口
+            alert('即将打开 ' + files.length + ' 个下载链接，请允许浏览器弹出窗口。如果被拦截，请点击地址栏旁边的拦截图标选择“允许”。');
             var progressDiv = document.getElementById('progressBar');
             var progressFill = document.getElementById('progressFill');
             var progressText = document.getElementById('progressText');
@@ -368,29 +405,23 @@
             files.forEach(function(file, i) {
                 setTimeout(function() {
                     var url = getDownloadUrl(file.browser_download_url);
-                    var decoded = decodeFilename(file.name);
-                    var a = document.createElement('a');
-                    a.href = url;
-                    a.download = decoded;
-                    a.target = '_blank';
-                    a.click();
+                    window.open(url, '_blank');
                     completed++;
                     progressFill.style.width = (completed / files.length * 100) + '%';
-                    progressText.innerText = '已下载 ' + completed + '/' + files.length + ' 个文件';
+                    progressText.innerText = '已打开 ' + completed + '/' + files.length + ' 个下载';
                     if (completed === files.length) {
                         setTimeout(function() { progressDiv.classList.remove('active'); }, 2000);
                     }
-                }, i * 400);
+                }, i * 600);
             });
             closeModal();
-            exitSelectMode();
+            // 不自动退出多选，以便用户继续选择
         }
 
         // ===================== 加载文件 =====================
         async function loadFiles() {
             var container = document.getElementById('fileList');
             try {
-                // 优先读取缓存
                 var res = await fetch('release-cache.json?_=' + Date.now());
                 if (res.ok) {
                     var data = await res.json();
@@ -400,7 +431,6 @@
                         return;
                     }
                 }
-                // 缓存无效，回退到 API
                 console.log('缓存无效，尝试从 API 获取...');
                 var apiRes = await fetch('https://api.github.com/repos/xiaozhongziyuanku2025/xiaozhongziyuanku2025/releases/tags/Windows病毒库');
                 if (apiRes.ok) {

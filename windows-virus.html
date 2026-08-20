@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="css/style.css">
     <style>
-        /* ========== 样式部分 (保持不变) ========== */
+        /* ========== 基础样式 ========== */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { background: #0f0f1a; color: #e0e0e0; font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; min-height: 100vh; }
         .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
@@ -181,10 +181,8 @@
         </div>
     </div>
 
-    <script src="js/main.js"></script>
     <script>
         // ===================== 配置 =====================
-        // 使用 gh-proxy.org，直接在原始链接前拼接代理域名
         const PROXY_PREFIX = 'https://gh-proxy.org/';
 
         let userCountry = 'OTHER';
@@ -238,12 +236,11 @@
             updateProxyStatus();
         }
 
-        // ===================== 核心修复：代理拼接 =====================
+        // ===================== 代理拼接 =====================
         function getDownloadUrl(originalUrl) {
             const mode = document.getElementById('proxySelect').value;
-            // 国内加速模式：在原始链接前直接加代理域名
             if (mode === 'cn' || (mode === 'auto' && userCountry === 'CN')) {
-                return PROXY_PREFIX + originalUrl;
+                return PROXY_PREFIX + originalUrl;   // 正确拼接：代理域名 + 原始链接
             }
             return originalUrl;
         }

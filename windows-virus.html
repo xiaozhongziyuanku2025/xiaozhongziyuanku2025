@@ -7,7 +7,6 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="css/style.css">
     <style>
-        /* 样式与前文相同，省略（保持原有样式） */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { background: #0f0f1a; color: #e0e0e0; font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; min-height: 100vh; }
         .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
@@ -70,7 +69,13 @@
 
         .proxy-toggle { display: flex; align-items: center; gap: 10px; margin: 10px 0; padding: 8px 15px; background: rgba(20,20,30,0.7); border-radius: 8px; flex-wrap: wrap; }
         .proxy-toggle label { color: #aaa; font-size: 14px; }
-        .proxy-toggle select { background: rgba(0,0,0,0.4); border: 1px solid #4CAF50; color: #fff; padding: 4px 10px; border-radius: 4px; }
+        .proxy-toggle select, .proxy-toggle button { background: rgba(0,0,0,0.4); border: 1px solid #4CAF50; color: #fff; padding: 4px 10px; border-radius: 4px; cursor: pointer; }
+        .proxy-toggle button:hover { background: #4CAF50; }
+        .proxy-status { font-size: 12px; color: #aaa; margin-left: 10px; }
+
+        .zip-buttons { display: flex; gap: 10px; margin: 10px 0; flex-wrap: wrap; align-items: center; }
+        .zip-btn { background: rgba(255,152,0,0.2); border: 1px solid #ff9800; color: #ff9800; padding: 8px 16px; border-radius: 6px; cursor: pointer; transition: 0.3s; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; font-size: 14px; }
+        .zip-btn:hover { background: rgba(255,152,0,0.4); }
 
         @media (max-width: 768px) {
             .sidebar { display: none; position: fixed; top: 0; left: 0; height: 100%; width: 280px; background: rgba(20,20,30,0.95); z-index: 1000; padding: 20px; overflow-y: auto; }
@@ -86,6 +91,7 @@
 <body>
     <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
+    <!-- 批量下载弹窗 -->
     <div class="batch-modal" id="batchModal">
         <div class="batch-modal-content">
             <h3 style="color:#4CAF50; margin-bottom:15px"><i class="fas fa-download"></i> 批量下载</h3>
@@ -98,6 +104,7 @@
         </div>
     </div>
 
+    <!-- 下载进度 -->
     <div class="download-progress" id="progressBar">
         <div class="progress-title"><i class="fas fa-download"></i> 下载进度</div>
         <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
@@ -133,14 +140,26 @@
                     <span style="color:#4CAF50">Windows病毒库</span>
                 </div>
 
+                <!-- 代理控制 -->
                 <div class="proxy-toggle">
                     <label><i class="fas fa-globe"></i> 加速模式：</label>
                     <select id="proxySelect">
-                        <option value="auto">自动检测</option>
-                        <option value="cn">国内加速 (gh-proxy.org)</option>
-                        <option value="global">直连 (无代理)</option>
+                        <option value="auto">自动 (最快)</option>
+                        <option value="gh-proxy.org">gh-proxy.org</option>
+                        <option value="ghproxy.net">ghproxy.net</option>
+                        <option value="gh-proxy.com">gh-proxy.com</option>
+                        <option value="ghproxy.cc">ghproxy.cc</option>
+                        <option value="none">直连</option>
                     </select>
-                    <span id="proxyStatus" style="font-size:12px; color:#aaa;">自动</span>
+                    <button id="speedTestBtn"><i class="fas fa-tachometer-alt"></i> 测速切换</button>
+                    <span class="proxy-status" id="proxyStatus">⏳ 检测中...</span>
+                </div>
+
+                <!-- 压缩包下载 -->
+                <div class="zip-buttons">
+                    <span style="color:#aaa;">源码包：</span>
+                    <a class="zip-btn" id="zipLink" href="#" target="_blank"><i class="fas fa-file-archive"></i> .zip</a>
+                    <a class="zip-btn" id="tarLink" href="#" target="_blank"><i class="fas fa-file-archive"></i> .tar.gz</a>
                 </div>
 
                 <div class="batch-controls">
@@ -156,6 +175,7 @@
                     </div>
                 </div>
 
+                <!-- 搜索栏 -->
                 <div class="search-container">
                     <span id="searchHint" style="color:#888; font-size:14px; cursor:default;" title="点击右侧放大镜展开搜索">点击图标搜索</span>
                     <button class="search-icon" id="searchToggle"><i class="fas fa-search"></i></button>
@@ -177,7 +197,14 @@
 
     <script>
         // ===================== 配置 =====================
-        const PROXY_PREFIX = 'https://gh-proxy.org/';
+        const PROXY_MAP = {
+            'gh-proxy.org': 'https://gh-proxy.org/',
+            'ghproxy.net': 'https://ghproxy.net/',
+            'gh-proxy.com': 'https://gh-proxy.com/',
+            'ghproxy.cc': 'https://ghproxy.cc/'
+        };
+        const DEFAULT_PROXY_KEY = 'gh-proxy.org';
+
         let userCountry = 'OTHER';
         let allFiles = [];
         let selectedFiles = new Set();
@@ -212,49 +239,101 @@
             });
         }
 
-        // ===================== IP 检测 =====================
+        // ===================== IP 检测（多个备用） =====================
         async function detectCountry() {
-            try {
-                const res = await fetch('https://ip-api.com/json/');
-                const data = await res.json();
-                if (data.status === 'success' && data.countryCode === 'CN') {
-                    userCountry = 'CN';
-                } else {
-                    userCountry = 'OTHER';
-                }
-            } catch(e) {
-                userCountry = 'CN';
+            const apis = [
+                'https://ip-api.com/json/',
+                'https://ip-api.org/json/'
+            ];
+            for (let api of apis) {
+                try {
+                    const res = await fetch(api, { timeout: 3000 });
+                    const data = await res.json();
+                    if (data && data.status === 'success' && data.countryCode) {
+                        userCountry = data.countryCode === 'CN' ? 'CN' : 'OTHER';
+                        console.log('IP检测成功，国家:', data.countryCode);
+                        return;
+                    }
+                } catch (e) { /* 继续下一个 */ }
             }
-            console.log('用户区域:', userCountry === 'CN' ? '🇨🇳 国内 (启用代理)' : '🌍 国外 (直连)');
-            updateProxyStatus();
+            // 检测失败，默认国外（直连）
+            userCountry = 'OTHER';
+            console.log('IP检测失败，默认直连');
         }
 
-        // ===================== 核心：代理拼接（只在此处添加一次） =====================
+        // ===================== 代理逻辑 =====================
+        function getSelectedProxyKey() {
+            return document.getElementById('proxySelect').value;
+        }
+
+        function getProxyPrefix(key) {
+            if (key === 'none' || key === 'auto') {
+                // auto 将动态选择，这里不处理
+                return '';
+            }
+            return PROXY_MAP[key] || '';
+        }
+
         function getDownloadUrl(originalUrl) {
-            const mode = document.getElementById('proxySelect').value;
-            if (mode === 'cn' || (mode === 'auto' && userCountry === 'CN')) {
-                return PROXY_PREFIX + originalUrl;
+            const mode = getSelectedProxyKey();
+            if (mode === 'none') return originalUrl;
+            if (mode === 'auto') {
+                // 使用当前最快的代理（存储于变量 bestProxyKey）
+                const best = bestProxyKey || DEFAULT_PROXY_KEY;
+                return PROXY_MAP[best] + originalUrl;
             }
-            return originalUrl;
+            // 手动指定
+            return PROXY_MAP[mode] + originalUrl;
         }
 
-        function updateProxyStatus() {
+        let bestProxyKey = DEFAULT_PROXY_KEY;
+
+        // ===================== 测速 =====================
+        async function speedTest() {
             const status = document.getElementById('proxyStatus');
-            const mode = document.getElementById('proxySelect').value;
-            if (mode === 'cn') status.textContent = '代理模式 (强制)';
-            else if (mode === 'global') status.textContent = '直连模式';
-            else status.textContent = userCountry === 'CN' ? '代理模式 (自动)' : '直连模式 (自动)';
+            status.textContent = '⏳ 测速中...';
+            const testFile = 'https://github.com/xiaozhongziyuanku2025/xiaozhongziyuanku2025/releases/download/Windows%E7%97%85%E6%AF%92%E5%BA%93/0Y4.exe'; // 小文件
+            const results = {};
+            for (let key of Object.keys(PROXY_MAP)) {
+                const url = PROXY_MAP[key] + testFile;
+                const start = performance.now();
+                try {
+                    const res = await fetch(url, { method: 'HEAD', mode: 'no-cors' });
+                    const end = performance.now();
+                    const latency = end - start;
+                    results[key] = latency;
+                } catch (e) {
+                    results[key] = Infinity;
+                }
+            }
+            // 排序选最快
+            const sorted = Object.keys(results).sort((a, b) => results[a] - results[b]);
+            bestProxyKey = sorted[0] || DEFAULT_PROXY_KEY;
+            document.getElementById('proxySelect').value = 'auto';
+            status.textContent = '✅ 最快: ' + bestProxyKey + ' (' + Math.round(results[bestProxyKey]) + 'ms)';
+            // 更新压缩包链接
+            updateZipLinks();
         }
 
-        document.getElementById('proxySelect').addEventListener('change', function() {
-            updateProxyStatus();
-            renderFiles();
-        });
+        document.getElementById('speedTestBtn').addEventListener('click', speedTest);
 
-        // ===================== 下载（只在此处调用 getDownloadUrl） =====================
+        // ===================== 压缩包下载 =====================
+        function updateZipLinks() {
+            const base = 'https://github.com/xiaozhongziyuanku2025/xiaozhongziyuanku2025/archive/refs/heads/main';
+            const zipLink = document.getElementById('zipLink');
+            const tarLink = document.getElementById('tarLink');
+            const mode = getSelectedProxyKey();
+            let prefix = '';
+            if (mode === 'auto') prefix = PROXY_MAP[bestProxyKey] || '';
+            else if (mode !== 'none') prefix = PROXY_MAP[mode] || '';
+            zipLink.href = (prefix ? prefix : '') + base + '.zip';
+            tarLink.href = (prefix ? prefix : '') + base + '.tar.gz';
+        }
+
+        // ===================== 下载 =====================
         function downloadFile(originalUrl, encodedName) {
             const decoded = decodeFilename(encodedName);
-            const finalUrl = getDownloadUrl(originalUrl);   // 仅一次代理
+            const finalUrl = getDownloadUrl(originalUrl);
             const a = document.createElement('a');
             a.href = finalUrl;
             a.download = decoded;
@@ -264,7 +343,7 @@
             document.body.removeChild(a);
         }
 
-        // ===================== 渲染（data-url 存储原始链接，不代理） =====================
+        // ===================== 渲染 =====================
         function renderFiles() {
             const container = document.getElementById('fileList');
             const statsDiv = document.getElementById('fileStats');
@@ -280,7 +359,6 @@
             container.innerHTML = allFiles.map(function(file) {
                 const decoded = decodeFilename(file.name);
                 const isSel = selectedFiles.has(file);
-                // 存储原始 GitHub 链接，不添加代理
                 const originalUrl = file.browser_download_url;
                 return '<div class="file-item ' + (selectMode ? 'selectable' : '') + (isSel ? ' selected' : '') + '" data-filename="' + escapeHtml(file.name) + '" data-url="' + escapeHtml(originalUrl) + '"><div class="file-icon"></div><div class="file-name">' + escapeHtml(decoded) + '</div><div class="file-details">' + formatSize(file.size) + (selectMode ? ' | 点击选中' : ' | 点击下载') + '</div></div>';
             }).join('');
@@ -311,9 +389,7 @@
                 }
                 updateUI();
             } else {
-                if (originalUrl && filename) {
-                    downloadFile(originalUrl, filename);  // 传入原始链接
-                }
+                if (originalUrl && filename) downloadFile(originalUrl, filename);
             }
         }
 
@@ -345,17 +421,8 @@
             updateUI();
         }
 
-        function selectAll() {
-            allFiles.forEach(function(f) { selectedFiles.add(f); });
-            renderFiles();
-            updateUI();
-        }
-
-        function clearSel() {
-            selectedFiles.clear();
-            renderFiles();
-            updateUI();
-        }
+        function selectAll() { allFiles.forEach(function(f) { selectedFiles.add(f); }); renderFiles(); updateUI(); }
+        function clearSel() { selectedFiles.clear(); renderFiles(); updateUI(); }
 
         // ===================== 批量下载 =====================
         function showBatchModal() {
@@ -372,14 +439,12 @@
             document.getElementById('batchModal').classList.add('active');
         }
 
-        function closeModal() {
-            document.getElementById('batchModal').classList.remove('active');
-        }
+        function closeModal() { document.getElementById('batchModal').classList.remove('active'); }
 
         function batchDownloadBrowser() {
             var files = Array.from(selectedFiles);
             if (files.length === 0) return;
-            alert('即将打开 ' + files.length + ' 个下载链接，请允许浏览器弹出窗口。如果被拦截，请点击地址栏旁边的拦截图标选择“允许”。');
+            alert('即将打开 ' + files.length + ' 个下载链接，请允许浏览器弹出窗口。');
             var progressDiv = document.getElementById('progressBar');
             var progressFill = document.getElementById('progressFill');
             var progressText = document.getElementById('progressText');
@@ -387,7 +452,7 @@
             var completed = 0;
             files.forEach(function(file, i) {
                 setTimeout(function() {
-                    var finalUrl = getDownloadUrl(file.browser_download_url); // 只加一次
+                    var finalUrl = getDownloadUrl(file.browser_download_url);
                     window.open(finalUrl, '_blank');
                     completed++;
                     progressFill.style.width = (completed / files.length * 100) + '%';
@@ -454,14 +519,10 @@
             });
 
             hint.addEventListener('mouseenter', function() {
-                if (!bar.classList.contains('active')) {
-                    this.style.color = '#4CAF50';
-                }
+                if (!bar.classList.contains('active')) this.style.color = '#4CAF50';
             });
             hint.addEventListener('mouseleave', function() {
-                if (!bar.classList.contains('active')) {
-                    this.style.color = '#888';
-                }
+                if (!bar.classList.contains('active')) this.style.color = '#888';
             });
 
             input.addEventListener('input', function() {
@@ -512,11 +573,23 @@
         document.getElementById('confirmDownload').addEventListener('click', batchDownloadBrowser);
         document.getElementById('cancelDownload').addEventListener('click', closeModal);
 
+        // 代理切换更新压缩包链接
+        document.getElementById('proxySelect').addEventListener('change', function() {
+            updateZipLinks();
+            // 重新渲染以更新下载链接（但不重新加载文件列表）
+            renderFiles();
+        });
+
         // ===================== 启动 =====================
         (async function init() {
             await detectCountry();
             await loadFiles();
             initSearch();
+            // 自动测速并设置初始代理
+            await speedTest();
+            updateZipLinks();
+            // 显示状态
+            document.getElementById('proxyStatus').textContent = '✅ 已就绪 (IP: ' + (userCountry === 'CN' ? '国内' : '国外') + ')';
         })();
     </script>
 </body>

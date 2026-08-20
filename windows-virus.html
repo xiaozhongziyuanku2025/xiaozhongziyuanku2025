@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="css/style.css">
     <style>
-        /* ========== 基础样式 ========== */
+        /* 样式与前文相同，省略（保持原有样式） */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { background: #0f0f1a; color: #e0e0e0; font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; min-height: 100vh; }
         .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
@@ -58,7 +58,6 @@
         .progress-bar { width: 100%; height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; overflow: hidden; margin: 10px 0; }
         .progress-fill { height: 100%; background: #4CAF50; width: 0%; transition: width 0.3s; }
 
-        /* ========== 搜索样式 ========== */
         .search-container { margin: 20px 0; display: flex; justify-content: flex-end; align-items: center; gap: 10px; }
         .search-icon { background: rgba(76,175,80,0.2); border: none; color: #4CAF50; font-size: 18px; padding: 10px 15px; border-radius: 8px; cursor: pointer; }
         .search-bar { display: none; width: 300px; }
@@ -87,7 +86,6 @@
 <body>
     <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
-    <!-- 批量下载弹窗 -->
     <div class="batch-modal" id="batchModal">
         <div class="batch-modal-content">
             <h3 style="color:#4CAF50; margin-bottom:15px"><i class="fas fa-download"></i> 批量下载</h3>
@@ -100,7 +98,6 @@
         </div>
     </div>
 
-    <!-- 下载进度 -->
     <div class="download-progress" id="progressBar">
         <div class="progress-title"><i class="fas fa-download"></i> 下载进度</div>
         <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
@@ -136,7 +133,6 @@
                     <span style="color:#4CAF50">Windows病毒库</span>
                 </div>
 
-                <!-- 代理切换 -->
                 <div class="proxy-toggle">
                     <label><i class="fas fa-globe"></i> 加速模式：</label>
                     <select id="proxySelect">
@@ -147,7 +143,6 @@
                     <span id="proxyStatus" style="font-size:12px; color:#aaa;">自动</span>
                 </div>
 
-                <!-- 批量操作 -->
                 <div class="batch-controls">
                     <button class="batch-btn" id="selectModeBtn"><i class="fas fa-check-square"></i> 多选模式</button>
                     <button class="batch-btn warning" id="downloadSelectedBtn" style="display:none"><i class="fas fa-download"></i> 下载选中 (<span id="selectedCount">0</span>)</button>
@@ -161,7 +156,6 @@
                     </div>
                 </div>
 
-                <!-- ========== 搜索栏 ========== -->
                 <div class="search-container">
                     <span id="searchHint" style="color:#888; font-size:14px; cursor:default;" title="点击右侧放大镜展开搜索">点击图标搜索</span>
                     <button class="search-icon" id="searchToggle"><i class="fas fa-search"></i></button>
@@ -184,7 +178,6 @@
     <script>
         // ===================== 配置 =====================
         const PROXY_PREFIX = 'https://gh-proxy.org/';
-
         let userCountry = 'OTHER';
         let allFiles = [];
         let selectedFiles = new Set();
@@ -236,11 +229,11 @@
             updateProxyStatus();
         }
 
-        // ===================== 代理拼接 =====================
+        // ===================== 核心：代理拼接（只在此处添加一次） =====================
         function getDownloadUrl(originalUrl) {
             const mode = document.getElementById('proxySelect').value;
             if (mode === 'cn' || (mode === 'auto' && userCountry === 'CN')) {
-                return PROXY_PREFIX + originalUrl;   // 正确拼接：代理域名 + 原始链接
+                return PROXY_PREFIX + originalUrl;
             }
             return originalUrl;
         }
@@ -258,10 +251,10 @@
             renderFiles();
         });
 
-        // ===================== 下载 =====================
-        function downloadFile(url, encodedName) {
+        // ===================== 下载（只在此处调用 getDownloadUrl） =====================
+        function downloadFile(originalUrl, encodedName) {
             const decoded = decodeFilename(encodedName);
-            const finalUrl = getDownloadUrl(url);
+            const finalUrl = getDownloadUrl(originalUrl);   // 仅一次代理
             const a = document.createElement('a');
             a.href = finalUrl;
             a.download = decoded;
@@ -271,7 +264,7 @@
             document.body.removeChild(a);
         }
 
-        // ===================== 渲染 =====================
+        // ===================== 渲染（data-url 存储原始链接，不代理） =====================
         function renderFiles() {
             const container = document.getElementById('fileList');
             const statsDiv = document.getElementById('fileStats');
@@ -287,8 +280,9 @@
             container.innerHTML = allFiles.map(function(file) {
                 const decoded = decodeFilename(file.name);
                 const isSel = selectedFiles.has(file);
-                const url = getDownloadUrl(file.browser_download_url);
-                return '<div class="file-item ' + (selectMode ? 'selectable' : '') + (isSel ? ' selected' : '') + '" data-filename="' + escapeHtml(file.name) + '" data-url="' + escapeHtml(url) + '"><div class="file-icon"></div><div class="file-name">' + escapeHtml(decoded) + '</div><div class="file-details">' + formatSize(file.size) + (selectMode ? ' | 点击选中' : ' | 点击下载') + '</div></div>';
+                // 存储原始 GitHub 链接，不添加代理
+                const originalUrl = file.browser_download_url;
+                return '<div class="file-item ' + (selectMode ? 'selectable' : '') + (isSel ? ' selected' : '') + '" data-filename="' + escapeHtml(file.name) + '" data-url="' + escapeHtml(originalUrl) + '"><div class="file-icon"></div><div class="file-name">' + escapeHtml(decoded) + '</div><div class="file-details">' + formatSize(file.size) + (selectMode ? ' | 点击选中' : ' | 点击下载') + '</div></div>';
             }).join('');
 
             bindEvents();
@@ -303,7 +297,7 @@
 
         function handleClick(e) {
             var item = e.currentTarget;
-            var url = item.dataset.url;
+            var originalUrl = item.dataset.url;
             var filename = item.dataset.filename;
 
             if (selectMode) {
@@ -317,7 +311,9 @@
                 }
                 updateUI();
             } else {
-                if (url && filename) downloadFile(url, filename);
+                if (originalUrl && filename) {
+                    downloadFile(originalUrl, filename);  // 传入原始链接
+                }
             }
         }
 
@@ -391,8 +387,8 @@
             var completed = 0;
             files.forEach(function(file, i) {
                 setTimeout(function() {
-                    var url = getDownloadUrl(file.browser_download_url);
-                    window.open(url, '_blank');
+                    var finalUrl = getDownloadUrl(file.browser_download_url); // 只加一次
+                    window.open(finalUrl, '_blank');
                     completed++;
                     progressFill.style.width = (completed / files.length * 100) + '%';
                     progressText.innerText = '已打开 ' + completed + '/' + files.length + ' 个下载';
@@ -444,7 +440,6 @@
             var mainList = document.getElementById('fileList');
             var hint = document.getElementById('searchHint');
 
-            // 点击搜索图标切换搜索框
             toggle.addEventListener('click', function() {
                 bar.classList.toggle('active');
                 if (bar.classList.contains('active')) {
@@ -458,7 +453,6 @@
                 }
             });
 
-            // 鼠标悬停提示
             hint.addEventListener('mouseenter', function() {
                 if (!bar.classList.contains('active')) {
                     this.style.color = '#4CAF50';
@@ -470,7 +464,6 @@
                 }
             });
 
-            // 实时搜索
             input.addEventListener('input', function() {
                 var kw = this.value.toLowerCase().trim();
                 if (!kw) {
@@ -485,8 +478,8 @@
                 });
                 if (matched.length) {
                     list.innerHTML = matched.map(function(f) {
-                        var url = getDownloadUrl(f.browser_download_url);
-                        return '<div class="file-item" onclick="downloadFile(\'' + f.browser_download_url + '\', \'' + f.name + '\')"><div class="file-icon"></div><div class="file-name">' + escapeHtml(decodeFilename(f.name)) + '</div><div class="file-details">' + formatSize(f.size) + ' | 点击下载</div></div>';
+                        var originalUrl = f.browser_download_url;
+                        return '<div class="file-item" onclick="downloadFile(\'' + originalUrl + '\', \'' + f.name + '\')"><div class="file-icon"></div><div class="file-name">' + escapeHtml(decodeFilename(f.name)) + '</div><div class="file-details">' + formatSize(f.size) + ' | 点击下载</div></div>';
                     }).join('');
                 } else {
                     list.innerHTML = '<div style="text-align:center;padding:40px">😔 没有找到相关文件</div>';

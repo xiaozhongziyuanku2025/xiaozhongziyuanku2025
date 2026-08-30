@@ -1,26 +1,34 @@
-name: 每日更新缓存
+name: Update Cache
 
 on:
   schedule:
-    - cron: '0 16 * * *'
+    - cron: '0 16 * * *'  # 每天 UTC 16:00
   workflow_dispatch:
 
 jobs:
   update:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
     steps:
       - uses: actions/checkout@v4
-      - name: 获取 Release 数据
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Fetch release data
         run: |
-          curl -H "Accept: application/vnd.github.v3+json" \
-               "https://api.github.com/repos/${{ github.repository }}/releases/tags/Windows病毒库" \
-               > release-cache.json
-      - name: 提交并推送
+          RELEASE_URL=$(curl -s https://api.github.com/repos/${{ github.repository }}/releases/latest | jq -r .assets_url)
+          curl -s $RELEASE_URL > assets.json
+          cat assets.json | jq 'map({name: .name, size: .size, browser_download_url: .browser_download_url})' > release-cache.json
+
+      - name: Generate search index
+        run: node scripts/generate-search-index.js
+
+      - name: Commit and push
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add release-cache.json
-          git diff --staged --quiet || git commit -m "自动更新缓存 $(date '+%Y-%m-%d')"
+          git add release-cache.json search-index.json
+          git commit -m "Update cache and search index [skip ci]" || exit 0
           git push

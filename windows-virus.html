@@ -9,10 +9,7 @@
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice"><defs><radialGradient id="g" cx="50%" cy="50%" r="70%"><stop offset="0%" stop-color="%230a0a1a"/><stop offset="100%" stop-color="%23000000"/></radialGradient></defs><rect width="100" height="100" fill="url(%23g)"/><circle cx="20" cy="20" r="1.5" fill="%234CAF50" opacity="0.3"/><circle cx="80" cy="40" r="2" fill="%234CAF50" opacity="0.2"/><circle cx="50" cy="80" r="1.8" fill="%234CAF50" opacity="0.25"/><circle cx="10" cy="70" r="1" fill="%234CAF50" opacity="0.2"/><circle cx="90" cy="85" r="1.2" fill="%234CAF50" opacity="0.15"/><circle cx="35" cy="45" r="0.8" fill="%238BC34A" opacity="0.3"/><circle cx="65" cy="15" r="1.3" fill="%238BC34A" opacity="0.2"/><circle cx="75" cy="65" r="1" fill="%234CAF50" opacity="0.2"/></svg>');
-            background-size: cover;
-            background-position: center;
-            background-attachment: fixed;
+            /* 背景由 css/style.css 控制，不在此处覆盖 */
             color: #e0e0e0;
             font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
             min-height: 100vh;
@@ -88,7 +85,6 @@
         .zip-btn { background: rgba(255,152,0,0.2); border: 1px solid #ff9800; color: #ff9800; padding: 8px 16px; border-radius: 6px; cursor: pointer; transition: 0.3s; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; font-size: 14px; }
         .zip-btn:hover { background: rgba(255,152,0,0.4); }
 
-        /* 提示条 - 新增 */
         .proxy-tip { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: #1e1e2e; color: #e0e0e0; padding: 12px 28px; border-radius: 10px; font-size: 14px; z-index: 9999; box-shadow: 0 4px 24px rgba(0,0,0,0.6); border: 1px solid rgba(76,175,80,0.3); animation: slideUp 0.4s ease; display: flex; align-items: center; gap: 12px; max-width: 90%; }
         .proxy-tip .tip-icon { font-size: 20px; }
         .proxy-tip .tip-close { cursor: pointer; opacity: 0.6; padding: 0 6px; font-size: 18px; }
@@ -111,7 +107,6 @@
 <body>
     <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
-    <!-- 批量下载弹窗 -->
     <div class="batch-modal" id="batchModal">
         <div class="batch-modal-content">
             <h3 style="color:#4CAF50; margin-bottom:15px"><i class="fas fa-download"></i> 批量下载</h3>
@@ -124,7 +119,6 @@
         </div>
     </div>
 
-    <!-- 下载进度 -->
     <div class="download-progress" id="progressBar">
         <div class="progress-title"><i class="fas fa-download"></i> 下载进度</div>
         <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
@@ -160,7 +154,6 @@
                     <span style="color:#4CAF50">Windows病毒库</span>
                 </div>
 
-                <!-- 代理控制 -->
                 <div class="proxy-toggle">
                     <label><i class="fas fa-globe"></i> 加速模式：</label>
                     <select id="proxySelect">
@@ -175,7 +168,6 @@
                     <span class="proxy-status" id="proxyStatus">⏳ 检测中...</span>
                 </div>
 
-                <!-- 压缩包下载 -->
                 <div class="zip-buttons">
                     <span style="color:#aaa;">源码包：</span>
                     <a class="zip-btn" id="zipLink" href="#" target="_blank"><i class="fas fa-file-archive"></i> .zip</a>
@@ -195,7 +187,6 @@
                     </div>
                 </div>
 
-                <!-- 搜索栏 -->
                 <div class="search-container">
                     <span id="searchHint" style="color:#888; font-size:14px; cursor:default;" title="点击右侧放大镜展开搜索">点击图标搜索</span>
                     <button class="search-icon" id="searchToggle"><i class="fas fa-search"></i></button>
@@ -217,11 +208,10 @@
 
     <script>
         // ================================================================
-        //  修复版 JavaScript
-        //  改动：IP检测（并行+超时+缓存）+ 真实测速 + 提示条
+        //  修复版 JavaScript - 完整保留所有功能
+        //  修复内容：IP检测（并行+超时+缓存）+ 真实测速 + 提示条
         // ================================================================
 
-        // ===================== 配置 =====================
         const PROXY_MAP = {
             'gh-proxy.org': 'https://gh-proxy.org/',
             'ghproxy.net': 'https://ghproxy.net/',
@@ -238,7 +228,6 @@
         let bestProxyKey = DEFAULT_PROXY_KEY;
         let isProxyAuto = true;
 
-        // ===================== 解码 =====================
         function decodeFilename(encoded) {
             if (!encoded) return encoded;
             try {
@@ -267,9 +256,6 @@
             });
         }
 
-        // ================================================================
-        //  IP 检测（并行 + 超时 + 缓存）
-        // ================================================================
         async function detectCountry() {
             const cached = sessionStorage.getItem('userCountry');
             if (cached) {
@@ -322,9 +308,6 @@
             return 'OTHER';
         }
 
-        // ================================================================
-        //  真实测速
-        // ================================================================
         async function speedTest() {
             const statusEl = document.getElementById('proxyStatus');
             statusEl.textContent = '⏳ 测速中...';
@@ -380,9 +363,6 @@
             console.log('🏆 测速完成，最快:', bestProxyKey, latency + 'ms');
         }
 
-        // ================================================================
-        //  提示条
-        // ================================================================
         function showProxyTip(msg, isError = false) {
             const existing = document.querySelector('.proxy-tip');
             if (existing) existing.remove();
@@ -400,9 +380,6 @@
             setTimeout(() => { if (tip.parentNode) tip.remove(); }, 8000);
         }
 
-        // ================================================================
-        //  代理逻辑
-        // ================================================================
         function getSelectedProxyKey() {
             return document.getElementById('proxySelect').value;
         }
@@ -420,9 +397,6 @@
             return prefix ? prefix + originalUrl : originalUrl;
         }
 
-        // ================================================================
-        //  压缩包下载
-        // ================================================================
         function updateZipLinks() {
             const base = 'https://github.com/xiaozhongziyuanku2025/xiaozhongziyuanku2025/archive/refs/heads/main';
             const zipLink = document.getElementById('zipLink');
@@ -432,9 +406,6 @@
             tarLink.href = (prefix ? prefix : '') + base + '.tar.gz';
         }
 
-        // ================================================================
-        //  下载
-        // ================================================================
         function downloadFile(originalUrl, encodedName) {
             const decoded = decodeFilename(encodedName);
             const finalUrl = getDownloadUrl(originalUrl);
@@ -447,9 +418,6 @@
             document.body.removeChild(a);
         }
 
-        // ================================================================
-        //  渲染
-        // ================================================================
         function renderFiles() {
             const container = document.getElementById('fileList');
             const statsDiv = document.getElementById('fileStats');
@@ -499,9 +467,6 @@
             }
         }
 
-        // ================================================================
-        //  多选 UI
-        // ================================================================
         function updateUI() {
             var count = selectedFiles.size;
             document.getElementById('selectedCounter').innerText = count;
@@ -532,9 +497,6 @@
         function selectAll() { allFiles.forEach(function(f) { selectedFiles.add(f); }); renderFiles(); updateUI(); }
         function clearSel() { selectedFiles.clear(); renderFiles(); updateUI(); }
 
-        // ================================================================
-        //  批量下载
-        // ================================================================
         function showBatchModal() {
             if (selectedFiles.size === 0) return;
             document.getElementById('modalSelectedCount').innerText = selectedFiles.size;
@@ -575,9 +537,6 @@
             closeModal();
         }
 
-        // ================================================================
-        //  加载文件
-        // ================================================================
         async function loadFiles() {
             var container = document.getElementById('fileList');
             try {
@@ -607,9 +566,6 @@
             }
         }
 
-        // ================================================================
-        //  搜索
-        // ================================================================
         function initSearch() {
             var toggle = document.getElementById('searchToggle');
             var bar = document.getElementById('searchBar');
@@ -662,9 +618,6 @@
             });
         }
 
-        // ================================================================
-        //  导航和菜单
-        // ================================================================
         document.getElementById('navToggle').addEventListener('click', function() {
             var sidebar = document.getElementById('sidebar');
             var overlay = document.getElementById('sidebarOverlay');
@@ -680,9 +633,6 @@
         document.getElementById('backButton').addEventListener('click', function() { history.back(); });
         document.getElementById('forwardButton').addEventListener('click', function() { history.forward(); });
 
-        // ================================================================
-        //  按钮绑定
-        // ================================================================
         document.getElementById('selectModeBtn').addEventListener('click', enterSelectMode);
         document.getElementById('exitSelectModeBtn').addEventListener('click', exitSelectMode);
         document.getElementById('selectAllBtn').addEventListener('click', selectAll);
@@ -712,9 +662,6 @@
             speedTest();
         });
 
-        // ================================================================
-        //  🚀 启动
-        // ================================================================
         (async function init() {
             const statusEl = document.getElementById('proxyStatus');
             statusEl.textContent = '⏳ 检测IP...';

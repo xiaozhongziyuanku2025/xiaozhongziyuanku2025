@@ -6,6 +6,110 @@
     <title>小众资源库文件夹 - 小众资源库</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="css/style.css">
+    
+    <style>
+        /* 面包屑样式统一 */
+        .breadcrumb {
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            background: rgba(20, 20, 30, 0.7);
+            padding: 12px 20px;
+            border-radius: 8px;
+            border: 1px solid rgba(76, 175, 80, 0.3);
+        }
+        
+        .breadcrumb-item {
+            color: #4CAF50;
+            margin-right: 8px;
+            cursor: pointer;
+        }
+        
+        .breadcrumb-item a {
+            color: #4CAF50;
+            text-decoration: none;
+            padding: 4px 8px;
+            border-radius: 4px;
+            transition: all 0.3s;
+        }
+        
+        .breadcrumb-item a:hover {
+            background: rgba(76, 175, 80, 0.2);
+            text-decoration: underline;
+        }
+        
+        .breadcrumb-item.active a {
+            color: #fff;
+            cursor: default;
+        }
+        
+        .breadcrumb-item.active a:hover {
+            background: none;
+            text-decoration: none;
+        }
+        
+        .breadcrumb-separator {
+            color: #aaa;
+            margin: 0 8px;
+        }
+        
+        /* 搜索容器样式 */
+        .search-container {
+            margin: 20px 0;
+            display: flex;
+            justify-content: flex-end;
+        }
+        
+        .search-icon {
+            background: rgba(76, 175, 80, 0.2);
+            border: none;
+            color: #4CAF50;
+            font-size: 18px;
+            padding: 10px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .search-icon:hover {
+            background: rgba(76, 175, 80, 0.4);
+        }
+        
+        .search-bar {
+            display: none;
+            width: 300px;
+            margin-left: 10px;
+            position: relative;
+        }
+        
+        .search-bar.active {
+            display: block;
+        }
+        
+        .search-input {
+            width: 100%;
+            padding: 10px 15px;
+            border: 1px solid rgba(76, 175, 80, 0.5);
+            border-radius: 8px;
+            background: rgba(20, 20, 30, 0.9);
+            color: #fff;
+            font-size: 16px;
+        }
+        
+        .search-input::placeholder {
+            color: #aaa;
+        }
+        
+        .search-results {
+            margin-top: 20px;
+            display: none;
+        }
+        
+        .search-results.active {
+            display: block;
+        }
+    </style>
 </head>
 <body>
     <div class="sidebar-overlay" id="sidebarOverlay"></div>
@@ -13,48 +117,74 @@
     <div class="container">
         <header>
             <div class="header-controls">
-                <button class="nav-toggle" id="navToggle"><i class="fas fa-bars"></i></button>
-                <button class="back-button" id="backButton"><i class="fas fa-arrow-left"></i></button>
-                <button class="forward-button" id="forwardButton"><i class="fas fa-arrow-right"></i></button>
+                <button class="nav-toggle" id="navToggle">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <button class="back-button" id="backButton">
+                    <i class="fas fa-arrow-left"></i>
+                </button>
+                <button class="forward-button" id="forwardButton">
+                    <i class="fas fa-arrow-right"></i>
+                </button>
             </div>
             <h1 class="site-title">小众资源库</h1>
         </header>
-
+        
         <div class="main-content">
             <div class="sidebar" id="sidebar">
                 <ul class="nav-menu">
-                    <li class="nav-item"><a href="index.html" class="nav-link"><i class="fas fa-user"></i> 关于作者</a></li>
-                    <li class="nav-item"><a href="resources.html" class="nav-link"><i class="fas fa-folder"></i> 资源库</a></li>
-                    <li class="nav-item"><a href="mailto:cn.2345.com@outlook.com" class="nav-link"><i class="fas fa-envelope"></i> 联系作者</a></li>
+                    <li class="nav-item">
+                        <a href="index.html" class="nav-link">
+                            <i class="fas fa-user"></i> 关于作者
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="resources.html" class="nav-link">
+                            <i class="fas fa-folder"></i> 资源库
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="mailto:cn.2345.com@outlook.com" class="nav-link">
+                            <i class="fas fa-envelope"></i> 联系作者
+                        </a>
+                    </li>
                 </ul>
             </div>
-
+            
             <div class="content-area">
                 <h2>小众资源库</h2>
-
-                <!-- 面包屑 -->
+                
                 <div class="breadcrumb">
-                    <span class="breadcrumb-item"><a href="index.html">首页</a></span>
+                    <div class="breadcrumb-item">
+                        <a href="index.html">首页</a>
+                    </div>
                     <span class="breadcrumb-separator">></span>
-                    <span class="breadcrumb-item"><a href="resources.html">资源库</a></span>
+                    
+                    <div class="breadcrumb-item">
+                        <a href="resources.html">资源库</a>
+                    </div>
                     <span class="breadcrumb-separator">></span>
-                    <span class="breadcrumb-item active"><a href="#">小众资源库</a></span>
-                </div>
-
-                <!-- 搜索框 -->
-                <div class="search-container">
-                    <span class="search-hint" id="searchHint">点击图标搜索</span>
-                    <button class="search-icon" id="searchToggle"><i class="fas fa-search"></i></button>
-                    <div class="search-bar" id="searchBar">
-                        <input type="text" class="search-input" id="searchInput" placeholder="搜索文件或文件夹...">
+                    
+                    <div class="breadcrumb-item active">
+                        <a href="#">小众资源库</a>
                     </div>
                 </div>
-
+                
+                <!-- 搜索功能 -->
+                <div class="search-container">
+                    <button class="search-icon" id="searchToggle">
+                        <i class="fas fa-search"></i>
+                    </button>
+                    <div class="search-bar" id="searchBar">
+                        <input type="text" class="search-input" placeholder="搜索文件或文件夹..." id="searchInput">
+                    </div>
+                </div>
+                
                 <div class="search-results" id="searchResults">
                     <h3>搜索结果</h3>
                     <div class="file-list" id="resultsList"></div>
                 </div>
-
+                
                 <div class="folder-content active">
                     <div class="folder-container">
                         <a href="windows-virus.html" class="folder-link">

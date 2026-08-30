@@ -7,256 +7,84 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="css/style.css">
     <style>
-        /* ===== 页面特有样式 ===== */
-        .file-stats {
-            background: rgba(20,20,30,0.7);
-            padding: 15px;
-            border-radius: 8px;
-            margin: 20px 0;
-            border: 1px solid rgba(76,175,80,0.3);
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #0f0f1a; color: #e0e0e0; font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; min-height: 100vh; }
+        .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
+        header { display: flex; justify-content: space-between; align-items: center; padding: 15px 0; border-bottom: 1px solid rgba(76,175,80,0.3); margin-bottom: 25px; flex-wrap: wrap; gap: 15px; }
+        .site-title { font-size: 1.8rem; background: linear-gradient(135deg, #4CAF50, #8BC34A); -webkit-background-clip: text; background-clip: text; color: transparent; }
+        .header-controls { display: flex; gap: 10px; }
+        .nav-toggle, .back-button, .forward-button { background: rgba(76,175,80,0.2); border: none; color: #4CAF50; padding: 10px 15px; border-radius: 8px; cursor: pointer; font-size: 18px; }
+        .main-content { display: flex; gap: 25px; flex-wrap: wrap; }
+        .sidebar { width: 250px; background: rgba(20,20,30,0.6); border-radius: 12px; padding: 20px; backdrop-filter: blur(10px); }
+        .sidebar-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 999; }
+        .sidebar-overlay.active { display: block; }
+        .nav-menu { list-style: none; }
+        .nav-item { margin-bottom: 15px; }
+        .nav-link { color: #e0e0e0; text-decoration: none; display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 8px; transition: all 0.3s; }
+        .nav-link:hover, .nav-link.active { background: rgba(76,175,80,0.2); color: #4CAF50; }
+        .content-area { flex: 1; min-width: 280px; background: rgba(20,20,30,0.4); border-radius: 12px; padding: 20px; }
+        .breadcrumb { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; padding: 12px 0; margin-bottom: 20px; border-bottom: 1px solid rgba(76,175,80,0.3); }
+        .breadcrumb a { color: #4CAF50; text-decoration: none; }
+        .breadcrumb a:hover { text-decoration: underline; }
+        .breadcrumb-separator { color: #aaa; }
+        .file-stats { background: rgba(20,20,30,0.7); padding: 15px; border-radius: 8px; margin: 20px 0; border: 1px solid rgba(76,175,80,0.3); }
 
-        .batch-controls {
-            display: flex;
-            gap: 10px;
-            margin: 20px 0;
-            flex-wrap: wrap;
-            align-items: center;
-        }
+        .file-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 15px; margin-top: 20px; }
+        .file-item { background: rgba(30,30,40,0.8); border-radius: 10px; padding: 15px; transition: all 0.3s; cursor: pointer; border: 2px solid transparent; position: relative; }
+        .file-item:hover { transform: translateY(-3px); background: rgba(40,40,50,0.9); }
+        .file-item.selected { border-color: #4CAF50; background: rgba(76,175,80,0.15); }
+        .file-item.selected::after { content: "✓"; position: absolute; top: 10px; right: 10px; width: 24px; height: 24px; background: #4CAF50; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 14px; }
+        .file-icon { width: 60px; height: 60px; margin: 0 auto 10px; background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23667eea"><path d="M6 2c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6H6z"/></svg>') no-repeat center; background-size: contain; }
+        .file-name { font-size: 16px; font-weight: 600; word-break: break-all; margin-bottom: 8px; }
+        .file-details { font-size: 12px; color: #aaa; }
+        .loading, .error { text-align: center; padding: 60px; font-size: 18px; }
 
-        .batch-btn {
-            padding: 12px 20px;
-            border: none;
-            border-radius: 8px;
-            background: linear-gradient(135deg, #4CAF50, #2E7D32);
-            color: white;
-            cursor: pointer;
-            font-size: 16px;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            font-weight: 600;
-            transition: 0.3s;
-        }
+        .batch-controls { display: flex; gap: 10px; margin: 20px 0; flex-wrap: wrap; align-items: center; }
+        .batch-btn { padding: 12px 20px; border: none; border-radius: 8px; background: linear-gradient(135deg, #4CAF50, #2E7D32); color: white; cursor: pointer; font-size: 16px; display: inline-flex; align-items: center; gap: 8px; font-weight: 600; transition: 0.3s; }
+        .batch-btn:hover { transform: translateY(-2px); opacity: 0.9; }
+        .batch-btn.warning { background: linear-gradient(135deg, #ff9800, #f57c00); }
+        .batch-btn.danger { background: linear-gradient(135deg, #f44336, #d32f2f); }
+        .batch-toolbar { display: none; background: rgba(76,175,80,0.15); padding: 15px; border-radius: 10px; margin: 15px 0; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
+        .batch-toolbar.active { display: flex; }
 
-        .batch-btn:hover {
-            transform: translateY(-2px);
-            opacity: 0.9;
-        }
+        .batch-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 2000; align-items: center; justify-content: center; }
+        .batch-modal.active { display: flex; }
+        .batch-modal-content { background: #1e1e2e; border-radius: 15px; padding: 25px; max-width: 500px; width: 90%; border: 2px solid #4CAF50; max-height: 90vh; overflow-y: auto; }
+        .selected-list { max-height: 200px; overflow-y: auto; background: rgba(20,20,30,0.7); border-radius: 8px; padding: 10px; margin: 15px 0; }
+        .selected-item { padding: 8px; margin-bottom: 5px; background: rgba(255,255,255,0.05); border-radius: 6px; border-left: 3px solid #4CAF50; }
+        .download-progress { display: none; position: fixed; bottom: 20px; right: 20px; background: #1e1e2e; border: 2px solid #4CAF50; border-radius: 10px; padding: 15px; z-index: 1000; min-width: 250px; }
+        .download-progress.active { display: block; }
+        .progress-bar { width: 100%; height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; overflow: hidden; margin: 10px 0; }
+        .progress-fill { height: 100%; background: #4CAF50; width: 0%; transition: width 0.3s; }
 
-        .batch-btn.warning {
-            background: linear-gradient(135deg, #ff9800, #f57c00);
-        }
+        .search-container { margin: 20px 0; display: flex; justify-content: flex-end; align-items: center; gap: 10px; }
+        .search-icon { background: rgba(76,175,80,0.2); border: none; color: #4CAF50; font-size: 18px; padding: 10px 15px; border-radius: 8px; cursor: pointer; }
+        .search-bar { display: none; width: 300px; }
+        .search-bar.active { display: block; }
+        .search-input { width: 100%; padding: 10px 15px; border: 1px solid rgba(76,175,80,0.5); border-radius: 8px; background: rgba(20,20,30,0.9); color: #fff; }
+        .search-input:focus { outline: none; border-color: #4CAF50; }
+        .search-hint { font-size: 12px; color: #888; margin-top: 4px; }
+        .search-results { margin-top: 20px; display: none; }
+        .search-results.active { display: block; }
 
-        .batch-btn.danger {
-            background: linear-gradient(135deg, #f44336, #d32f2f);
-        }
+        .proxy-toggle { display: flex; align-items: center; gap: 10px; margin: 10px 0; padding: 8px 15px; background: rgba(20,20,30,0.7); border-radius: 8px; flex-wrap: wrap; }
+        .proxy-toggle label { color: #aaa; font-size: 14px; }
+        .proxy-toggle select, .proxy-toggle button { background: rgba(0,0,0,0.4); border: 1px solid #4CAF50; color: #fff; padding: 4px 10px; border-radius: 4px; cursor: pointer; }
+        .proxy-toggle button:hover { background: #4CAF50; }
+        .proxy-status { font-size: 12px; color: #aaa; margin-left: 10px; }
 
-        .batch-toolbar {
-            display: none;
-            background: rgba(76,175,80,0.15);
-            padding: 15px;
-            border-radius: 10px;
-            margin: 15px 0;
-            justify-content: space-between;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-
-        .batch-toolbar.active {
-            display: flex;
-        }
-
-        .batch-modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.9);
-            z-index: 2000;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .batch-modal.active {
-            display: flex;
-        }
-
-        .batch-modal-content {
-            background: #1e1e2e;
-            border-radius: 15px;
-            padding: 25px;
-            max-width: 500px;
-            width: 90%;
-            border: 2px solid #4CAF50;
-            max-height: 90vh;
-            overflow-y: auto;
-        }
-
-        .selected-list {
-            max-height: 200px;
-            overflow-y: auto;
-            background: rgba(20,20,30,0.7);
-            border-radius: 8px;
-            padding: 10px;
-            margin: 15px 0;
-        }
-
-        .selected-item {
-            padding: 8px;
-            margin-bottom: 5px;
-            background: rgba(255,255,255,0.05);
-            border-radius: 6px;
-            border-left: 3px solid #4CAF50;
-        }
-
-        .download-progress {
-            display: none;
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background: #1e1e2e;
-            border: 2px solid #4CAF50;
-            border-radius: 10px;
-            padding: 15px;
-            z-index: 1000;
-            min-width: 250px;
-        }
-
-        .download-progress.active {
-            display: block;
-        }
-
-        .progress-bar {
-            width: 100%;
-            height: 6px;
-            background: rgba(255,255,255,0.1);
-            border-radius: 3px;
-            overflow: hidden;
-            margin: 10px 0;
-        }
-
-        .progress-fill {
-            height: 100%;
-            background: #4CAF50;
-            width: 0%;
-            transition: width 0.3s;
-        }
-
-        .proxy-toggle {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin: 10px 0;
-            padding: 8px 15px;
-            background: rgba(20,20,30,0.7);
-            border-radius: 8px;
-            flex-wrap: wrap;
-        }
-
-        .proxy-toggle label {
-            color: #aaa;
-            font-size: 14px;
-        }
-
-        .proxy-toggle select, .proxy-toggle button {
-            background: rgba(0,0,0,0.4);
-            border: 1px solid #4CAF50;
-            color: #fff;
-            padding: 4px 10px;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-
-        .proxy-toggle button:hover {
-            background: #4CAF50;
-        }
-
-        .proxy-status {
-            font-size: 12px;
-            color: #aaa;
-            margin-left: 10px;
-        }
-
-        .proxy-status.success {
-            color: #4CAF50;
-        }
-
-        .proxy-status.error {
-            color: #f44336;
-        }
-
-        .proxy-status.loading {
-            color: #ff9800;
-        }
-
-        .zip-buttons {
-            display: flex;
-            gap: 10px;
-            margin: 10px 0;
-            flex-wrap: wrap;
-            align-items: center;
-        }
-
-        .zip-btn {
-            background: rgba(255,152,0,0.2);
-            border: 1px solid #ff9800;
-            color: #ff9800;
-            padding: 8px 16px;
-            border-radius: 6px;
-            cursor: pointer;
-            transition: 0.3s;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            font-size: 14px;
-        }
-
-        .zip-btn:hover {
-            background: rgba(255,152,0,0.4);
-        }
-
-        /* 多选模式 */
-        .file-item.selectable {
-            cursor: pointer;
-        }
-
-        .file-item.selected::after {
-            content: "✓";
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            width: 24px;
-            height: 24px;
-            background: #4CAF50;
-            color: white;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            font-size: 14px;
-        }
+        .zip-buttons { display: flex; gap: 10px; margin: 10px 0; flex-wrap: wrap; align-items: center; }
+        .zip-btn { background: rgba(255,152,0,0.2); border: 1px solid #ff9800; color: #ff9800; padding: 8px 16px; border-radius: 6px; cursor: pointer; transition: 0.3s; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; font-size: 14px; }
+        .zip-btn:hover { background: rgba(255,152,0,0.4); }
 
         @media (max-width: 768px) {
-            .batch-controls {
-                flex-direction: column;
-            }
-            .batch-btn {
-                width: 100%;
-                justify-content: center;
-            }
-            .file-list {
-                grid-template-columns: 1fr;
-            }
-            .proxy-tip {
-                bottom: 15px;
-                padding: 10px 16px;
-                font-size: 13px;
-            }
+            .sidebar { display: none; position: fixed; top: 0; left: 0; height: 100%; width: 280px; background: rgba(20,20,30,0.95); z-index: 1000; padding: 20px; overflow-y: auto; }
+            .sidebar.active { display: block; }
+            .file-list { grid-template-columns: 1fr; }
+            .batch-controls { flex-direction: column; }
+            .batch-btn { width: 100%; justify-content: center; }
+            .search-bar { width: 100%; }
+            .search-container { flex-wrap: wrap; }
         }
     </style>
 </head>
@@ -304,30 +132,24 @@
 
             <div class="content-area">
                 <h2>Windows病毒库</h2>
-
-                <!-- 面包屑 - 统一格式 -->
-                <div class="breadcrumb">
-                    <span class="breadcrumb-item"><a href="index.html">首页</a></span>
-                    <span class="breadcrumb-separator">></span>
-                    <span class="breadcrumb-item"><a href="resources.html">资源库</a></span>
-                    <span class="breadcrumb-separator">></span>
-                    <span class="breadcrumb-item"><a href="main-resources.html">小众资源库</a></span>
-                    <span class="breadcrumb-separator">></span>
-                    <span class="breadcrumb-item active"><a href="#">Windows病毒库</a></span>
-                </div>
-
                 <div class="file-stats" id="fileStats">正在加载...</div>
+                <div class="breadcrumb">
+                    <a href="index.html">首页</a><span class="breadcrumb-separator">></span>
+                    <a href="resources.html">资源库</a><span class="breadcrumb-separator">></span>
+                    <a href="main-resources.html">小众资源库</a><span class="breadcrumb-separator">></span>
+                    <span style="color:#4CAF50">Windows病毒库</span>
+                </div>
 
                 <!-- 代理控制 -->
                 <div class="proxy-toggle">
                     <label><i class="fas fa-globe"></i> 加速模式：</label>
                     <select id="proxySelect">
-                        <option value="auto">⚡ 自动 (推荐)</option>
+                        <option value="auto">自动 (最快)</option>
                         <option value="gh-proxy.org">gh-proxy.org</option>
                         <option value="ghproxy.net">ghproxy.net</option>
                         <option value="gh-proxy.com">gh-proxy.com</option>
                         <option value="ghproxy.cc">ghproxy.cc</option>
-                        <option value="none">🌍 直连</option>
+                        <option value="none">直连</option>
                     </select>
                     <button id="speedTestBtn"><i class="fas fa-tachometer-alt"></i> 测速切换</button>
                     <span class="proxy-status" id="proxyStatus">⏳ 检测中...</span>
@@ -344,7 +166,6 @@
                     <button class="batch-btn" id="selectModeBtn"><i class="fas fa-check-square"></i> 多选模式</button>
                     <button class="batch-btn warning" id="downloadSelectedBtn" style="display:none"><i class="fas fa-download"></i> 下载选中 (<span id="selectedCount">0</span>)</button>
                 </div>
-
                 <div class="batch-toolbar" id="batchToolbar">
                     <span>已选择 <strong id="selectedCounter">0</strong> 个文件</span>
                     <div>
@@ -354,15 +175,14 @@
                     </div>
                 </div>
 
-                <!-- 搜索框 -->
+                <!-- 搜索栏 -->
                 <div class="search-container">
-                    <span class="search-hint" id="searchHint">点击图标搜索</span>
+                    <span id="searchHint" style="color:#888; font-size:14px; cursor:default;" title="点击右侧放大镜展开搜索">点击图标搜索</span>
                     <button class="search-icon" id="searchToggle"><i class="fas fa-search"></i></button>
                     <div class="search-bar" id="searchBar">
                         <input type="text" class="search-input" id="searchInput" placeholder="输入文件名关键词...">
                     </div>
                 </div>
-
                 <div class="search-results" id="searchResults">
                     <h3>搜索结果</h3>
                     <div class="file-list" id="resultsList"></div>
@@ -376,11 +196,6 @@
     </div>
 
     <script>
-        // ================================================================
-        //  ██████  windows-virus.html 独立脚本  ██████
-        //  包含：代理检测、文件列表、多选、批量下载、搜索
-        // ================================================================
-
         // ===================== 配置 =====================
         const PROXY_MAP = {
             'gh-proxy.org': 'https://gh-proxy.org/',
@@ -392,41 +207,8 @@
 
         let userCountry = 'OTHER';
         let allFiles = [];
-        let filteredFiles = [];
         let selectedFiles = new Set();
         let selectMode = false;
-        let bestProxyKey = DEFAULT_PROXY_KEY;
-        let isProxyAuto = true;
-
-        // ===================== DOM 引用 =====================
-        const container = document.getElementById('fileList');
-        const searchInput = document.getElementById('searchInput');
-        const searchResults = document.getElementById('searchResults');
-        const resultsList = document.getElementById('resultsList');
-        const searchToggle = document.getElementById('searchToggle');
-        const searchBar = document.getElementById('searchBar');
-        const proxySelect = document.getElementById('proxySelect');
-        const proxyStatus = document.getElementById('proxyStatus');
-        const speedTestBtn = document.getElementById('speedTestBtn');
-        const fileStats = document.getElementById('fileStats');
-        const zipLink = document.getElementById('zipLink');
-        const tarLink = document.getElementById('tarLink');
-        const selectModeBtn = document.getElementById('selectModeBtn');
-        const downloadSelectedBtn = document.getElementById('downloadSelectedBtn');
-        const selectedCount = document.getElementById('selectedCount');
-        const selectedCounter = document.getElementById('selectedCounter');
-        const batchToolbar = document.getElementById('batchToolbar');
-        const selectAllBtn = document.getElementById('selectAllBtn');
-        const clearSelectionBtn = document.getElementById('clearSelectionBtn');
-        const exitSelectModeBtn = document.getElementById('exitSelectModeBtn');
-        const batchModal = document.getElementById('batchModal');
-        const modalSelectedCount = document.getElementById('modalSelectedCount');
-        const modalFileList = document.getElementById('modalFileList');
-        const confirmDownload = document.getElementById('confirmDownload');
-        const cancelDownload = document.getElementById('cancelDownload');
-        const progressBar = document.getElementById('progressBar');
-        const progressFill = document.getElementById('progressFill');
-        const progressText = document.getElementById('progressText');
 
         // ===================== 解码 =====================
         function decodeFilename(encoded) {
@@ -457,205 +239,128 @@
             });
         }
 
-        // ================================================================
-        //  🔥 IP 检测（并行 + 超时 + 缓存）
-        // ================================================================
+        // ===================== IP 检测（多个备用） =====================
         async function detectCountry() {
-            const cached = sessionStorage.getItem('userCountry');
-            if (cached) {
-                userCountry = cached;
-                return cached;
-            }
-
             const apis = [
-                { url: 'https://ipapi.co/json/', parser: (d) => d.country_code || d.country || '' },
-                { url: 'https://ipinfo.io/json', parser: (d) => d.country || '' },
-                { url: 'https://api.ipify.org?format=json', parser: () => '' }
+                'https://ip-api.com/json/',
+                'https://ip-api.org/json/'
             ];
-
-            const fetchWithTimeout = (url, timeout = 3000) => {
-                return Promise.race([
-                    fetch(url),
-                    new Promise((_, reject) => setTimeout(() => reject(new Error('超时')), timeout))
-                ]);
-            };
-
-            const promises = apis.map(async (api) => {
+            for (let api of apis) {
                 try {
-                    const res = await fetchWithTimeout(api.url);
-                    if (!res.ok) return null;
+                    const res = await fetch(api, { timeout: 3000 });
                     const data = await res.json();
-                    const country = api.parser(data);
-                    if (country && country.length === 2) {
-                        return country.toUpperCase();
+                    if (data && data.status === 'success' && data.countryCode) {
+                        userCountry = data.countryCode === 'CN' ? 'CN' : 'OTHER';
+                        console.log('IP检测成功，国家:', data.countryCode);
+                        return;
                     }
-                    return null;
-                } catch {
-                    return null;
-                }
-            });
-
-            const results = await Promise.all(promises);
-            for (let result of results) {
-                if (result) {
-                    userCountry = result;
-                    sessionStorage.setItem('userCountry', result);
-                    return result;
-                }
+                } catch (e) { /* 继续下一个 */ }
             }
-
+            // 检测失败，默认国外（直连）
             userCountry = 'OTHER';
-            sessionStorage.setItem('userCountry', 'OTHER');
-            return 'OTHER';
+            console.log('IP检测失败，默认直连');
         }
 
-        // ================================================================
-        //  🔥 真实测速
-        // ================================================================
-        async function speedTest() {
-            const statusEl = proxyStatus;
-            statusEl.textContent = '⏳ 测速中...';
-            statusEl.className = 'proxy-status loading';
-
-            const testFile = 'https://github.com/xiaozhongziyuanku2025/xiaozhongziyuanku2025/releases/download/Windows%E7%97%85%E6%AF%92%E5%BA%93/0Y4.exe';
-            const proxyKeys = Object.keys(PROXY_MAP);
-            const results = {};
-
-            const testPromises = proxyKeys.map(async (key) => {
-                const url = PROXY_MAP[key] + testFile;
-                const start = performance.now();
-                try {
-                    const controller = new AbortController();
-                    const timeoutId = setTimeout(() => controller.abort(), 5000);
-                    const res = await fetch(url, {
-                        signal: controller.signal,
-                        headers: { 'Range': 'bytes=0-1024' }
-                    });
-                    clearTimeout(timeoutId);
-                    if (!res.ok) { results[key] = Infinity; return; }
-                    const reader = res.body.getReader();
-                    await reader.read();
-                    reader.releaseLock();
-                    results[key] = performance.now() - start;
-                } catch {
-                    results[key] = Infinity;
-                }
-            });
-
-            await Promise.allSettled(testPromises);
-
-            const valid = Object.keys(results).filter(k => results[k] !== Infinity);
-            if (valid.length === 0) {
-                bestProxyKey = DEFAULT_PROXY_KEY;
-                statusEl.textContent = '⚠️ 测速失败，使用默认代理';
-                statusEl.className = 'proxy-status error';
-                return;
-            }
-
-            valid.sort((a, b) => results[a] - results[b]);
-            bestProxyKey = valid[0];
-            const latency = Math.round(results[bestProxyKey]);
-
-            statusEl.textContent = '✅ 最快: ' + bestProxyKey + ' (' + latency + 'ms)';
-            statusEl.className = 'proxy-status success';
-
-            if (isProxyAuto) {
-                proxySelect.value = 'auto';
-                renderFiles();
-                updateZipLinks();
-                showProxyTip('🚀 自动切换到最快代理: ' + bestProxyKey + ' (' + latency + 'ms)');
-            }
+        // ===================== 代理逻辑 =====================
+        function getSelectedProxyKey() {
+            return document.getElementById('proxySelect').value;
         }
 
-        // ================================================================
-        //  提示条
-        // ================================================================
-        function showProxyTip(msg, isError = false) {
-            const existing = document.querySelector('.proxy-tip');
-            if (existing) existing.remove();
-
-            const tip = document.createElement('div');
-            tip.className = 'proxy-tip';
-            tip.innerHTML = `
-                <span class="tip-icon">${isError ? '⚠️' : '✅'}</span>
-                <span>${msg}</span>
-                <span class="tip-close">&times;</span>
-            `;
-            if (isError) tip.style.borderColor = 'rgba(244,67,54,0.5)';
-            document.body.appendChild(tip);
-
-            tip.querySelector('.tip-close').addEventListener('click', function() {
-                tip.remove();
-            });
-
-            setTimeout(() => { if (tip.parentNode) tip.remove(); }, 8000);
-        }
-
-        // ================================================================
-        //  代理逻辑
-        // ================================================================
         function getProxyPrefix(key) {
-            if (key === 'none') return '';
-            if (key === 'auto') return PROXY_MAP[bestProxyKey] || '';
+            if (key === 'none' || key === 'auto') {
+                // auto 将动态选择，这里不处理
+                return '';
+            }
             return PROXY_MAP[key] || '';
         }
 
         function getDownloadUrl(originalUrl) {
-            const mode = proxySelect.value;
-            const prefix = getProxyPrefix(mode);
-            return prefix ? prefix + originalUrl : originalUrl;
+            const mode = getSelectedProxyKey();
+            if (mode === 'none') return originalUrl;
+            if (mode === 'auto') {
+                // 使用当前最快的代理（存储于变量 bestProxyKey）
+                const best = bestProxyKey || DEFAULT_PROXY_KEY;
+                return PROXY_MAP[best] + originalUrl;
+            }
+            // 手动指定
+            return PROXY_MAP[mode] + originalUrl;
         }
 
-        // ================================================================
-        //  压缩包
-        // ================================================================
+        let bestProxyKey = DEFAULT_PROXY_KEY;
+
+        // ===================== 测速 =====================
+        async function speedTest() {
+            const status = document.getElementById('proxyStatus');
+            status.textContent = '⏳ 测速中...';
+            const testFile = 'https://github.com/xiaozhongziyuanku2025/xiaozhongziyuanku2025/releases/download/Windows%E7%97%85%E6%AF%92%E5%BA%93/0Y4.exe'; // 小文件
+            const results = {};
+            for (let key of Object.keys(PROXY_MAP)) {
+                const url = PROXY_MAP[key] + testFile;
+                const start = performance.now();
+                try {
+                    const res = await fetch(url, { method: 'HEAD', mode: 'no-cors' });
+                    const end = performance.now();
+                    const latency = end - start;
+                    results[key] = latency;
+                } catch (e) {
+                    results[key] = Infinity;
+                }
+            }
+            // 排序选最快
+            const sorted = Object.keys(results).sort((a, b) => results[a] - results[b]);
+            bestProxyKey = sorted[0] || DEFAULT_PROXY_KEY;
+            document.getElementById('proxySelect').value = 'auto';
+            status.textContent = '✅ 最快: ' + bestProxyKey + ' (' + Math.round(results[bestProxyKey]) + 'ms)';
+            // 更新压缩包链接
+            updateZipLinks();
+        }
+
+        document.getElementById('speedTestBtn').addEventListener('click', speedTest);
+
+        // ===================== 压缩包下载 =====================
         function updateZipLinks() {
             const base = 'https://github.com/xiaozhongziyuanku2025/xiaozhongziyuanku2025/archive/refs/heads/main';
-            const prefix = getProxyPrefix(proxySelect.value);
+            const zipLink = document.getElementById('zipLink');
+            const tarLink = document.getElementById('tarLink');
+            const mode = getSelectedProxyKey();
+            let prefix = '';
+            if (mode === 'auto') prefix = PROXY_MAP[bestProxyKey] || '';
+            else if (mode !== 'none') prefix = PROXY_MAP[mode] || '';
             zipLink.href = (prefix ? prefix : '') + base + '.zip';
             tarLink.href = (prefix ? prefix : '') + base + '.tar.gz';
         }
 
-        // ================================================================
-        //  下载
-        // ================================================================
+        // ===================== 下载 =====================
         function downloadFile(originalUrl, encodedName) {
+            const decoded = decodeFilename(encodedName);
             const finalUrl = getDownloadUrl(originalUrl);
             const a = document.createElement('a');
             a.href = finalUrl;
+            a.download = decoded;
             a.target = '_blank';
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
         }
 
-        // ================================================================
-        //  渲染文件列表
-        // ================================================================
+        // ===================== 渲染 =====================
         function renderFiles() {
-            const list = filteredFiles.length ? filteredFiles : allFiles;
+            const container = document.getElementById('fileList');
+            const statsDiv = document.getElementById('fileStats');
 
-            if (!list.length) {
+            if (!allFiles.length) {
                 container.innerHTML = '<div class="loading">📁 暂无文件</div>';
-                fileStats.innerHTML = '📁 暂无文件';
+                statsDiv.innerHTML = '📁 暂无文件';
                 return;
             }
 
-            fileStats.innerHTML = '<i class="fas fa-chart-bar"></i> 共 ' + list.length + ' 个文件';
+            statsDiv.innerHTML = '<i class="fas fa-chart-bar"></i> 共 ' + allFiles.length + ' 个文件';
 
-            container.innerHTML = list.map(function(file) {
+            container.innerHTML = allFiles.map(function(file) {
                 const decoded = decodeFilename(file.name);
                 const isSel = selectedFiles.has(file);
                 const originalUrl = file.browser_download_url;
-                return `
-                    <div class="file-item ${selectMode ? 'selectable' : ''} ${isSel ? 'selected' : ''}"
-                         data-filename="${escapeHtml(file.name)}"
-                         data-url="${escapeHtml(originalUrl)}">
-                        <div class="file-icon"></div>
-                        <div class="file-name">${escapeHtml(decoded)}</div>
-                        <div class="file-details">${formatSize(file.size)} ${selectMode ? '| 点击选中' : '| 点击下载'}</div>
-                    </div>
-                `;
+                return '<div class="file-item ' + (selectMode ? 'selectable' : '') + (isSel ? ' selected' : '') + '" data-filename="' + escapeHtml(file.name) + '" data-url="' + escapeHtml(originalUrl) + '"><div class="file-icon"></div><div class="file-name">' + escapeHtml(decoded) + '</div><div class="file-details">' + formatSize(file.size) + (selectMode ? ' | 点击选中' : ' | 点击下载') + '</div></div>';
             }).join('');
 
             bindEvents();
@@ -669,13 +374,12 @@
         }
 
         function handleClick(e) {
-            const item = e.currentTarget;
-            const originalUrl = item.dataset.url;
-            const filename = item.dataset.filename;
+            var item = e.currentTarget;
+            var originalUrl = item.dataset.url;
+            var filename = item.dataset.filename;
 
             if (selectMode) {
-                const file = allFiles.find(function(f) { return f.name === filename; });
-                if (!file) return;
+                var file = allFiles.find(function(f) { return f.name === filename; });
                 if (selectedFiles.has(file)) {
                     selectedFiles.delete(file);
                     item.classList.remove('selected');
@@ -689,20 +393,20 @@
             }
         }
 
-        // ================================================================
-        //  多选 UI
-        // ================================================================
+        // ===================== 多选 UI =====================
         function updateUI() {
-            const count = selectedFiles.size;
-            selectedCounter.innerText = count;
-            selectedCount.innerText = count;
-            downloadSelectedBtn.style.display = count > 0 ? 'flex' : 'none';
+            var count = selectedFiles.size;
+            document.getElementById('selectedCounter').innerText = count;
+            document.getElementById('selectedCount').innerText = count;
+            var btn = document.getElementById('downloadSelectedBtn');
+            if (btn) btn.style.display = count > 0 ? 'flex' : 'none';
         }
 
         function enterSelectMode() {
             selectMode = true;
-            selectModeBtn.style.display = 'none';
-            batchToolbar.classList.add('active');
+            document.body.classList.add('select-mode');
+            document.getElementById('selectModeBtn').style.display = 'none';
+            document.getElementById('batchToolbar').classList.add('active');
             renderFiles();
             updateUI();
         }
@@ -710,84 +414,76 @@
         function exitSelectMode() {
             selectMode = false;
             selectedFiles.clear();
-            selectModeBtn.style.display = 'flex';
-            batchToolbar.classList.remove('active');
+            document.body.classList.remove('select-mode');
+            document.getElementById('selectModeBtn').style.display = 'flex';
+            document.getElementById('batchToolbar').classList.remove('active');
             renderFiles();
             updateUI();
         }
 
-        function selectAll() {
-            const list = filteredFiles.length ? filteredFiles : allFiles;
-            list.forEach(function(f) { selectedFiles.add(f); });
-            renderFiles();
-            updateUI();
-        }
+        function selectAll() { allFiles.forEach(function(f) { selectedFiles.add(f); }); renderFiles(); updateUI(); }
+        function clearSel() { selectedFiles.clear(); renderFiles(); updateUI(); }
 
-        function clearSel() {
-            selectedFiles.clear();
-            renderFiles();
-            updateUI();
-        }
-
-        // ================================================================
-        //  批量下载
-        // ================================================================
+        // ===================== 批量下载 =====================
         function showBatchModal() {
             if (selectedFiles.size === 0) return;
-            modalSelectedCount.innerText = selectedFiles.size;
-            modalFileList.innerHTML = '';
+            document.getElementById('modalSelectedCount').innerText = selectedFiles.size;
+            var list = document.getElementById('modalFileList');
+            list.innerHTML = '';
             selectedFiles.forEach(function(f) {
-                const div = document.createElement('div');
+                var div = document.createElement('div');
                 div.className = 'selected-item';
                 div.innerHTML = '<i class="fas fa-file"></i> ' + escapeHtml(decodeFilename(f.name));
-                modalFileList.appendChild(div);
+                list.appendChild(div);
             });
-            batchModal.classList.add('active');
+            document.getElementById('batchModal').classList.add('active');
         }
 
-        function closeModal() { batchModal.classList.remove('active'); }
+        function closeModal() { document.getElementById('batchModal').classList.remove('active'); }
 
         function batchDownloadBrowser() {
-            const files = Array.from(selectedFiles);
+            var files = Array.from(selectedFiles);
             if (files.length === 0) return;
-            showProxyTip('📥 正在打开 ' + files.length + ' 个下载链接...');
-            progressBar.classList.add('active');
-            let completed = 0;
+            alert('即将打开 ' + files.length + ' 个下载链接，请允许浏览器弹出窗口。');
+            var progressDiv = document.getElementById('progressBar');
+            var progressFill = document.getElementById('progressFill');
+            var progressText = document.getElementById('progressText');
+            progressDiv.classList.add('active');
+            var completed = 0;
             files.forEach(function(file, i) {
                 setTimeout(function() {
-                    window.open(getDownloadUrl(file.browser_download_url), '_blank');
+                    var finalUrl = getDownloadUrl(file.browser_download_url);
+                    window.open(finalUrl, '_blank');
                     completed++;
                     progressFill.style.width = (completed / files.length * 100) + '%';
                     progressText.innerText = '已打开 ' + completed + '/' + files.length + ' 个下载';
                     if (completed === files.length) {
-                        setTimeout(function() { progressBar.classList.remove('active'); }, 2000);
+                        setTimeout(function() { progressDiv.classList.remove('active'); }, 2000);
                     }
                 }, i * 600);
             });
             closeModal();
         }
 
-        // ================================================================
-        //  加载文件
-        // ================================================================
+        // ===================== 加载文件 =====================
         async function loadFiles() {
+            var container = document.getElementById('fileList');
             try {
-                const res = await fetch('release-cache.json?_=' + Date.now());
+                var res = await fetch('release-cache.json?_=' + Date.now());
                 if (res.ok) {
-                    const data = await res.json();
+                    var data = await res.json();
                     if (data.assets && data.assets.length) {
                         allFiles = data.assets;
-                        filteredFiles = [...allFiles];
                         renderFiles();
                         return;
                     }
                 }
-                const apiRes = await fetch('https://api.github.com/repos/xiaozhongziyuanku2025/xiaozhongziyuanku2025/releases/tags/Windows病毒库');
+                console.log('缓存无效，尝试从 API 获取...');
+                var apiRes = await fetch('https://api.github.com/repos/xiaozhongziyuanku2025/xiaozhongziyuanku2025/releases/tags/Windows病毒库');
                 if (apiRes.ok) {
-                    const apiData = await apiRes.json();
+                    var apiData = await apiRes.json();
                     if (apiData.assets && apiData.assets.length) {
                         allFiles = apiData.assets;
-                        filteredFiles = [...allFiles];
                         renderFiles();
                         return;
                     }
@@ -795,62 +491,69 @@
                 throw new Error('无数据');
             } catch(e) {
                 container.innerHTML = '<div class="error">加载失败，请刷新或稍后再试</div>';
-                fileStats.innerHTML = '加载失败';
+                document.getElementById('fileStats').innerHTML = '加载失败';
             }
         }
 
-        // ================================================================
-        //  搜索（本页面独立）
-        // ================================================================
+        // ===================== 搜索 =====================
         function initSearch() {
-            searchToggle.addEventListener('click', function() {
-                searchBar.classList.toggle('active');
-                if (searchBar.classList.contains('active')) {
-                    searchInput.focus();
-                    document.getElementById('searchHint').style.display = 'none';
+            var toggle = document.getElementById('searchToggle');
+            var bar = document.getElementById('searchBar');
+            var input = document.getElementById('searchInput');
+            var results = document.getElementById('searchResults');
+            var list = document.getElementById('resultsList');
+            var mainList = document.getElementById('fileList');
+            var hint = document.getElementById('searchHint');
+
+            toggle.addEventListener('click', function() {
+                bar.classList.toggle('active');
+                if (bar.classList.contains('active')) {
+                    input.focus();
+                    hint.style.display = 'none';
                 } else {
-                    searchInput.value = '';
-                    searchResults.classList.remove('active');
-                    document.getElementById('searchHint').style.display = 'inline';
+                    input.value = '';
+                    results.classList.remove('active');
+                    mainList.style.display = 'grid';
+                    hint.style.display = 'inline';
                 }
             });
 
-            searchInput.addEventListener('input', function() {
-                const kw = this.value.trim().toLowerCase();
+            hint.addEventListener('mouseenter', function() {
+                if (!bar.classList.contains('active')) this.style.color = '#4CAF50';
+            });
+            hint.addEventListener('mouseleave', function() {
+                if (!bar.classList.contains('active')) this.style.color = '#888';
+            });
+
+            input.addEventListener('input', function() {
+                var kw = this.value.toLowerCase().trim();
                 if (!kw) {
-                    searchResults.classList.remove('active');
-                    container.style.display = 'grid';
+                    results.classList.remove('active');
+                    mainList.style.display = 'grid';
                     return;
                 }
-                container.style.display = 'none';
-                const matched = allFiles.filter(function(f) {
+                mainList.style.display = 'none';
+                results.classList.add('active');
+                var matched = allFiles.filter(function(f) {
                     return decodeFilename(f.name).toLowerCase().includes(kw);
                 });
                 if (matched.length) {
-                    resultsList.innerHTML = matched.map(function(f) {
-                        const originalUrl = f.browser_download_url;
-                        return `
-                            <div class="file-item" onclick="downloadFile('${originalUrl}', '${f.name}')">
-                                <div class="file-icon"></div>
-                                <div class="file-name">${escapeHtml(decodeFilename(f.name))}</div>
-                                <div class="file-details">${formatSize(f.size)} | 点击下载</div>
-                            </div>
-                        `;
+                    list.innerHTML = matched.map(function(f) {
+                        var originalUrl = f.browser_download_url;
+                        return '<div class="file-item" onclick="downloadFile(\'' + originalUrl + '\', \'' + f.name + '\')"><div class="file-icon"></div><div class="file-name">' + escapeHtml(decodeFilename(f.name)) + '</div><div class="file-details">' + formatSize(f.size) + ' | 点击下载</div></div>';
                     }).join('');
-                    searchResults.classList.add('active');
                 } else {
-                    resultsList.innerHTML = '<div style="text-align:center;padding:40px">😔 没有找到相关文件</div>';
-                    searchResults.classList.add('active');
+                    list.innerHTML = '<div style="text-align:center;padding:40px">😔 没有找到相关文件</div>';
                 }
             });
         }
 
-        // ================================================================
-        //  导航
-        // ================================================================
+        // ===================== 导航和菜单 =====================
         document.getElementById('navToggle').addEventListener('click', function() {
-            document.getElementById('sidebar').classList.toggle('active');
-            document.getElementById('sidebarOverlay').classList.toggle('active');
+            var sidebar = document.getElementById('sidebar');
+            var overlay = document.getElementById('sidebarOverlay');
+            sidebar.classList.toggle('active');
+            overlay.classList.toggle('active');
         });
 
         document.getElementById('sidebarOverlay').addEventListener('click', function() {
@@ -861,72 +564,32 @@
         document.getElementById('backButton').addEventListener('click', function() { history.back(); });
         document.getElementById('forwardButton').addEventListener('click', function() { history.forward(); });
 
-        // ================================================================
-        //  按钮绑定
-        // ================================================================
-        selectModeBtn.addEventListener('click', enterSelectMode);
-        exitSelectModeBtn.addEventListener('click', exitSelectMode);
-        selectAllBtn.addEventListener('click', selectAll);
-        clearSelectionBtn.addEventListener('click', clearSel);
-        downloadSelectedBtn.addEventListener('click', showBatchModal);
-        confirmDownload.addEventListener('click', batchDownloadBrowser);
-        cancelDownload.addEventListener('click', closeModal);
+        // ===================== 按钮绑定 =====================
+        document.getElementById('selectModeBtn').addEventListener('click', enterSelectMode);
+        document.getElementById('exitSelectModeBtn').addEventListener('click', exitSelectMode);
+        document.getElementById('selectAllBtn').addEventListener('click', selectAll);
+        document.getElementById('clearSelectionBtn').addEventListener('click', clearSel);
+        document.getElementById('downloadSelectedBtn').addEventListener('click', showBatchModal);
+        document.getElementById('confirmDownload').addEventListener('click', batchDownloadBrowser);
+        document.getElementById('cancelDownload').addEventListener('click', closeModal);
 
-        // 代理切换
-        proxySelect.addEventListener('change', function() {
-            const val = this.value;
-            isProxyAuto = (val === 'auto');
-            if (val === 'auto') {
-                proxyStatus.textContent = '🤖 自动模式 (使用 ' + bestProxyKey + ')';
-                proxyStatus.className = 'proxy-status success';
-            } else if (val === 'none') {
-                proxyStatus.textContent = '🌍 直连模式';
-                proxyStatus.className = 'proxy-status';
-            } else {
-                proxyStatus.textContent = '🔗 手动: ' + val;
-                proxyStatus.className = 'proxy-status';
-            }
+        // 代理切换更新压缩包链接
+        document.getElementById('proxySelect').addEventListener('change', function() {
             updateZipLinks();
+            // 重新渲染以更新下载链接（但不重新加载文件列表）
             renderFiles();
         });
 
-        speedTestBtn.addEventListener('click', speedTest);
-
-        // ================================================================
-        //  🚀 启动
-        // ================================================================
+        // ===================== 启动 =====================
         (async function init() {
-            proxyStatus.textContent = '⏳ 检测IP...';
-            proxyStatus.className = 'proxy-status loading';
-
-            const country = await detectCountry();
-            if (country === 'CN') {
-                proxyStatus.textContent = '🇨🇳 国内用户';
-                showProxyTip('🇨🇳 检测到您在中国，将自动选择国内加速代理');
-            } else if (country === 'OTHER' && sessionStorage.getItem('userCountry') === 'OTHER') {
-                proxyStatus.textContent = '🌍 国外 / 检测失败';
-                proxyStatus.className = 'proxy-status error';
-                showProxyTip('⚠️ IP检测失败，已切换至直连模式', true);
-            } else {
-                proxyStatus.textContent = '🌍 国外用户';
-                showProxyTip('🌍 检测到您在境外，已切换至直连模式');
-            }
-
+            await detectCountry();
             await loadFiles();
             initSearch();
-
-            proxyStatus.textContent = '⏳ 测速中...';
-            proxyStatus.className = 'proxy-status loading';
+            // 自动测速并设置初始代理
             await speedTest();
-
             updateZipLinks();
-
-            if (proxySelect.value === 'auto') {
-                proxyStatus.textContent = '🤖 自动 (' + bestProxyKey + ')';
-                proxyStatus.className = 'proxy-status success';
-            }
-
-            console.log('✅ 初始化完成');
+            // 显示状态
+            document.getElementById('proxyStatus').textContent = '✅ 已就绪 (IP: ' + (userCountry === 'CN' ? '国内' : '国外') + ')';
         })();
     </script>
 </body>

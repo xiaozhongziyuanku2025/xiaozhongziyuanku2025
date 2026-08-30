@@ -257,7 +257,7 @@ header {
     display: block;
 }
 
-/* ===== 文件列表（用于页面内的 grid） ===== */
+/* ===== 文件列表 ===== */
 .file-list {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -291,6 +291,16 @@ header {
     margin: 0 auto 10px;
     background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23667eea"><path d="M6 2c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6H6z"/></svg>') no-repeat center;
     background-size: contain;
+}
+
+/* ===== 搜索结果显示 ===== */
+.search-result {
+    transition: all 0.3s;
+}
+
+.search-result:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
 /* ===== 文件夹展示 ===== */
@@ -461,4 +471,60 @@ header {
         width: 95%;
         padding: 20px;
     }
+}
+
+/* ===== 提示条 (windows-virus.html 使用) ===== */
+.proxy-tip {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #1e1e2e;
+    color: #e0e0e0;
+    padding: 12px 28px;
+    border-radius: 10px;
+    font-size: 14px;
+    z-index: 9999;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.6);
+    border: 1px solid rgba(76, 175, 80, 0.3);
+    animation: slideUp 0.4s ease;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    max-width: 90%;
+}
+
+.proxy-tip .tip-icon {
+    font-size: 20px;
+}
+
+.proxy-tip .tip-close {
+    cursor: pointer;
+    opacity: 0.6;
+    padding: 0 6px;
+    font-size: 18px;
+}
+
+.proxy-tip .tip-close:hover {
+    opacity: 1;
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateX(-50%) translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
+}
+
+@keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+}
+
+.proxy-status.loading {
+    animation: blink 1s infinite;
 }

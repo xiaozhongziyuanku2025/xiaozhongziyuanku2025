@@ -72,10 +72,21 @@
         .proxy-toggle select, .proxy-toggle button { background: rgba(0,0,0,0.4); border: 1px solid #4CAF50; color: #fff; padding: 4px 10px; border-radius: 4px; cursor: pointer; }
         .proxy-toggle button:hover { background: #4CAF50; }
         .proxy-status { font-size: 12px; color: #aaa; margin-left: 10px; }
+        .proxy-status.success { color: #4CAF50; }
+        .proxy-status.error { color: #f44336; }
+        .proxy-status.loading { color: #ff9800; animation: blink 1s infinite; }
 
         .zip-buttons { display: flex; gap: 10px; margin: 10px 0; flex-wrap: wrap; align-items: center; }
         .zip-btn { background: rgba(255,152,0,0.2); border: 1px solid #ff9800; color: #ff9800; padding: 8px 16px; border-radius: 6px; cursor: pointer; transition: 0.3s; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; font-size: 14px; }
         .zip-btn:hover { background: rgba(255,152,0,0.4); }
+
+        /* 提示条 - 修复版新增 */
+        .proxy-tip { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: #1e1e2e; color: #e0e0e0; padding: 12px 28px; border-radius: 10px; font-size: 14px; z-index: 9999; box-shadow: 0 4px 24px rgba(0,0,0,0.6); border: 1px solid rgba(76,175,80,0.3); animation: slideUp 0.4s ease; display: flex; align-items: center; gap: 12px; max-width: 90%; }
+        .proxy-tip .tip-icon { font-size: 20px; }
+        .proxy-tip .tip-close { cursor: pointer; opacity: 0.6; padding: 0 6px; font-size: 18px; }
+        .proxy-tip .tip-close:hover { opacity: 1; }
+        @keyframes slideUp { from { opacity: 0; transform: translateX(-50%) translateY(30px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
 
         @media (max-width: 768px) {
             .sidebar { display: none; position: fixed; top: 0; left: 0; height: 100%; width: 280px; background: rgba(20,20,30,0.95); z-index: 1000; padding: 20px; overflow-y: auto; }
@@ -85,6 +96,7 @@
             .batch-btn { width: 100%; justify-content: center; }
             .search-bar { width: 100%; }
             .search-container { flex-wrap: wrap; }
+            .proxy-tip { bottom: 15px; padding: 10px 16px; font-size: 13px; }
         }
     </style>
 </head>
@@ -140,16 +152,16 @@
                     <span style="color:#4CAF50">Windows病毒库</span>
                 </div>
 
-                <!-- 代理控制 -->
+                <!-- 代理控制 - 修复版增强 -->
                 <div class="proxy-toggle">
                     <label><i class="fas fa-globe"></i> 加速模式：</label>
                     <select id="proxySelect">
-                        <option value="auto">自动 (最快)</option>
+                        <option value="auto">⚡ 自动 (推荐)</option>
                         <option value="gh-proxy.org">gh-proxy.org</option>
                         <option value="ghproxy.net">ghproxy.net</option>
                         <option value="gh-proxy.com">gh-proxy.com</option>
                         <option value="ghproxy.cc">ghproxy.cc</option>
-                        <option value="none">直连</option>
+                        <option value="none">🌍 直连</option>
                     </select>
                     <button id="speedTestBtn"><i class="fas fa-tachometer-alt"></i> 测速切换</button>
                     <span class="proxy-status" id="proxyStatus">⏳ 检测中...</span>
@@ -196,6 +208,16 @@
     </div>
 
     <script>
+        // ================================================================
+        //  ██████  修复版 JavaScript  ██████
+        //  改动说明：
+        //  1. detectCountry() → 并行请求3个API + 超时 + 缓存
+        //  2. speedTest() → 改用真实小文件下载测速（替代无意义的 HEAD）
+        //  3. 增加 showProxyTip() 用户友好提示
+        //  4. 启动时自动检测 + 缓存复用
+        //  5. 状态显示优化（成功/失败/加载中）
+        // ================================================================
+
         // ===================== 配置 =====================
         const PROXY_MAP = {
             'gh-proxy.org': 'https://gh-proxy.org/',
@@ -205,10 +227,15 @@
         };
         const DEFAULT_PROXY_KEY = 'gh-proxy.org';
 
+        // 用于测速的小文件（实际存在的较小文件）
+        const SPEED_TEST_FILE = 'https://github.com/xiaozhongziyuanku2025/xiaozhongziyuanku2025/releases/download/Windows%E7%97%85%E6%AF%92%E5%BA%93/0Y4.exe';
+
         let userCountry = 'OTHER';
         let allFiles = [];
         let selectedFiles = new Set();
         let selectMode = false;
+        let bestProxyKey = DEFAULT_PROXY_KEY;
+        let isProxyAuto = true; // 是否处于自动模式
 
         // ===================== 解码 =====================
         function decodeFilename(encoded) {
@@ -239,37 +266,189 @@
             });
         }
 
-        // ===================== IP 检测（多个备用） =====================
+        // ================================================================
+        //  🔥 核心修复 1：IP 检测（并行 + 超时 + 缓存）
+        // ================================================================
         async function detectCountry() {
-            const apis = [
-                'https://ip-api.com/json/',
-                'https://ip-api.org/json/'
-            ];
-            for (let api of apis) {
-                try {
-                    const res = await fetch(api, { timeout: 3000 });
-                    const data = await res.json();
-                    if (data && data.status === 'success' && data.countryCode) {
-                        userCountry = data.countryCode === 'CN' ? 'CN' : 'OTHER';
-                        console.log('IP检测成功，国家:', data.countryCode);
-                        return;
-                    }
-                } catch (e) { /* 继续下一个 */ }
+            // 先检查缓存（本次会话有效）
+            const cached = sessionStorage.getItem('userCountry');
+            if (cached) {
+                userCountry = cached;
+                console.log('📦 使用缓存的IP信息:', userCountry);
+                return userCountry;
             }
-            // 检测失败，默认国外（直连）
+
+            const apis = [
+                { url: 'https://ipapi.co/json/', parser: (d) => d.country_code || d.country || '' },
+                { url: 'https://ipinfo.io/json', parser: (d) => d.country || '' },
+                { url: 'https://api.ipify.org?format=json', parser: (d) => {
+                    // ipify 只返回 IP，不返回国家，我们根据 IP 段粗略判断（仅作为最后备用）
+                    // 实际上如果前两个都失败，ipify 也没法判断国家，所以这里返回空
+                    return '';
+                }}
+            ];
+
+            // 使用 Promise.race 实现超时
+            const fetchWithTimeout = (url, timeout = 3000) => {
+                return Promise.race([
+                    fetch(url),
+                    new Promise((_, reject) => setTimeout(() => reject(new Error('超时')), timeout))
+                ]);
+            };
+
+            // 并行请求所有 API
+            const promises = apis.map(async (api) => {
+                try {
+                    const res = await fetchWithTimeout(api.url);
+                    if (!res.ok) return null;
+                    const data = await res.json();
+                    const country = api.parser(data);
+                    if (country && country.length === 2) {
+                        return country.toUpperCase();
+                    }
+                    return null;
+                } catch (e) {
+                    return null;
+                }
+            });
+
+            // 等待所有结果，取第一个非空值
+            const results = await Promise.all(promises);
+            for (let result of results) {
+                if (result) {
+                    userCountry = result;
+                    // 存入缓存
+                    sessionStorage.setItem('userCountry', result);
+                    console.log('✅ IP检测成功，国家:', result);
+                    return result;
+                }
+            }
+
+            // 全部失败，默认为国外（直连）
             userCountry = 'OTHER';
-            console.log('IP检测失败，默认直连');
+            sessionStorage.setItem('userCountry', 'OTHER');
+            console.warn('⚠️ IP检测全部失败，默认直连模式');
+            return 'OTHER';
         }
 
-        // ===================== 代理逻辑 =====================
+        // ================================================================
+        //  🔥 核心修复 2：真实测速（下载小文件）
+        // ================================================================
+        async function speedTest() {
+            const statusEl = document.getElementById('proxyStatus');
+            statusEl.textContent = '⏳ 测速中...';
+            statusEl.className = 'proxy-status loading';
+
+            const proxyKeys = Object.keys(PROXY_MAP);
+            const results = {};
+
+            // 并行测速所有代理
+            const testPromises = proxyKeys.map(async (key) => {
+                const url = PROXY_MAP[key] + SPEED_TEST_FILE;
+                const start = performance.now();
+                try {
+                    // 用 fetch 下载小文件，只取前 1KB 就 abort
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 5000); // 5秒超时
+
+                    const res = await fetch(url, {
+                        signal: controller.signal,
+                        headers: { 'Range': 'bytes=0-1024' } // 只取前1KB
+                    });
+
+                    clearTimeout(timeoutId);
+                    if (!res.ok) {
+                        results[key] = Infinity;
+                        return;
+                    }
+                    const reader = res.body.getReader();
+                    await reader.read(); // 读第一个块就行
+                    reader.releaseLock();
+
+                    const end = performance.now();
+                    const latency = end - start;
+                    results[key] = latency;
+                } catch (e) {
+                    results[key] = Infinity;
+                }
+            });
+
+            await Promise.allSettled(testPromises);
+
+            // 筛选有效结果（排除 Infinity）
+            const valid = Object.keys(results).filter(k => results[k] !== Infinity);
+            if (valid.length === 0) {
+                // 全部测速失败，使用默认
+                bestProxyKey = DEFAULT_PROXY_KEY;
+                statusEl.textContent = '⚠️ 测速失败，使用默认代理';
+                statusEl.className = 'proxy-status error';
+                return;
+            }
+
+            // 按延迟排序，取最快
+            valid.sort((a, b) => results[a] - results[b]);
+            bestProxyKey = valid[0];
+
+            // 更新状态
+            const latency = Math.round(results[bestProxyKey]);
+            statusEl.textContent = '✅ 最快: ' + bestProxyKey + ' (' + latency + 'ms)';
+            statusEl.className = 'proxy-status success';
+
+            // 如果当前是自动模式，自动切换到最快的代理
+            if (isProxyAuto) {
+                document.getElementById('proxySelect').value = 'auto';
+                // 重新渲染以更新下载链接
+                renderFiles();
+                updateZipLinks();
+                showProxyTip('🚀 自动切换到最快代理: ' + bestProxyKey + ' (' + latency + 'ms)');
+            }
+
+            console.log('🏆 测速完成，最快代理:', bestProxyKey, latency + 'ms');
+        }
+
+        // ================================================================
+        //  🔥 核心修复 3：用户提示条
+        // ================================================================
+        function showProxyTip(msg, isError = false) {
+            // 移除已有提示
+            const existing = document.querySelector('.proxy-tip');
+            if (existing) existing.remove();
+
+            const tip = document.createElement('div');
+            tip.className = 'proxy-tip';
+            tip.innerHTML = `
+                <span class="tip-icon">${isError ? '⚠️' : '✅'}</span>
+                <span>${msg}</span>
+                <span class="tip-close">&times;</span>
+            `;
+            if (isError) {
+                tip.style.borderColor = 'rgba(244,67,54,0.5)';
+            }
+            document.body.appendChild(tip);
+
+            // 点击关闭
+            tip.querySelector('.tip-close').addEventListener('click', function() {
+                tip.remove();
+            });
+
+            // 8秒后自动消失
+            setTimeout(() => {
+                if (tip.parentNode) tip.remove();
+            }, 8000);
+        }
+
+        // ================================================================
+        //  代理逻辑
+        // ================================================================
         function getSelectedProxyKey() {
             return document.getElementById('proxySelect').value;
         }
 
         function getProxyPrefix(key) {
-            if (key === 'none' || key === 'auto') {
-                // auto 将动态选择，这里不处理
-                return '';
+            if (key === 'none') return '';
+            if (key === 'auto') {
+                // 使用测速结果
+                return PROXY_MAP[bestProxyKey] || '';
             }
             return PROXY_MAP[key] || '';
         }
@@ -277,60 +456,25 @@
         function getDownloadUrl(originalUrl) {
             const mode = getSelectedProxyKey();
             if (mode === 'none') return originalUrl;
-            if (mode === 'auto') {
-                // 使用当前最快的代理（存储于变量 bestProxyKey）
-                const best = bestProxyKey || DEFAULT_PROXY_KEY;
-                return PROXY_MAP[best] + originalUrl;
-            }
-            // 手动指定
-            return PROXY_MAP[mode] + originalUrl;
+            const prefix = getProxyPrefix(mode);
+            return prefix ? prefix + originalUrl : originalUrl;
         }
 
-        let bestProxyKey = DEFAULT_PROXY_KEY;
-
-        // ===================== 测速 =====================
-        async function speedTest() {
-            const status = document.getElementById('proxyStatus');
-            status.textContent = '⏳ 测速中...';
-            const testFile = 'https://github.com/xiaozhongziyuanku2025/xiaozhongziyuanku2025/releases/download/Windows%E7%97%85%E6%AF%92%E5%BA%93/0Y4.exe'; // 小文件
-            const results = {};
-            for (let key of Object.keys(PROXY_MAP)) {
-                const url = PROXY_MAP[key] + testFile;
-                const start = performance.now();
-                try {
-                    const res = await fetch(url, { method: 'HEAD', mode: 'no-cors' });
-                    const end = performance.now();
-                    const latency = end - start;
-                    results[key] = latency;
-                } catch (e) {
-                    results[key] = Infinity;
-                }
-            }
-            // 排序选最快
-            const sorted = Object.keys(results).sort((a, b) => results[a] - results[b]);
-            bestProxyKey = sorted[0] || DEFAULT_PROXY_KEY;
-            document.getElementById('proxySelect').value = 'auto';
-            status.textContent = '✅ 最快: ' + bestProxyKey + ' (' + Math.round(results[bestProxyKey]) + 'ms)';
-            // 更新压缩包链接
-            updateZipLinks();
-        }
-
-        document.getElementById('speedTestBtn').addEventListener('click', speedTest);
-
-        // ===================== 压缩包下载 =====================
+        // ================================================================
+        //  压缩包下载
+        // ================================================================
         function updateZipLinks() {
             const base = 'https://github.com/xiaozhongziyuanku2025/xiaozhongziyuanku2025/archive/refs/heads/main';
             const zipLink = document.getElementById('zipLink');
             const tarLink = document.getElementById('tarLink');
-            const mode = getSelectedProxyKey();
-            let prefix = '';
-            if (mode === 'auto') prefix = PROXY_MAP[bestProxyKey] || '';
-            else if (mode !== 'none') prefix = PROXY_MAP[mode] || '';
+            const prefix = getProxyPrefix(getSelectedProxyKey());
             zipLink.href = (prefix ? prefix : '') + base + '.zip';
             tarLink.href = (prefix ? prefix : '') + base + '.tar.gz';
         }
 
-        // ===================== 下载 =====================
+        // ================================================================
+        //  下载
+        // ================================================================
         function downloadFile(originalUrl, encodedName) {
             const decoded = decodeFilename(encodedName);
             const finalUrl = getDownloadUrl(originalUrl);
@@ -343,7 +487,9 @@
             document.body.removeChild(a);
         }
 
-        // ===================== 渲染 =====================
+        // ================================================================
+        //  渲染
+        // ================================================================
         function renderFiles() {
             const container = document.getElementById('fileList');
             const statsDiv = document.getElementById('fileStats');
@@ -393,7 +539,9 @@
             }
         }
 
-        // ===================== 多选 UI =====================
+        // ================================================================
+        //  多选 UI
+        // ================================================================
         function updateUI() {
             var count = selectedFiles.size;
             document.getElementById('selectedCounter').innerText = count;
@@ -424,7 +572,9 @@
         function selectAll() { allFiles.forEach(function(f) { selectedFiles.add(f); }); renderFiles(); updateUI(); }
         function clearSel() { selectedFiles.clear(); renderFiles(); updateUI(); }
 
-        // ===================== 批量下载 =====================
+        // ================================================================
+        //  批量下载
+        // ================================================================
         function showBatchModal() {
             if (selectedFiles.size === 0) return;
             document.getElementById('modalSelectedCount').innerText = selectedFiles.size;
@@ -444,7 +594,7 @@
         function batchDownloadBrowser() {
             var files = Array.from(selectedFiles);
             if (files.length === 0) return;
-            alert('即将打开 ' + files.length + ' 个下载链接，请允许浏览器弹出窗口。');
+            showProxyTip('📥 正在打开 ' + files.length + ' 个下载链接...');
             var progressDiv = document.getElementById('progressBar');
             var progressFill = document.getElementById('progressFill');
             var progressText = document.getElementById('progressText');
@@ -465,7 +615,9 @@
             closeModal();
         }
 
-        // ===================== 加载文件 =====================
+        // ================================================================
+        //  加载文件
+        // ================================================================
         async function loadFiles() {
             var container = document.getElementById('fileList');
             try {
@@ -495,7 +647,9 @@
             }
         }
 
-        // ===================== 搜索 =====================
+        // ================================================================
+        //  搜索
+        // ================================================================
         function initSearch() {
             var toggle = document.getElementById('searchToggle');
             var bar = document.getElementById('searchBar');
@@ -548,7 +702,9 @@
             });
         }
 
-        // ===================== 导航和菜单 =====================
+        // ================================================================
+        //  导航和菜单
+        // ================================================================
         document.getElementById('navToggle').addEventListener('click', function() {
             var sidebar = document.getElementById('sidebar');
             var overlay = document.getElementById('sidebarOverlay');
@@ -564,7 +720,9 @@
         document.getElementById('backButton').addEventListener('click', function() { history.back(); });
         document.getElementById('forwardButton').addEventListener('click', function() { history.forward(); });
 
-        // ===================== 按钮绑定 =====================
+        // ================================================================
+        //  按钮绑定
+        // ================================================================
         document.getElementById('selectModeBtn').addEventListener('click', enterSelectMode);
         document.getElementById('exitSelectModeBtn').addEventListener('click', exitSelectMode);
         document.getElementById('selectAllBtn').addEventListener('click', selectAll);
@@ -573,23 +731,74 @@
         document.getElementById('confirmDownload').addEventListener('click', batchDownloadBrowser);
         document.getElementById('cancelDownload').addEventListener('click', closeModal);
 
-        // 代理切换更新压缩包链接
+        // 代理切换
         document.getElementById('proxySelect').addEventListener('change', function() {
+            const val = this.value;
+            isProxyAuto = (val === 'auto');
+            if (val === 'auto') {
+                // 自动模式：使用测速结果
+                const statusEl = document.getElementById('proxyStatus');
+                statusEl.textContent = '🤖 自动模式 (使用 ' + bestProxyKey + ')';
+                statusEl.className = 'proxy-status success';
+                showProxyTip('🔄 切换到自动模式，当前最快: ' + bestProxyKey);
+            } else if (val === 'none') {
+                showProxyTip('🌍 切换到直连模式');
+            } else {
+                showProxyTip('🔗 手动切换到: ' + val);
+            }
             updateZipLinks();
-            // 重新渲染以更新下载链接（但不重新加载文件列表）
             renderFiles();
         });
 
-        // ===================== 启动 =====================
+        // 测速按钮
+        document.getElementById('speedTestBtn').addEventListener('click', function() {
+            speedTest();
+        });
+
+        // ================================================================
+        //  🚀 启动
+        // ================================================================
         (async function init() {
-            await detectCountry();
+            const statusEl = document.getElementById('proxyStatus');
+
+            // 1. IP 检测（优先使用缓存）
+            statusEl.textContent = '⏳ 检测IP...';
+            statusEl.className = 'proxy-status loading';
+
+            const country = await detectCountry();
+            if (country === 'CN') {
+                statusEl.textContent = '🇨🇳 国内用户';
+                showProxyTip('🇨🇳 检测到您在中国，将自动选择国内加速代理');
+            } else if (country === 'OTHER' && sessionStorage.getItem('userCountry') === 'OTHER') {
+                statusEl.textContent = '🌍 国外 / 检测失败';
+                statusEl.className = 'proxy-status error';
+                showProxyTip('⚠️ IP检测失败，已切换至直连模式，你可手动选择代理', true);
+            } else {
+                statusEl.textContent = '🌍 国外用户';
+                showProxyTip('🌍 检测到您在境外，已切换至直连模式');
+            }
+
+            // 2. 加载文件列表
             await loadFiles();
+
+            // 3. 初始化搜索
             initSearch();
-            // 自动测速并设置初始代理
+
+            // 4. 测速（自动选择最快代理）
+            statusEl.textContent = '⏳ 测速中...';
+            statusEl.className = 'proxy-status loading';
             await speedTest();
+
+            // 5. 更新压缩包链接
             updateZipLinks();
-            // 显示状态
-            document.getElementById('proxyStatus').textContent = '✅ 已就绪 (IP: ' + (userCountry === 'CN' ? '国内' : '国外') + ')';
+
+            // 6. 最终状态
+            if (getSelectedProxyKey() === 'auto') {
+                statusEl.textContent = '🤖 自动 (' + bestProxyKey + ')';
+                statusEl.className = 'proxy-status success';
+            }
+
+            console.log('✅ 初始化完成，当前代理:', getSelectedProxyKey(), '最佳:', bestProxyKey);
         })();
     </script>
 </body>

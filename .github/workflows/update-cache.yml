@@ -12,7 +12,7 @@ jobs:
       contents: write
     steps:
       - name: 检出仓库
-        uses: actions/checkout@v5   # v4 → v5，消除 Node.js 20 警告
+        uses: actions/checkout@v5
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
@@ -25,8 +25,10 @@ jobs:
             [.[] | select(.tag_name | startswith("Windows病毒库"))] as $releases |
             $releases | map(
               .tag_name as $tag |
+              # 解析子路径：去掉 "Windows病毒库" 前缀，按 "-" 分割
               ($tag | sub("^Windows病毒库"; "") | sub("^-"; "") | split("-") | join("/")) as $subpath |
-              ($subpath | if . == "" then "Windows病毒库" else "Windows病毒库/" + . end) as $path |
+              # 如果子路径为空，则设为 ""（根目录），否则直接使用子路径（不再加前缀）
+              ($subpath | if . == "" then "" else . end) as $path |
               .assets[] |
               {
                 name: .name,

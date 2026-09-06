@@ -152,6 +152,7 @@
 <body>
     <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
+    <!-- 批量下载弹窗 -->
     <div class="batch-modal" id="batchModal">
         <div class="batch-modal-content">
             <h3 style="color:#4CAF50; margin-bottom:15px"><i class="fas fa-download"></i> 批量下载</h3>
@@ -164,6 +165,7 @@
         </div>
     </div>
 
+    <!-- 下载进度 -->
     <div class="download-progress" id="progressBar">
         <div class="progress-title"><i class="fas fa-download"></i> 下载进度</div>
         <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
@@ -265,7 +267,7 @@
 
     <script>
         // ================================================================
-        //  完整版：层级目录 + 正确IP检测 + 国家判断
+        //  完整版：层级目录 + 正确IP检测 + 国家判断 + 下载解码
         // ================================================================
 
         const PROXY_MAP = {
@@ -451,16 +453,92 @@
             tarLink.href = (prefix ? prefix : '') + base + '.tar.gz';
         }
 
-        function downloadFile(originalUrl, encodedName) {
+        // ================================================================
+        //  ✅ 核心：下载并自动解码文件名（fetch + Blob）
+        // ================================================================
+        async function downloadFile(originalUrl, encodedName) {
             const decoded = decodeFilename(encodedName);
             const finalUrl = getDownloadUrl(originalUrl);
-            const a = document.createElement('a');
-            a.href = finalUrl;
-            a.download = decoded;
-            a.target = '_blank';
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
+
+            showProxyTip('⏳ 正在下载: ' + decoded);
+
+            try {
+                const response = await fetch(finalUrl);
+                if (!response.ok) throw new Error('HTTP ' + response.status);
+
+                const blob = await response.blob();
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = decoded;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                setTimeout(() => URL.revokeObjectURL(link.href), 5000);
+                showProxyTip('✅ 下载完成: ' + decoded);
+            } catch (e) {
+                console.error('下载失败:', e);
+                showProxyTip('⚠️ 下载失败，尝试直接打开', true);
+                window.open(finalUrl, '_blank');
+            }
+        }
+
+        // ================================================================
+        //  ✅ 批量下载（并发控制 + 自动解码文件名）
+        // ================================================================
+        async function batchDownloadBrowser() {
+            const files = Array.from(selectedFiles);
+            if (files.length === 0) return;
+
+            showProxyTip('📥 开始批量下载 ' + files.length + ' 个文件...');
+            const progressDiv = document.getElementById('progressBar');
+            const progressFill = document.getElementById('progressFill');
+            const progressText = document.getElementById('progressText');
+            progressDiv.classList.add('active');
+
+            let completed = 0;
+            const total = files.length;
+            const concurrency = 3;
+            const queue = [...files];
+
+            async function downloadNext() {
+                if (queue.length === 0) return;
+                const file = queue.shift();
+                const decoded = decodeFilename(file.name);
+                const finalUrl = getDownloadUrl(file.download_url || file.browser_download_url || '');
+
+                try {
+                    const response = await fetch(finalUrl);
+                    if (!response.ok) throw new Error('HTTP ' + response.status);
+                    const blob = await response.blob();
+                    const link = document.createElement('a');
+                    link.href = URL.createObjectURL(blob);
+                    link.download = decoded;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    setTimeout(() => URL.revokeObjectURL(link.href), 5000);
+                } catch (e) {
+                    console.error('下载失败:', file.name, e);
+                    window.open(finalUrl, '_blank');
+                }
+
+                completed++;
+                progressFill.style.width = (completed / total * 100) + '%';
+                progressText.innerText = '已下载 ' + completed + '/' + total + ' 个文件';
+                await downloadNext();
+            }
+
+            const workers = [];
+            for (let i = 0; i < Math.min(concurrency, total); i++) {
+                workers.push(downloadNext());
+            }
+            await Promise.all(workers);
+
+            setTimeout(() => {
+                progressDiv.classList.remove('active');
+                showProxyTip('✅ 批量下载完成！');
+            }, 2000);
+            closeModal();
         }
 
         // ================================================================
@@ -752,7 +830,7 @@
         }
 
         // ================================================================
-        //  批量下载
+        //  批量下载弹窗
         // ================================================================
         function showBatchModal() {
             if (selectedFiles.size === 0) return;
@@ -770,30 +848,6 @@
         }
 
         function closeModal() { document.getElementById('batchModal').classList.remove('active'); }
-
-        function batchDownloadBrowser() {
-            const files = Array.from(selectedFiles);
-            if (files.length === 0) return;
-            showProxyTip('📥 正在打开 ' + files.length + ' 个下载链接...');
-            const progressDiv = document.getElementById('progressBar');
-            const progressFill = document.getElementById('progressFill');
-            const progressText = document.getElementById('progressText');
-            progressDiv.classList.add('active');
-            let completed = 0;
-            files.forEach((file, i) => {
-                setTimeout(() => {
-                    const finalUrl = getDownloadUrl(file.download_url || file.browser_download_url || '');
-                    window.open(finalUrl, '_blank');
-                    completed++;
-                    progressFill.style.width = (completed / files.length * 100) + '%';
-                    progressText.innerText = '已打开 ' + completed + '/' + files.length + ' 个下载';
-                    if (completed === files.length) {
-                        setTimeout(() => { progressDiv.classList.remove('active'); }, 2000);
-                    }
-                }, i * 600);
-            });
-            closeModal();
-        }
 
         // ================================================================
         //  加载文件
@@ -892,7 +946,7 @@
                     list.innerHTML = matched.map(f => {
                         const originalUrl = f.download_url || f.browser_download_url || '';
                         const name = f.decoded_name || decodeFilename(f.name);
-                        return `<div class="file-item" onclick="downloadFile('${originalUrl}', '${f.name}')"><div class="file-icon" style="width:60px;height:60px;margin:0 auto 10px;"></div><div class="file-name">${escapeHtml(name)}</div><div class="file-details">${formatSize(f.size)} | 点击下载</div></div>`;
+                        return `<div class="file-item" data-url="${escapeHtml(originalUrl)}" data-filename="${escapeHtml(f.name)}" onclick="downloadFile('${escapeHtml(originalUrl)}', '${escapeHtml(f.name)}')"><div class="file-icon" style="width:60px;height:60px;margin:0 auto 10px;"></div><div class="file-name">${escapeHtml(name)}</div><div class="file-details">${formatSize(f.size)} | 点击下载</div></div>`;
                     }).join('');
                 } else {
                     list.innerHTML = '<div style="text-align:center;padding:40px">😔 没有找到相关文件</div>';

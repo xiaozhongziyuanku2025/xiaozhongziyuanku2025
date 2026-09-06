@@ -9,6 +9,7 @@
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
+            background: #0f0f1a;
             color: #e0e0e0;
             font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
             min-height: 100vh;
@@ -27,79 +28,10 @@
         .nav-link { color: #e0e0e0; text-decoration: none; display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 8px; transition: all 0.3s; }
         .nav-link:hover, .nav-link.active { background: rgba(76,175,80,0.2); color: #4CAF50; }
         .content-area { flex: 1; min-width: 280px; background: rgba(20,20,30,0.4); border-radius: 12px; padding: 20px; }
-
-        /* 面包屑导航 - 两段式 */
-        .breadcrumb-nav {
-            display: flex;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 6px;
-            padding: 10px 14px;
-            margin-bottom: 18px;
-            background: rgba(20,20,30,0.6);
-            border-radius: 8px;
-            border: 1px solid rgba(76,175,80,0.2);
-            font-size: 14px;
-        }
-        .breadcrumb-nav .crumb-part {
-            display: flex;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 4px;
-        }
-        .breadcrumb-nav .crumb-sep {
-            color: #666;
-            margin: 0 4px;
-        }
-        .breadcrumb-nav .crumb-divider {
-            color: #4CAF50;
-            font-weight: bold;
-            margin: 0 10px;
-            user-select: none;
-        }
-        .breadcrumb-nav .crumb-item {
-            color: #aaa;
-            cursor: pointer;
-            padding: 4px 8px;
-            border-radius: 4px;
-            transition: 0.2s;
-            text-decoration: none;
-        }
-        .breadcrumb-nav .crumb-item:hover {
-            background: rgba(76,175,80,0.15);
-            color: #4CAF50;
-        }
-        .breadcrumb-nav .crumb-current {
-            color: #4CAF50;
-            font-weight: 600;
-            padding: 4px 8px;
-        }
-        .breadcrumb-nav .crumb-home {
-            color: #4CAF50;
-            cursor: pointer;
-            padding: 4px 8px;
-            border-radius: 4px;
-            transition: 0.2s;
-        }
-        .breadcrumb-nav .crumb-home:hover {
-            background: rgba(76,175,80,0.2);
-        }
-
-        .folder-item {
-            background: rgba(30,30,40,0.7);
-            border-radius: 10px;
-            padding: 15px 20px;
-            transition: all 0.3s;
-            cursor: pointer;
-            border: 1px solid rgba(76,175,80,0.2);
-            display: flex;
-            align-items: center;
-            gap: 14px;
-        }
-        .folder-item:hover { transform: translateY(-2px); background: rgba(40,40,50,0.9); border-color: rgba(76,175,80,0.5); }
-        .folder-item .folder-name { font-size: 16px; font-weight: 500; color: #e0e0e0; }
-        .folder-item .folder-count { font-size: 13px; color: #888; margin-left: auto; }
-
+        .breadcrumb { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; padding: 12px 0; margin-bottom: 20px; border-bottom: 1px solid rgba(76,175,80,0.3); }
+        .breadcrumb a { color: #4CAF50; text-decoration: none; }
+        .breadcrumb a:hover { text-decoration: underline; }
+        .breadcrumb-separator { color: #aaa; }
         .file-stats { background: rgba(20,20,30,0.7); padding: 15px; border-radius: 8px; margin: 20px 0; border: 1px solid rgba(76,175,80,0.3); }
 
         .file-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 15px; margin-top: 20px; }
@@ -107,6 +39,7 @@
         .file-item:hover { transform: translateY(-3px); background: rgba(40,40,50,0.9); }
         .file-item.selected { border-color: #4CAF50; background: rgba(76,175,80,0.15); }
         .file-item.selected::after { content: "✓"; position: absolute; top: 10px; right: 10px; width: 24px; height: 24px; background: #4CAF50; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 14px; }
+        .file-icon { width: 60px; height: 60px; margin: 0 auto 10px; background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23667eea"><path d="M6 2c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6H6z"/></svg>') no-repeat center; background-size: contain; }
         .file-name { font-size: 16px; font-weight: 600; word-break: break-all; margin-bottom: 8px; }
         .file-details { font-size: 12px; color: #aaa; }
         .loading, .error { text-align: center; padding: 60px; font-size: 18px; }
@@ -147,20 +80,19 @@
         .proxy-status.success { color: #4CAF50; }
         .proxy-status.error { color: #f44336; }
         .proxy-status.loading { color: #ff9800; animation: blink 1s infinite; }
+        .proxy-status.info { color: #42a5f5; }
 
         .zip-buttons { display: flex; gap: 10px; margin: 10px 0; flex-wrap: wrap; align-items: center; }
         .zip-btn { background: rgba(255,152,0,0.2); border: 1px solid #ff9800; color: #ff9800; padding: 8px 16px; border-radius: 6px; cursor: pointer; transition: 0.3s; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; font-size: 14px; }
         .zip-btn:hover { background: rgba(255,152,0,0.4); }
 
+        /* 提示条 */
         .proxy-tip { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: #1e1e2e; color: #e0e0e0; padding: 12px 28px; border-radius: 10px; font-size: 14px; z-index: 9999; box-shadow: 0 4px 24px rgba(0,0,0,0.6); border: 1px solid rgba(76,175,80,0.3); animation: slideUp 0.4s ease; display: flex; align-items: center; gap: 12px; max-width: 90%; }
         .proxy-tip .tip-icon { font-size: 20px; }
         .proxy-tip .tip-close { cursor: pointer; opacity: 0.6; padding: 0 6px; font-size: 18px; }
         .proxy-tip .tip-close:hover { opacity: 1; }
         @keyframes slideUp { from { opacity: 0; transform: translateX(-50%) translateY(30px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
         @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
-
-        .empty-folder { text-align: center; padding: 40px; color: #888; font-size: 16px; }
-        .empty-folder i { font-size: 48px; display: block; margin-bottom: 16px; color: #555; }
 
         @media (max-width: 768px) {
             .sidebar { display: none; position: fixed; top: 0; left: 0; height: 100%; width: 280px; background: rgba(20,20,30,0.95); z-index: 1000; padding: 20px; overflow-y: auto; }
@@ -171,14 +103,13 @@
             .search-bar { width: 100%; }
             .search-container { flex-wrap: wrap; }
             .proxy-tip { bottom: 15px; padding: 10px 16px; font-size: 13px; }
-            .breadcrumb-nav { font-size: 13px; padding: 8px 12px; flex-wrap: wrap; }
-            .folder-item { padding: 12px 16px; }
         }
     </style>
 </head>
 <body>
     <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
+    <!-- 批量下载弹窗 -->
     <div class="batch-modal" id="batchModal">
         <div class="batch-modal-content">
             <h3 style="color:#4CAF50; margin-bottom:15px"><i class="fas fa-download"></i> 批量下载</h3>
@@ -191,6 +122,7 @@
         </div>
     </div>
 
+    <!-- 下载进度 -->
     <div class="download-progress" id="progressBar">
         <div class="progress-title"><i class="fas fa-download"></i> 下载进度</div>
         <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
@@ -219,25 +151,14 @@
             <div class="content-area">
                 <h2>Windows病毒库</h2>
                 <div class="file-stats" id="fileStats">正在加载...</div>
-
-                <!-- 面包屑导航：两段式 -->
-                <div class="breadcrumb-nav" id="breadcrumbNav">
-                    <!-- 前段：网页资源库导航 -->
-                    <span class="crumb-part" id="crumbNavPart">
-                        <a href="index.html" class="crumb-item">首页</a>
-                        <span class="crumb-sep">></span>
-                        <a href="resources.html" class="crumb-item">资源库</a>
-                        <span class="crumb-sep">></span>
-                        <span class="crumb-current">Windows病毒库</span>
-                    </span>
-                    <!-- 分隔符 -->
-                    <span class="crumb-divider">|</span>
-                    <!-- 后段：文件内部层级 -->
-                    <span class="crumb-part" id="crumbFilePart">
-                        <span class="crumb-home" data-path="" data-level="-1"><i class="fas fa-home"></i> 根目录</span>
-                    </span>
+                <div class="breadcrumb">
+                    <a href="index.html">首页</a><span class="breadcrumb-separator">></span>
+                    <a href="resources.html">资源库</a><span class="breadcrumb-separator">></span>
+                    <a href="main-resources.html">小众资源库</a><span class="breadcrumb-separator">></span>
+                    <span style="color:#4CAF50">Windows病毒库</span>
                 </div>
 
+                <!-- 代理控制 -->
                 <div class="proxy-toggle">
                     <label><i class="fas fa-globe"></i> 加速模式：</label>
                     <select id="proxySelect">
@@ -248,10 +169,11 @@
                         <option value="ghproxy.cc">ghproxy.cc</option>
                         <option value="none">🌍 直连</option>
                     </select>
-                    <button id="speedTestBtn"><i class="fas fa-tachometer-alt"></i> 测速切换</button>
+                    <button id="speedTestBtn"><i class="fas fa-tachometer-alt"></i> 测速</button>
                     <span class="proxy-status" id="proxyStatus">⏳ 检测中...</span>
                 </div>
 
+                <!-- 压缩包下载 -->
                 <div class="zip-buttons">
                     <span style="color:#aaa;">源码包：</span>
                     <a class="zip-btn" id="zipLink" href="#" target="_blank"><i class="fas fa-file-archive"></i> .zip</a>
@@ -271,6 +193,7 @@
                     </div>
                 </div>
 
+                <!-- 搜索栏 -->
                 <div class="search-container">
                     <span id="searchHint" style="color:#888; font-size:14px; cursor:default;" title="点击右侧放大镜展开搜索">点击图标搜索</span>
                     <button class="search-icon" id="searchToggle"><i class="fas fa-search"></i></button>
@@ -283,7 +206,7 @@
                     <div class="file-list" id="resultsList"></div>
                 </div>
 
-                <div id="fileListContainer">
+                <div class="file-list" id="fileList">
                     <div class="loading"><i class="fas fa-spinner fa-pulse"></i> 加载中...</div>
                 </div>
             </div>
@@ -292,8 +215,9 @@
 
     <script>
         // ================================================================
-        // JavaScript - 完整功能（层级目录 + 搜索 + 批量下载 + 代理）
-        // 面包屑分为两段：前段固定（首页>资源库>Windows病毒库），后段文件层级
+        //  ✅ 正确的 IP 检测 + 国家判断 + 自动代理
+        //  核心逻辑：检测国家 → CN 走代理，否则直连
+        //  测速只用于手动模式，不覆盖自动决策
         // ================================================================
 
         const PROXY_MAP = {
@@ -302,21 +226,16 @@
             'gh-proxy.com': 'https://gh-proxy.com/',
             'ghproxy.cc': 'https://ghproxy.cc/'
         };
-        const DEFAULT_PROXY_KEY = 'gh-proxy.org';
-        const SPEED_TEST_FILE = 'https://github.com/xiaozhongziyuanku2025/xiaozhongziyuanku2025/releases/download/Windows%E7%97%85%E6%AF%92%E5%BA%93/0Y4.exe';
+        const DEFAULT_PROXY_KEY = 'ghproxy.net';
 
-        let userCountry = 'OTHER';
+        let userCountry = 'OTHER';      // CN 或 OTHER
         let allFiles = [];
         let selectedFiles = new Set();
         let selectMode = false;
-        let bestProxyKey = DEFAULT_PROXY_KEY;
-        let isProxyAuto = true;
-        let currentPath = '';   // 子路径，如 "GTX690/驱动" 或 ""
+        let isProxyAuto = true;         // 是否自动模式
+        let currentProxyKey = 'none';   // 当前实际使用的代理
 
-        const container = document.getElementById('fileListContainer');
-        const statsDiv = document.getElementById('fileStats');
-        const filePart = document.getElementById('crumbFilePart');
-
+        // ===================== 解码 =====================
         function decodeFilename(encoded) {
             if (!encoded) return encoded;
             try {
@@ -345,120 +264,175 @@
             });
         }
 
+        // ================================================================
+        //  ✅ 核心：IP 检测 + 国家判断（带缓存，永不超时挂起）
+        // ================================================================
         async function detectCountry() {
+            // 先检查缓存（本次会话有效）
             const cached = sessionStorage.getItem('userCountry');
             if (cached) {
                 userCountry = cached;
-                return userCountry;
+                console.log('📦 使用缓存IP信息:', userCountry);
+                return cached;
             }
+
+            // 并行请求多个 API，取第一个成功返回的结果
             const apis = [
-                { url: 'https://ipapi.co/json/', parser: (d) => d.country_code || d.country || '' },
-                { url: 'https://ipinfo.io/json', parser: (d) => d.country || '' },
-                { url: 'https://api.ipify.org?format=json', parser: () => '' }
+                {
+                    url: 'https://ipinfo.io/json',
+                    timeout: 3000,
+                    parser: (data) => {
+                        if (data && data.country) {
+                            return data.country.toUpperCase();
+                        }
+                        return null;
+                    }
+                },
+                {
+                    url: 'https://ip-api.com/json/',
+                    timeout: 4000,
+                    parser: (data) => {
+                        if (data && data.status === 'success' && data.countryCode) {
+                            return data.countryCode.toUpperCase();
+                        }
+                        return null;
+                    }
+                }
             ];
-            const fetchWithTimeout = (url, timeout = 3000) => {
+
+            const fetchWithTimeout = (url, timeout) => {
                 return Promise.race([
                     fetch(url),
-                    new Promise((_, reject) => setTimeout(() => reject(new Error('超时')), timeout))
+                    new Promise((_, reject) =>
+                        setTimeout(() => reject(new Error('超时')), timeout)
+                    )
                 ]);
             };
-            const promises = apis.map(async (api) => {
-                try {
-                    const res = await fetchWithTimeout(api.url);
-                    if (!res.ok) return null;
-                    const data = await res.json();
-                    const country = api.parser(data);
-                    if (country && country.length === 2) return country.toUpperCase();
-                    return null;
-                } catch (e) { return null; }
-            });
-            const results = await Promise.all(promises);
-            for (let result of results) {
-                if (result) {
-                    userCountry = result;
-                    sessionStorage.setItem('userCountry', result);
-                    return result;
+
+            // 并发请求
+            const results = await Promise.allSettled(
+                apis.map(async (api) => {
+                    try {
+                        const res = await fetchWithTimeout(api.url, api.timeout);
+                        if (!res.ok) return null;
+                        const data = await res.json();
+                        return api.parser(data);
+                    } catch (e) {
+                        return null;
+                    }
+                })
+            );
+
+            // 取第一个非空结果
+            for (const result of results) {
+                if (result.status === 'fulfilled' && result.value) {
+                    const country = result.value;
+                    if (country === 'CN' || country.length === 2) {
+                        sessionStorage.setItem('userCountry', country);
+                        userCountry = country;
+                        console.log('✅ IP检测成功，国家:', country);
+                        return country;
+                    }
                 }
             }
-            userCountry = 'OTHER';
+
+            // 全部失败 → 默认国外（直连）
             sessionStorage.setItem('userCountry', 'OTHER');
+            userCountry = 'OTHER';
+            console.warn('⚠️ IP检测全部失败，默认直连');
             return 'OTHER';
         }
 
-        async function speedTest() {
+        // ================================================================
+        //  ✅ 根据国家应用代理（核心决策）
+        // ================================================================
+        function applyProxyByCountry(country) {
             const statusEl = document.getElementById('proxyStatus');
-            statusEl.textContent = '⏳ 测速中...';
-            statusEl.className = 'proxy-status loading';
-            const proxyKeys = Object.keys(PROXY_MAP);
-            const results = {};
-            const testPromises = proxyKeys.map(async (key) => {
-                const url = PROXY_MAP[key] + SPEED_TEST_FILE;
-                const start = performance.now();
-                try {
-                    const controller = new AbortController();
-                    const timeoutId = setTimeout(() => controller.abort(), 5000);
-                    const res = await fetch(url, { signal: controller.signal, headers: { 'Range': 'bytes=0-1024' } });
-                    clearTimeout(timeoutId);
-                    if (!res.ok) { results[key] = Infinity; return; }
-                    const reader = res.body.getReader();
-                    await reader.read();
-                    reader.releaseLock();
-                    results[key] = performance.now() - start;
-                } catch (e) { results[key] = Infinity; }
-            });
-            await Promise.allSettled(testPromises);
-            const valid = Object.keys(results).filter(k => results[k] !== Infinity);
-            if (valid.length === 0) {
-                bestProxyKey = DEFAULT_PROXY_KEY;
-                statusEl.textContent = '⚠️ 测速失败，使用默认代理';
-                statusEl.className = 'proxy-status error';
-                return;
+            const selectEl = document.getElementById('proxySelect');
+
+            if (country === 'CN') {
+                // 中国用户 → 自动使用国内代理
+                currentProxyKey = DEFAULT_PROXY_KEY;
+                selectEl.value = 'auto';
+                statusEl.textContent = '🇨🇳 国内用户 · 已启用加速';
+                statusEl.className = 'proxy-status success';
+                showProxyTip('🇨🇳 检测到您在中国，已启用国内加速代理');
+                isProxyAuto = true;
+            } else {
+                // 国外用户 / 检测失败 → 直连
+                currentProxyKey = 'none';
+                selectEl.value = 'none';
+                statusEl.textContent = '🌍 国外用户 · 直连模式';
+                statusEl.className = 'proxy-status info';
+                showProxyTip('🌍 检测到您在境外，使用直连模式');
+                isProxyAuto = true;
             }
-            valid.sort((a, b) => results[a] - results[b]);
-            bestProxyKey = valid[0];
-            const latency = Math.round(results[bestProxyKey]);
-            statusEl.textContent = '✅ 最快: ' + bestProxyKey + ' (' + latency + 'ms)';
-            statusEl.className = 'proxy-status success';
-            if (isProxyAuto) {
-                document.getElementById('proxySelect').value = 'auto';
-                renderCurrentPath();
-                updateZipLinks();
-                showProxyTip('🚀 自动切换到最快代理: ' + bestProxyKey + ' (' + latency + 'ms)');
-            }
+
+            // 刷新页面显示
+            updateZipLinks();
+            renderFiles();
         }
 
+        // ================================================================
+        //  手动切换代理（用户选择）
+        // ================================================================
+        function handleManualProxyChange(key) {
+            isProxyAuto = false;
+            currentProxyKey = key;
+            const statusEl = document.getElementById('proxyStatus');
+            statusEl.textContent = '🖐️ 手动: ' + key;
+            statusEl.className = 'proxy-status info';
+            updateZipLinks();
+            renderFiles();
+            showProxyTip('🔗 手动切换到: ' + key);
+        }
+
+        // ================================================================
+        //  提示条
+        // ================================================================
         function showProxyTip(msg, isError = false) {
             const existing = document.querySelector('.proxy-tip');
             if (existing) existing.remove();
+
             const tip = document.createElement('div');
             tip.className = 'proxy-tip';
-            tip.innerHTML = `<span class="tip-icon">${isError ? '⚠️' : '✅'}</span><span>${msg}</span><span class="tip-close">&times;</span>`;
+            tip.innerHTML = `
+                <span class="tip-icon">${isError ? '⚠️' : '✅'}</span>
+                <span>${msg}</span>
+                <span class="tip-close">&times;</span>
+            `;
             if (isError) tip.style.borderColor = 'rgba(244,67,54,0.5)';
             document.body.appendChild(tip);
             tip.querySelector('.tip-close').addEventListener('click', function() { tip.remove(); });
-            setTimeout(() => { if (tip.parentNode) tip.remove(); }, 8000);
+            setTimeout(() => { if (tip.parentNode) tip.remove(); }, 6000);
         }
 
-        function getSelectedProxyKey() { return document.getElementById('proxySelect').value; }
+        // ================================================================
+        //  代理逻辑（获取实际代理前缀）
+        // ================================================================
         function getProxyPrefix(key) {
-            if (key === 'none') return '';
-            if (key === 'auto') return PROXY_MAP[bestProxyKey] || '';
+            if (key === 'none' || key === 'auto') {
+                // auto: 使用当前实际代理（由 detectCountry 决定）
+                if (currentProxyKey === 'none') return '';
+                return PROXY_MAP[currentProxyKey] || '';
+            }
             return PROXY_MAP[key] || '';
         }
+
         function getDownloadUrl(originalUrl) {
-            const mode = getSelectedProxyKey();
-            if (mode === 'none') return originalUrl;
-            const prefix = getProxyPrefix(mode);
+            const prefix = getProxyPrefix(currentProxyKey);
             return prefix ? prefix + originalUrl : originalUrl;
         }
+
         function updateZipLinks() {
             const base = 'https://github.com/xiaozhongziyuanku2025/xiaozhongziyuanku2025/archive/refs/heads/main';
             const zipLink = document.getElementById('zipLink');
             const tarLink = document.getElementById('tarLink');
-            const prefix = getProxyPrefix(getSelectedProxyKey());
+            const prefix = getProxyPrefix(currentProxyKey);
             zipLink.href = (prefix ? prefix : '') + base + '.zip';
             tarLink.href = (prefix ? prefix : '') + base + '.tar.gz';
         }
+
         function downloadFile(originalUrl, encodedName) {
             const decoded = decodeFilename(encodedName);
             const finalUrl = getDownloadUrl(originalUrl);
@@ -471,192 +445,117 @@
             document.body.removeChild(a);
         }
 
-        function buildFileTree(files) {
-            const tree = {};
-            const rootFiles = [];
-            files.forEach(file => {
-                const path = file.path || '';
-                const normalizedPath = path.trim().replace(/\/+$/, '') + (path ? '/' : '');
-                const parts = normalizedPath.split('/').filter(p => p.length > 0);
-                if (parts.length === 0) { rootFiles.push(file); return; }
-                let current = tree;
-                for (let i = 0; i < parts.length; i++) {
-                    const part = parts[i];
-                    if (i === parts.length - 1) {
-                        if (!current[part]) current[part] = [];
-                        if (Array.isArray(current[part])) {
-                            current[part].push(file);
-                        } else {
-                            if (!current[part]._files) current[part]._files = [];
-                            current[part]._files.push(file);
-                        }
-                    } else {
-                        if (!current[part]) current[part] = {};
-                        if (Array.isArray(current[part])) {
-                            const existingFiles = current[part];
-                            current[part] = { _files: existingFiles };
-                        }
-                        current = current[part];
-                    }
-                }
-            });
-            return { tree, rootFiles };
-        }
+        // ================================================================
+        //  测速（仅用于手动测速，不影响自动模式）
+        // ================================================================
+        async function speedTest() {
+            const statusEl = document.getElementById('proxyStatus');
+            statusEl.textContent = '⏳ 测速中...';
+            statusEl.className = 'proxy-status loading';
 
-        function getPathContent(tree, rootFiles, path) {
-            if (!path || path === '') {
-                const folders = Object.keys(tree).filter(k => !k.startsWith('_'));
-                return { folders, files: rootFiles };
-            }
-            const parts = path.split('/').filter(p => p.length > 0);
-            let current = tree;
-            for (let i = 0; i < parts.length; i++) {
-                const part = parts[i];
-                if (!current[part]) return { folders: [], files: [] };
-                if (i === parts.length - 1) {
-                    const node = current[part];
-                    if (Array.isArray(node)) return { folders: [], files: node };
-                    else {
-                        const folders = Object.keys(node).filter(k => !k.startsWith('_'));
-                        const files = node._files || [];
-                        return { folders, files };
-                    }
-                } else {
-                    current = current[part];
-                    if (Array.isArray(current)) return { folders: [], files: [] };
+            const testFile = 'https://github.com/xiaozhongziyuanku2025/xiaozhongziyuanku2025/releases/download/Windows%E7%97%85%E6%AF%92%E5%BA%93/0Y4.exe';
+            const results = {};
+            const proxyKeys = Object.keys(PROXY_MAP);
+
+            for (let key of proxyKeys) {
+                const url = PROXY_MAP[key] + testFile;
+                const start = performance.now();
+                try {
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 5000);
+                    const res = await fetch(url, {
+                        signal: controller.signal,
+                        headers: { 'Range': 'bytes=0-1024' }
+                    });
+                    clearTimeout(timeoutId);
+                    if (!res.ok) { results[key] = Infinity; continue; }
+                    const reader = res.body.getReader();
+                    await reader.read();
+                    reader.releaseLock();
+                    results[key] = performance.now() - start;
+                } catch (e) {
+                    results[key] = Infinity;
                 }
             }
-            return { folders: [], files: [] };
+
+            const valid = Object.keys(results).filter(k => results[k] !== Infinity);
+            if (valid.length === 0) {
+                statusEl.textContent = '⚠️ 测速失败';
+                statusEl.className = 'proxy-status error';
+                showProxyTip('⚠️ 测速失败，请检查网络', true);
+                return;
+            }
+
+            valid.sort((a, b) => results[a] - results[b]);
+            const fastest = valid[0];
+            statusEl.textContent = '✅ 最快: ' + fastest + ' (' + Math.round(results[fastest]) + 'ms)';
+            statusEl.className = 'proxy-status success';
+
+            // 如果当前是自动模式且检测到 CN，但测出最快的是国外代理？这里不覆盖自动决策
+            // 只显示信息，让用户手动切换
+            showProxyTip('🏆 测速完成，最快: ' + fastest + ' (' + Math.round(results[fastest]) + 'ms)');
         }
 
-        function getBreadcrumbParts(path) {
-            if (!path) return [];
-            return path.split('/').filter(p => p.length > 0);
-        }
+        // ================================================================
+        //  渲染文件列表
+        // ================================================================
+        function renderFiles() {
+            const container = document.getElementById('fileList');
+            const statsDiv = document.getElementById('fileStats');
 
-        function navigateTo(path) {
-            currentPath = path || '';
-            renderCurrentPath();
-        }
-
-        function renderCurrentPath() {
             if (!allFiles.length) {
                 container.innerHTML = '<div class="loading">📁 暂无文件</div>';
                 statsDiv.innerHTML = '📁 暂无文件';
-                updateFileBreadcrumb([]);
                 return;
             }
-            const { tree, rootFiles } = buildFileTree(allFiles);
-            const content = getPathContent(tree, rootFiles, currentPath);
-            const totalFiles = content.files.length;
-            const totalFolders = content.folders.length;
-            statsDiv.innerHTML = `<i class="fas fa-chart-bar"></i> 共 ${totalFiles} 个文件，${totalFolders} 个文件夹`;
 
-            // 更新文件层级面包屑（后段）
-            const parts = getBreadcrumbParts(currentPath);
-            updateFileBreadcrumb(parts);
+            statsDiv.innerHTML = '<i class="fas fa-chart-bar"></i> 共 ' + allFiles.length + ' 个文件';
 
-            let html = '';
-            if (content.folders.length > 0) {
-                content.folders.forEach(folderName => {
-                    const subPath = currentPath ? currentPath + '/' + folderName : folderName;
-                    const subContent = getPathContent(tree, rootFiles, subPath);
-                    const count = subContent.files.length;
-                    html += `
-                        <div class="folder-item" data-path="${escapeHtml(subPath)}">
-                            <div class="folder-icon" style="width:60px;height:60px;flex-shrink:0;"></div>
-                            <div class="folder-name">${escapeHtml(folderName)}</div>
-                            <div class="folder-count">${count} 个文件</div>
-                        </div>
-                    `;
-                });
-            }
-            if (content.files.length > 0) {
-                content.files.forEach(file => {
-                    const isSel = selectedFiles.has(file);
-                    const displayName = file.decoded_name || decodeFilename(file.name);
-                    const originalUrl = file.download_url || '';
-                    html += `
-                        <div class="file-item ${selectMode ? 'selectable' : ''} ${isSel ? ' selected' : ''}"
-                             data-filename="${escapeHtml(file.name)}"
-                             data-url="${escapeHtml(originalUrl)}">
-                            <div class="file-icon" style="width:60px;height:60px;margin:0 auto 10px;"></div>
-                            <div class="file-name">${escapeHtml(displayName)}</div>
-                            <div class="file-details">${formatSize(file.size)} ${selectMode ? '| 点击选中' : '| 点击下载'}</div>
-                        </div>
-                    `;
-                });
-            }
-            if (content.folders.length === 0 && content.files.length === 0) {
-                html = `<div class="empty-folder"><i class="fas fa-folder-open"></i>此目录为空</div>`;
-            }
-            container.innerHTML = html;
+            container.innerHTML = allFiles.map(function(file) {
+                const decoded = decodeFilename(file.name);
+                const isSel = selectedFiles.has(file);
+                const originalUrl = file.browser_download_url;
+                return '<div class="file-item ' + (selectMode ? 'selectable' : '') + (isSel ? ' selected' : '') + '" data-filename="' + escapeHtml(file.name) + '" data-url="' + escapeHtml(originalUrl) + '"><div class="file-icon"></div><div class="file-name">' + escapeHtml(decoded) + '</div><div class="file-details">' + formatSize(file.size) + (selectMode ? ' | 点击选中' : ' | 点击下载') + '</div></div>';
+            }).join('');
 
-            container.querySelectorAll('.folder-item').forEach(el => {
-                el.addEventListener('click', function() {
-                    const path = this.dataset.path;
-                    if (path) navigateTo(path);
-                });
-            });
-            container.querySelectorAll('.file-item').forEach(item => {
-                item.removeEventListener('click', handleFileClick);
-                item.addEventListener('click', handleFileClick);
-            });
-            updateUI();
+            bindEvents();
         }
 
-        function handleFileClick(e) {
-            const item = e.currentTarget;
-            const originalUrl = item.dataset.url;
-            const filename = item.dataset.filename;
+        function bindEvents() {
+            document.querySelectorAll('#fileList .file-item').forEach(function(item) {
+                item.removeEventListener('click', handleClick);
+                item.addEventListener('click', handleClick);
+            });
+        }
+
+        function handleClick(e) {
+            var item = e.currentTarget;
+            var originalUrl = item.dataset.url;
+            var filename = item.dataset.filename;
+
             if (selectMode) {
-                const file = allFiles.find(f => f.name === filename);
-                if (file) {
-                    if (selectedFiles.has(file)) {
-                        selectedFiles.delete(file);
-                        item.classList.remove('selected');
-                    } else {
-                        selectedFiles.add(file);
-                        item.classList.add('selected');
-                    }
-                    updateUI();
+                var file = allFiles.find(function(f) { return f.name === filename; });
+                if (selectedFiles.has(file)) {
+                    selectedFiles.delete(file);
+                    item.classList.remove('selected');
+                } else {
+                    selectedFiles.add(file);
+                    item.classList.add('selected');
                 }
+                updateUI();
             } else {
                 if (originalUrl && filename) downloadFile(originalUrl, filename);
             }
         }
 
-        // 更新文件层级面包屑（后段）
-        function updateFileBreadcrumb(parts) {
-            let html = `<span class="crumb-home" data-path="" data-level="-1"><i class="fas fa-home"></i> 根目录</span>`;
-            let cumulativePath = '';
-            parts.forEach((part, index) => {
-                cumulativePath = cumulativePath ? cumulativePath + '/' + part : part;
-                const isLast = index === parts.length - 1;
-                if (isLast) {
-                    html += `<span class="crumb-sep"> / </span>`;
-                    html += `<span class="crumb-current"><i class="fas fa-folder-open crumb-folder-icon"></i>${escapeHtml(part)}</span>`;
-                } else {
-                    html += `<span class="crumb-sep"> / </span>`;
-                    html += `<span class="crumb-item" data-path="${escapeHtml(cumulativePath)}">${escapeHtml(part)}</span>`;
-                }
-            });
-            filePart.innerHTML = html;
-
-            // 绑定点击事件
-            filePart.querySelectorAll('.crumb-home, .crumb-item').forEach(el => {
-                el.addEventListener('click', function() {
-                    const path = this.dataset.path || '';
-                    navigateTo(path);
-                });
-            });
-        }
-
+        // ================================================================
+        //  多选 UI
+        // ================================================================
         function updateUI() {
-            const count = selectedFiles.size;
+            var count = selectedFiles.size;
             document.getElementById('selectedCounter').innerText = count;
             document.getElementById('selectedCount').innerText = count;
-            const btn = document.getElementById('downloadSelectedBtn');
+            var btn = document.getElementById('downloadSelectedBtn');
             if (btn) btn.style.display = count > 0 ? 'flex' : 'none';
         }
 
@@ -665,7 +564,7 @@
             document.body.classList.add('select-mode');
             document.getElementById('selectModeBtn').style.display = 'none';
             document.getElementById('batchToolbar').classList.add('active');
-            renderCurrentPath();
+            renderFiles();
             updateUI();
         }
 
@@ -675,34 +574,25 @@
             document.body.classList.remove('select-mode');
             document.getElementById('selectModeBtn').style.display = 'flex';
             document.getElementById('batchToolbar').classList.remove('active');
-            renderCurrentPath();
+            renderFiles();
             updateUI();
         }
 
-        function selectAll() {
-            const { tree, rootFiles } = buildFileTree(allFiles);
-            const content = getPathContent(tree, rootFiles, currentPath);
-            content.files.forEach(f => selectedFiles.add(f));
-            renderCurrentPath();
-            updateUI();
-        }
+        function selectAll() { allFiles.forEach(function(f) { selectedFiles.add(f); }); renderFiles(); updateUI(); }
+        function clearSel() { selectedFiles.clear(); renderFiles(); updateUI(); }
 
-        function clearSel() {
-            selectedFiles.clear();
-            renderCurrentPath();
-            updateUI();
-        }
-
+        // ================================================================
+        //  批量下载
+        // ================================================================
         function showBatchModal() {
             if (selectedFiles.size === 0) return;
             document.getElementById('modalSelectedCount').innerText = selectedFiles.size;
-            const list = document.getElementById('modalFileList');
+            var list = document.getElementById('modalFileList');
             list.innerHTML = '';
             selectedFiles.forEach(function(f) {
-                const div = document.createElement('div');
+                var div = document.createElement('div');
                 div.className = 'selected-item';
-                const name = f.decoded_name || decodeFilename(f.name);
-                div.innerHTML = '<i class="fas fa-file"></i> ' + escapeHtml(name);
+                div.innerHTML = '<i class="fas fa-file"></i> ' + escapeHtml(decodeFilename(f.name));
                 list.appendChild(div);
             });
             document.getElementById('batchModal').classList.add('active');
@@ -711,17 +601,17 @@
         function closeModal() { document.getElementById('batchModal').classList.remove('active'); }
 
         function batchDownloadBrowser() {
-            const files = Array.from(selectedFiles);
+            var files = Array.from(selectedFiles);
             if (files.length === 0) return;
             showProxyTip('📥 正在打开 ' + files.length + ' 个下载链接...');
-            const progressDiv = document.getElementById('progressBar');
-            const progressFill = document.getElementById('progressFill');
-            const progressText = document.getElementById('progressText');
+            var progressDiv = document.getElementById('progressBar');
+            var progressFill = document.getElementById('progressFill');
+            var progressText = document.getElementById('progressText');
             progressDiv.classList.add('active');
-            let completed = 0;
+            var completed = 0;
             files.forEach(function(file, i) {
                 setTimeout(function() {
-                    const finalUrl = getDownloadUrl(file.download_url || '');
+                    var finalUrl = getDownloadUrl(file.browser_download_url);
                     window.open(finalUrl, '_blank');
                     completed++;
                     progressFill.style.width = (completed / files.length * 100) + '%';
@@ -734,58 +624,49 @@
             closeModal();
         }
 
+        // ================================================================
+        //  加载文件
+        // ================================================================
         async function loadFiles() {
+            var container = document.getElementById('fileList');
             try {
-                const res = await fetch('release-cache.json?_=' + Date.now());
+                var res = await fetch('release-cache.json?_=' + Date.now());
                 if (res.ok) {
-                    const data = await res.json();
-                    if (data.files && Array.isArray(data.files)) {
-                        allFiles = data.files;
-                    } else if (Array.isArray(data)) {
-                        allFiles = data;
-                    } else {
-                        throw new Error('缓存格式错误');
+                    var data = await res.json();
+                    if (data.assets && data.assets.length) {
+                        allFiles = data.assets;
+                        renderFiles();
+                        return;
                     }
-                    allFiles = allFiles.map(f => {
-                        if (!f.path) f.path = '';
-                        if (!f.decoded_name) f.decoded_name = decodeFilename(f.name);
-                        return f;
-                    });
-                    renderCurrentPath();
-                    return;
                 }
                 console.log('缓存无效，尝试从 API 获取...');
-                const apiRes = await fetch('https://api.github.com/repos/xiaozhongziyuanku2025/xiaozhongziyuanku2025/releases/tags/Windows病毒库');
+                var apiRes = await fetch('https://api.github.com/repos/xiaozhongziyuanku2025/xiaozhongziyuanku2025/releases/tags/Windows病毒库');
                 if (apiRes.ok) {
-                    const apiData = await apiRes.json();
+                    var apiData = await apiRes.json();
                     if (apiData.assets && apiData.assets.length) {
-                        allFiles = apiData.assets.map(asset => ({
-                            name: asset.name,
-                            size: asset.size,
-                            download_url: asset.browser_download_url,
-                            path: '',
-                            decoded_name: decodeFilename(asset.name)
-                        }));
-                        renderCurrentPath();
+                        allFiles = apiData.assets;
+                        renderFiles();
                         return;
                     }
                 }
                 throw new Error('无数据');
             } catch(e) {
                 container.innerHTML = '<div class="error">加载失败，请刷新或稍后再试</div>';
-                statsDiv.innerHTML = '加载失败';
-                console.error(e);
+                document.getElementById('fileStats').innerHTML = '加载失败';
             }
         }
 
+        // ================================================================
+        //  搜索
+        // ================================================================
         function initSearch() {
-            const toggle = document.getElementById('searchToggle');
-            const bar = document.getElementById('searchBar');
-            const input = document.getElementById('searchInput');
-            const results = document.getElementById('searchResults');
-            const list = document.getElementById('resultsList');
-            const mainList = container;
-            const hint = document.getElementById('searchHint');
+            var toggle = document.getElementById('searchToggle');
+            var bar = document.getElementById('searchBar');
+            var input = document.getElementById('searchInput');
+            var results = document.getElementById('searchResults');
+            var list = document.getElementById('resultsList');
+            var mainList = document.getElementById('fileList');
+            var hint = document.getElementById('searchHint');
 
             toggle.addEventListener('click', function() {
                 bar.classList.toggle('active');
@@ -795,7 +676,7 @@
                 } else {
                     input.value = '';
                     results.classList.remove('active');
-                    mainList.style.display = 'block';
+                    mainList.style.display = 'grid';
                     hint.style.display = 'inline';
                 }
             });
@@ -808,23 +689,21 @@
             });
 
             input.addEventListener('input', function() {
-                const kw = this.value.toLowerCase().trim();
+                var kw = this.value.toLowerCase().trim();
                 if (!kw) {
                     results.classList.remove('active');
-                    mainList.style.display = 'block';
+                    mainList.style.display = 'grid';
                     return;
                 }
                 mainList.style.display = 'none';
                 results.classList.add('active');
-                const matched = allFiles.filter(function(f) {
-                    const name = f.decoded_name || decodeFilename(f.name);
-                    return name.toLowerCase().includes(kw);
+                var matched = allFiles.filter(function(f) {
+                    return decodeFilename(f.name).toLowerCase().includes(kw);
                 });
                 if (matched.length) {
                     list.innerHTML = matched.map(function(f) {
-                        const originalUrl = f.download_url || '';
-                        const name = f.decoded_name || decodeFilename(f.name);
-                        return `<div class="file-item" onclick="downloadFile('${originalUrl}', '${f.name}')"><div class="file-icon" style="width:60px;height:60px;margin:0 auto 10px;"></div><div class="file-name">${escapeHtml(name)}</div><div class="file-details">${formatSize(f.size)} | 点击下载</div></div>`;
+                        var originalUrl = f.browser_download_url;
+                        return '<div class="file-item" onclick="downloadFile(\'' + originalUrl + '\', \'' + f.name + '\')"><div class="file-icon"></div><div class="file-name">' + escapeHtml(decodeFilename(f.name)) + '</div><div class="file-details">' + formatSize(f.size) + ' | 点击下载</div></div>';
                     }).join('');
                 } else {
                     list.innerHTML = '<div style="text-align:center;padding:40px">😔 没有找到相关文件</div>';
@@ -832,9 +711,12 @@
             });
         }
 
+        // ================================================================
+        //  导航和菜单
+        // ================================================================
         document.getElementById('navToggle').addEventListener('click', function() {
-            const sidebar = document.getElementById('sidebar');
-            const overlay = document.getElementById('sidebarOverlay');
+            var sidebar = document.getElementById('sidebar');
+            var overlay = document.getElementById('sidebarOverlay');
             sidebar.classList.toggle('active');
             overlay.classList.toggle('active');
         });
@@ -847,6 +729,9 @@
         document.getElementById('backButton').addEventListener('click', function() { history.back(); });
         document.getElementById('forwardButton').addEventListener('click', function() { history.forward(); });
 
+        // ================================================================
+        //  按钮绑定
+        // ================================================================
         document.getElementById('selectModeBtn').addEventListener('click', enterSelectMode);
         document.getElementById('exitSelectModeBtn').addEventListener('click', exitSelectMode);
         document.getElementById('selectAllBtn').addEventListener('click', selectAll);
@@ -855,59 +740,47 @@
         document.getElementById('confirmDownload').addEventListener('click', batchDownloadBrowser);
         document.getElementById('cancelDownload').addEventListener('click', closeModal);
 
+        // 代理下拉切换（手动）
         document.getElementById('proxySelect').addEventListener('change', function() {
             const val = this.value;
-            isProxyAuto = (val === 'auto');
             if (val === 'auto') {
-                const statusEl = document.getElementById('proxyStatus');
-                statusEl.textContent = '🤖 自动模式 (使用 ' + bestProxyKey + ')';
-                statusEl.className = 'proxy-status success';
-                showProxyTip('🔄 切换到自动模式，当前最快: ' + bestProxyKey);
-            } else if (val === 'none') {
-                showProxyTip('🌍 切换到直连模式');
+                // 切回自动模式：重新应用国家检测结果
+                isProxyAuto = true;
+                applyProxyByCountry(userCountry);
             } else {
-                showProxyTip('🔗 手动切换到: ' + val);
+                handleManualProxyChange(val);
             }
-            updateZipLinks();
-            renderCurrentPath();
         });
 
+        // 测速按钮（仅测速，不切换代理）
         document.getElementById('speedTestBtn').addEventListener('click', function() {
             speedTest();
         });
 
+        // ================================================================
+        //  🚀 启动
+        // ================================================================
         (async function init() {
             const statusEl = document.getElementById('proxyStatus');
             statusEl.textContent = '⏳ 检测IP...';
             statusEl.className = 'proxy-status loading';
 
+            // 1. 检测国家
             const country = await detectCountry();
-            if (country === 'CN') {
-                statusEl.textContent = '🇨🇳 国内用户';
-                showProxyTip('🇨🇳 检测到您在中国，将自动选择国内加速代理');
-            } else if (country === 'OTHER' && sessionStorage.getItem('userCountry') === 'OTHER') {
-                statusEl.textContent = '🌍 国外 / 检测失败';
-                statusEl.className = 'proxy-status error';
-                showProxyTip('⚠️ IP检测失败，已切换至直连模式，你可手动选择代理', true);
-            } else {
-                statusEl.textContent = '🌍 国外用户';
-                showProxyTip('🌍 检测到您在境外，已切换至直连模式');
-            }
 
+            // 2. 根据国家自动选择代理
+            applyProxyByCountry(country);
+
+            // 3. 加载文件列表
             await loadFiles();
+
+            // 4. 初始化搜索
             initSearch();
 
-            statusEl.textContent = '⏳ 测速中...';
-            statusEl.className = 'proxy-status loading';
-            await speedTest();
+            // 5. 更新压缩包链接
             updateZipLinks();
 
-            if (getSelectedProxyKey() === 'auto') {
-                statusEl.textContent = '🤖 自动 (' + bestProxyKey + ')';
-                statusEl.className = 'proxy-status success';
-            }
-
-            console.log('✅ 初始化完成');
+            console.log('✅ 初始化完成，当前代理:', currentProxyKey, '国家:', userCountry);
         })();
     </script>
 </body>

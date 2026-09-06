@@ -9,7 +9,6 @@
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            /* 背景由 css/style.css 控制，不在此处覆盖 */
             color: #e0e0e0;
             font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
             min-height: 100vh;
@@ -29,6 +28,7 @@
         .nav-link:hover, .nav-link.active { background: rgba(76,175,80,0.2); color: #4CAF50; }
         .content-area { flex: 1; min-width: 280px; background: rgba(20,20,30,0.4); border-radius: 12px; padding: 20px; }
 
+        /* 面包屑导航 - 两段式 */
         .breadcrumb-nav {
             display: flex;
             align-items: center;
@@ -41,15 +41,50 @@
             border: 1px solid rgba(76,175,80,0.2);
             font-size: 14px;
         }
-        .breadcrumb-nav .crumb-home { color: #4CAF50; cursor: pointer; padding: 4px 8px; border-radius: 4px; transition: 0.2s; }
-        .breadcrumb-nav .crumb-home:hover { background: rgba(76,175,80,0.2); }
-        .breadcrumb-nav .crumb-sep { color: #666; margin: 0 2px; }
-        .breadcrumb-nav .crumb-item { color: #aaa; cursor: pointer; padding: 4px 8px; border-radius: 4px; transition: 0.2s; }
-        .breadcrumb-nav .crumb-item:hover { background: rgba(76,175,80,0.15); color: #4CAF50; }
-        .breadcrumb-nav .crumb-current { color: #4CAF50; font-weight: 600; padding: 4px 8px; }
-        .breadcrumb-nav .crumb-folder-icon { margin-right: 4px; }
+        .breadcrumb-nav .crumb-part {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 4px;
+        }
+        .breadcrumb-nav .crumb-sep {
+            color: #666;
+            margin: 0 4px;
+        }
+        .breadcrumb-nav .crumb-divider {
+            color: #4CAF50;
+            font-weight: bold;
+            margin: 0 10px;
+            user-select: none;
+        }
+        .breadcrumb-nav .crumb-item {
+            color: #aaa;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 4px;
+            transition: 0.2s;
+            text-decoration: none;
+        }
+        .breadcrumb-nav .crumb-item:hover {
+            background: rgba(76,175,80,0.15);
+            color: #4CAF50;
+        }
+        .breadcrumb-nav .crumb-current {
+            color: #4CAF50;
+            font-weight: 600;
+            padding: 4px 8px;
+        }
+        .breadcrumb-nav .crumb-home {
+            color: #4CAF50;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 4px;
+            transition: 0.2s;
+        }
+        .breadcrumb-nav .crumb-home:hover {
+            background: rgba(76,175,80,0.2);
+        }
 
-        /* 文件夹卡片 - 使用 style.css 中的图标 */
         .folder-item {
             background: rgba(30,30,40,0.7);
             border-radius: 10px;
@@ -67,7 +102,6 @@
 
         .file-stats { background: rgba(20,20,30,0.7); padding: 15px; border-radius: 8px; margin: 20px 0; border: 1px solid rgba(76,175,80,0.3); }
 
-        /* 文件列表 - 使用 style.css 中的 .file-icon */
         .file-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 15px; margin-top: 20px; }
         .file-item { background: rgba(30,30,40,0.8); border-radius: 10px; padding: 15px; transition: all 0.3s; cursor: pointer; border: 2px solid transparent; position: relative; }
         .file-item:hover { transform: translateY(-3px); background: rgba(40,40,50,0.9); }
@@ -137,7 +171,7 @@
             .search-bar { width: 100%; }
             .search-container { flex-wrap: wrap; }
             .proxy-tip { bottom: 15px; padding: 10px 16px; font-size: 13px; }
-            .breadcrumb-nav { font-size: 13px; padding: 8px 12px; }
+            .breadcrumb-nav { font-size: 13px; padding: 8px 12px; flex-wrap: wrap; }
             .folder-item { padding: 12px 16px; }
         }
     </style>
@@ -186,8 +220,22 @@
                 <h2>Windows病毒库</h2>
                 <div class="file-stats" id="fileStats">正在加载...</div>
 
+                <!-- 面包屑导航：两段式 -->
                 <div class="breadcrumb-nav" id="breadcrumbNav">
-                    <span class="crumb-home" data-path="" data-level="-1"><i class="fas fa-home"></i> 根目录</span>
+                    <!-- 前段：网页资源库导航 -->
+                    <span class="crumb-part" id="crumbNavPart">
+                        <a href="index.html" class="crumb-item">首页</a>
+                        <span class="crumb-sep">></span>
+                        <a href="resources.html" class="crumb-item">资源库</a>
+                        <span class="crumb-sep">></span>
+                        <span class="crumb-current">Windows病毒库</span>
+                    </span>
+                    <!-- 分隔符 -->
+                    <span class="crumb-divider">|</span>
+                    <!-- 后段：文件内部层级 -->
+                    <span class="crumb-part" id="crumbFilePart">
+                        <span class="crumb-home" data-path="" data-level="-1"><i class="fas fa-home"></i> 根目录</span>
+                    </span>
                 </div>
 
                 <div class="proxy-toggle">
@@ -244,8 +292,8 @@
 
     <script>
         // ================================================================
-        //  JavaScript - 完整功能（层级目录 + 搜索 + 批量下载 + 代理）
-        //  图标继承自 css/style.css，不在此覆盖
+        // JavaScript - 完整功能（层级目录 + 搜索 + 批量下载 + 代理）
+        // 面包屑分为两段：前段固定（首页>资源库>Windows病毒库），后段文件层级
         // ================================================================
 
         const PROXY_MAP = {
@@ -263,11 +311,11 @@
         let selectMode = false;
         let bestProxyKey = DEFAULT_PROXY_KEY;
         let isProxyAuto = true;
-        let currentPath = '';
+        let currentPath = '';   // 子路径，如 "GTX690/驱动" 或 ""
 
         const container = document.getElementById('fileListContainer');
         const statsDiv = document.getElementById('fileStats');
-        const breadcrumbNav = document.getElementById('breadcrumbNav');
+        const filePart = document.getElementById('crumbFilePart');
 
         function decodeFilename(encoded) {
             if (!encoded) return encoded;
@@ -427,8 +475,8 @@
             const tree = {};
             const rootFiles = [];
             files.forEach(file => {
-                const path = file.path || 'Windows病毒库/';
-                const normalizedPath = path.trim().replace(/\/+$/, '') + '/';
+                const path = file.path || '';
+                const normalizedPath = path.trim().replace(/\/+$/, '') + (path ? '/' : '');
                 const parts = normalizedPath.split('/').filter(p => p.length > 0);
                 if (parts.length === 0) { rootFiles.push(file); return; }
                 let current = tree;
@@ -495,7 +543,7 @@
             if (!allFiles.length) {
                 container.innerHTML = '<div class="loading">📁 暂无文件</div>';
                 statsDiv.innerHTML = '📁 暂无文件';
-                updateBreadcrumb([]);
+                updateFileBreadcrumb([]);
                 return;
             }
             const { tree, rootFiles } = buildFileTree(allFiles);
@@ -503,11 +551,12 @@
             const totalFiles = content.files.length;
             const totalFolders = content.folders.length;
             statsDiv.innerHTML = `<i class="fas fa-chart-bar"></i> 共 ${totalFiles} 个文件，${totalFolders} 个文件夹`;
+
+            // 更新文件层级面包屑（后段）
             const parts = getBreadcrumbParts(currentPath);
-            updateBreadcrumb(parts);
+            updateFileBreadcrumb(parts);
 
             let html = '';
-            // 渲染文件夹（使用 style.css 中的 .folder-icon）
             if (content.folders.length > 0) {
                 content.folders.forEach(folderName => {
                     const subPath = currentPath ? currentPath + '/' + folderName : folderName;
@@ -522,7 +571,6 @@
                     `;
                 });
             }
-            // 渲染文件（使用 style.css 中的 .file-icon）
             if (content.files.length > 0) {
                 content.files.forEach(file => {
                     const isSel = selectedFiles.has(file);
@@ -578,7 +626,8 @@
             }
         }
 
-        function updateBreadcrumb(parts) {
+        // 更新文件层级面包屑（后段）
+        function updateFileBreadcrumb(parts) {
             let html = `<span class="crumb-home" data-path="" data-level="-1"><i class="fas fa-home"></i> 根目录</span>`;
             let cumulativePath = '';
             parts.forEach((part, index) => {
@@ -592,8 +641,10 @@
                     html += `<span class="crumb-item" data-path="${escapeHtml(cumulativePath)}">${escapeHtml(part)}</span>`;
                 }
             });
-            breadcrumbNav.innerHTML = html;
-            breadcrumbNav.querySelectorAll('.crumb-home, .crumb-item').forEach(el => {
+            filePart.innerHTML = html;
+
+            // 绑定点击事件
+            filePart.querySelectorAll('.crumb-home, .crumb-item').forEach(el => {
                 el.addEventListener('click', function() {
                     const path = this.dataset.path || '';
                     navigateTo(path);
@@ -696,7 +747,7 @@
                         throw new Error('缓存格式错误');
                     }
                     allFiles = allFiles.map(f => {
-                        if (!f.path) f.path = 'Windows病毒库/';
+                        if (!f.path) f.path = '';
                         if (!f.decoded_name) f.decoded_name = decodeFilename(f.name);
                         return f;
                     });
@@ -712,7 +763,7 @@
                             name: asset.name,
                             size: asset.size,
                             download_url: asset.browser_download_url,
-                            path: 'Windows病毒库/',
+                            path: '',
                             decoded_name: decodeFilename(asset.name)
                         }));
                         renderCurrentPath();

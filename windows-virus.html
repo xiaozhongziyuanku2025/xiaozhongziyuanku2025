@@ -29,7 +29,6 @@
         .nav-link:hover, .nav-link.active { background: rgba(76,175,80,0.2); color: #4CAF50; }
         .content-area { flex: 1; min-width: 280px; background: rgba(20,20,30,0.4); border-radius: 12px; padding: 20px; }
 
-        /* ===== 面包屑导航（新增） ===== */
         .breadcrumb-nav {
             display: flex;
             align-items: center;
@@ -42,41 +41,15 @@
             border: 1px solid rgba(76,175,80,0.2);
             font-size: 14px;
         }
-        .breadcrumb-nav .crumb-home {
-            color: #4CAF50;
-            cursor: pointer;
-            padding: 4px 8px;
-            border-radius: 4px;
-            transition: 0.2s;
-        }
-        .breadcrumb-nav .crumb-home:hover {
-            background: rgba(76,175,80,0.2);
-        }
-        .breadcrumb-nav .crumb-sep {
-            color: #666;
-            margin: 0 2px;
-        }
-        .breadcrumb-nav .crumb-item {
-            color: #aaa;
-            cursor: pointer;
-            padding: 4px 8px;
-            border-radius: 4px;
-            transition: 0.2s;
-        }
-        .breadcrumb-nav .crumb-item:hover {
-            background: rgba(76,175,80,0.15);
-            color: #4CAF50;
-        }
-        .breadcrumb-nav .crumb-current {
-            color: #4CAF50;
-            font-weight: 600;
-            padding: 4px 8px;
-        }
-        .breadcrumb-nav .crumb-folder-icon {
-            margin-right: 4px;
-        }
+        .breadcrumb-nav .crumb-home { color: #4CAF50; cursor: pointer; padding: 4px 8px; border-radius: 4px; transition: 0.2s; }
+        .breadcrumb-nav .crumb-home:hover { background: rgba(76,175,80,0.2); }
+        .breadcrumb-nav .crumb-sep { color: #666; margin: 0 2px; }
+        .breadcrumb-nav .crumb-item { color: #aaa; cursor: pointer; padding: 4px 8px; border-radius: 4px; transition: 0.2s; }
+        .breadcrumb-nav .crumb-item:hover { background: rgba(76,175,80,0.15); color: #4CAF50; }
+        .breadcrumb-nav .crumb-current { color: #4CAF50; font-weight: 600; padding: 4px 8px; }
+        .breadcrumb-nav .crumb-folder-icon { margin-right: 4px; }
 
-        /* ===== 文件夹卡片（新增） ===== */
+        /* 文件夹卡片 - 使用 style.css 中的图标 */
         .folder-item {
             background: rgba(30,30,40,0.7);
             border-radius: 10px;
@@ -88,36 +61,18 @@
             align-items: center;
             gap: 14px;
         }
-        .folder-item:hover {
-            transform: translateY(-2px);
-            background: rgba(40,40,50,0.9);
-            border-color: rgba(76,175,80,0.5);
-        }
-        .folder-item .folder-icon {
-            font-size: 28px;
-            color: #ffc107;
-            width: 40px;
-            text-align: center;
-        }
-        .folder-item .folder-name {
-            font-size: 16px;
-            font-weight: 500;
-            color: #e0e0e0;
-        }
-        .folder-item .folder-count {
-            font-size: 13px;
-            color: #888;
-            margin-left: auto;
-        }
+        .folder-item:hover { transform: translateY(-2px); background: rgba(40,40,50,0.9); border-color: rgba(76,175,80,0.5); }
+        .folder-item .folder-name { font-size: 16px; font-weight: 500; color: #e0e0e0; }
+        .folder-item .folder-count { font-size: 13px; color: #888; margin-left: auto; }
 
         .file-stats { background: rgba(20,20,30,0.7); padding: 15px; border-radius: 8px; margin: 20px 0; border: 1px solid rgba(76,175,80,0.3); }
 
+        /* 文件列表 - 使用 style.css 中的 .file-icon */
         .file-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 15px; margin-top: 20px; }
         .file-item { background: rgba(30,30,40,0.8); border-radius: 10px; padding: 15px; transition: all 0.3s; cursor: pointer; border: 2px solid transparent; position: relative; }
         .file-item:hover { transform: translateY(-3px); background: rgba(40,40,50,0.9); }
         .file-item.selected { border-color: #4CAF50; background: rgba(76,175,80,0.15); }
         .file-item.selected::after { content: "✓"; position: absolute; top: 10px; right: 10px; width: 24px; height: 24px; background: #4CAF50; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 14px; }
-        .file-icon { width: 60px; height: 60px; margin: 0 auto 10px; background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23667eea"><path d="M6 2c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6H6z"/></svg>') no-repeat center; background-size: contain; }
         .file-name { font-size: 16px; font-weight: 600; word-break: break-all; margin-bottom: 8px; }
         .file-details { font-size: 12px; color: #aaa; }
         .loading, .error { text-align: center; padding: 60px; font-size: 18px; }
@@ -170,18 +125,8 @@
         @keyframes slideUp { from { opacity: 0; transform: translateX(-50%) translateY(30px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
         @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
 
-        .empty-folder {
-            text-align: center;
-            padding: 40px;
-            color: #888;
-            font-size: 16px;
-        }
-        .empty-folder i {
-            font-size: 48px;
-            display: block;
-            margin-bottom: 16px;
-            color: #555;
-        }
+        .empty-folder { text-align: center; padding: 40px; color: #888; font-size: 16px; }
+        .empty-folder i { font-size: 48px; display: block; margin-bottom: 16px; color: #555; }
 
         @media (max-width: 768px) {
             .sidebar { display: none; position: fixed; top: 0; left: 0; height: 100%; width: 280px; background: rgba(20,20,30,0.95); z-index: 1000; padding: 20px; overflow-y: auto; }
@@ -241,7 +186,6 @@
                 <h2>Windows病毒库</h2>
                 <div class="file-stats" id="fileStats">正在加载...</div>
 
-                <!-- 面包屑导航（新增） -->
                 <div class="breadcrumb-nav" id="breadcrumbNav">
                     <span class="crumb-home" data-path="" data-level="-1"><i class="fas fa-home"></i> 根目录</span>
                 </div>
@@ -291,7 +235,6 @@
                     <div class="file-list" id="resultsList"></div>
                 </div>
 
-                <!-- 文件/文件夹容器 -->
                 <div id="fileListContainer">
                     <div class="loading"><i class="fas fa-spinner fa-pulse"></i> 加载中...</div>
                 </div>
@@ -301,8 +244,8 @@
 
     <script>
         // ================================================================
-        //  修复版 JavaScript - 完整保留所有功能 + 层级目录支持
-        //  新增：面包屑导航 + 文件夹/文件混合展示 + 路径切换
+        //  JavaScript - 完整功能（层级目录 + 搜索 + 批量下载 + 代理）
+        //  图标继承自 css/style.css，不在此覆盖
         // ================================================================
 
         const PROXY_MAP = {
@@ -315,14 +258,13 @@
         const SPEED_TEST_FILE = 'https://github.com/xiaozhongziyuanku2025/xiaozhongziyuanku2025/releases/download/Windows%E7%97%85%E6%AF%92%E5%BA%93/0Y4.exe';
 
         let userCountry = 'OTHER';
-        let allFiles = [];              // 原始缓存数据（带 path、decoded_name 等）
+        let allFiles = [];
         let selectedFiles = new Set();
         let selectMode = false;
         let bestProxyKey = DEFAULT_PROXY_KEY;
         let isProxyAuto = true;
-        let currentPath = '';           // 当前浏览的路径，如 'Windows病毒库/GTX690/驱动'
+        let currentPath = '';
 
-        // DOM 引用
         const container = document.getElementById('fileListContainer');
         const statsDiv = document.getElementById('fileStats');
         const breadcrumbNav = document.getElementById('breadcrumbNav');
@@ -355,96 +297,68 @@
             });
         }
 
-        // ================================================================
-        //  IP 检测（并行 + 超时 + 缓存）
-        // ================================================================
         async function detectCountry() {
             const cached = sessionStorage.getItem('userCountry');
             if (cached) {
                 userCountry = cached;
-                console.log('📦 使用缓存IP:', userCountry);
                 return userCountry;
             }
-
             const apis = [
                 { url: 'https://ipapi.co/json/', parser: (d) => d.country_code || d.country || '' },
                 { url: 'https://ipinfo.io/json', parser: (d) => d.country || '' },
                 { url: 'https://api.ipify.org?format=json', parser: () => '' }
             ];
-
             const fetchWithTimeout = (url, timeout = 3000) => {
                 return Promise.race([
                     fetch(url),
                     new Promise((_, reject) => setTimeout(() => reject(new Error('超时')), timeout))
                 ]);
             };
-
             const promises = apis.map(async (api) => {
                 try {
                     const res = await fetchWithTimeout(api.url);
                     if (!res.ok) return null;
                     const data = await res.json();
                     const country = api.parser(data);
-                    if (country && country.length === 2) {
-                        return country.toUpperCase();
-                    }
+                    if (country && country.length === 2) return country.toUpperCase();
                     return null;
-                } catch (e) {
-                    return null;
-                }
+                } catch (e) { return null; }
             });
-
             const results = await Promise.all(promises);
             for (let result of results) {
                 if (result) {
                     userCountry = result;
                     sessionStorage.setItem('userCountry', result);
-                    console.log('✅ IP检测成功:', result);
                     return result;
                 }
             }
-
             userCountry = 'OTHER';
             sessionStorage.setItem('userCountry', 'OTHER');
-            console.warn('⚠️ IP检测失败，默认直连');
             return 'OTHER';
         }
 
-        // ================================================================
-        //  真实测速
-        // ================================================================
         async function speedTest() {
             const statusEl = document.getElementById('proxyStatus');
             statusEl.textContent = '⏳ 测速中...';
             statusEl.className = 'proxy-status loading';
-
             const proxyKeys = Object.keys(PROXY_MAP);
             const results = {};
-
             const testPromises = proxyKeys.map(async (key) => {
                 const url = PROXY_MAP[key] + SPEED_TEST_FILE;
                 const start = performance.now();
                 try {
                     const controller = new AbortController();
                     const timeoutId = setTimeout(() => controller.abort(), 5000);
-                    const res = await fetch(url, {
-                        signal: controller.signal,
-                        headers: { 'Range': 'bytes=0-1024' }
-                    });
+                    const res = await fetch(url, { signal: controller.signal, headers: { 'Range': 'bytes=0-1024' } });
                     clearTimeout(timeoutId);
                     if (!res.ok) { results[key] = Infinity; return; }
                     const reader = res.body.getReader();
                     await reader.read();
                     reader.releaseLock();
-                    const end = performance.now();
-                    results[key] = end - start;
-                } catch (e) {
-                    results[key] = Infinity;
-                }
+                    results[key] = performance.now() - start;
+                } catch (e) { results[key] = Infinity; }
             });
-
             await Promise.allSettled(testPromises);
-
             const valid = Object.keys(results).filter(k => results[k] !== Infinity);
             if (valid.length === 0) {
                 bestProxyKey = DEFAULT_PROXY_KEY;
@@ -452,59 +366,43 @@
                 statusEl.className = 'proxy-status error';
                 return;
             }
-
             valid.sort((a, b) => results[a] - results[b]);
             bestProxyKey = valid[0];
             const latency = Math.round(results[bestProxyKey]);
             statusEl.textContent = '✅ 最快: ' + bestProxyKey + ' (' + latency + 'ms)';
             statusEl.className = 'proxy-status success';
-
             if (isProxyAuto) {
                 document.getElementById('proxySelect').value = 'auto';
                 renderCurrentPath();
                 updateZipLinks();
                 showProxyTip('🚀 自动切换到最快代理: ' + bestProxyKey + ' (' + latency + 'ms)');
             }
-            console.log('🏆 测速完成，最快:', bestProxyKey, latency + 'ms');
         }
 
         function showProxyTip(msg, isError = false) {
             const existing = document.querySelector('.proxy-tip');
             if (existing) existing.remove();
-
             const tip = document.createElement('div');
             tip.className = 'proxy-tip';
-            tip.innerHTML = `
-                <span class="tip-icon">${isError ? '⚠️' : '✅'}</span>
-                <span>${msg}</span>
-                <span class="tip-close">&times;</span>
-            `;
+            tip.innerHTML = `<span class="tip-icon">${isError ? '⚠️' : '✅'}</span><span>${msg}</span><span class="tip-close">&times;</span>`;
             if (isError) tip.style.borderColor = 'rgba(244,67,54,0.5)';
             document.body.appendChild(tip);
             tip.querySelector('.tip-close').addEventListener('click', function() { tip.remove(); });
             setTimeout(() => { if (tip.parentNode) tip.remove(); }, 8000);
         }
 
-        // ================================================================
-        //  代理逻辑
-        // ================================================================
-        function getSelectedProxyKey() {
-            return document.getElementById('proxySelect').value;
-        }
-
+        function getSelectedProxyKey() { return document.getElementById('proxySelect').value; }
         function getProxyPrefix(key) {
             if (key === 'none') return '';
             if (key === 'auto') return PROXY_MAP[bestProxyKey] || '';
             return PROXY_MAP[key] || '';
         }
-
         function getDownloadUrl(originalUrl) {
             const mode = getSelectedProxyKey();
             if (mode === 'none') return originalUrl;
             const prefix = getProxyPrefix(mode);
             return prefix ? prefix + originalUrl : originalUrl;
         }
-
         function updateZipLinks() {
             const base = 'https://github.com/xiaozhongziyuanku2025/xiaozhongziyuanku2025/archive/refs/heads/main';
             const zipLink = document.getElementById('zipLink');
@@ -513,7 +411,6 @@
             zipLink.href = (prefix ? prefix : '') + base + '.zip';
             tarLink.href = (prefix ? prefix : '') + base + '.tar.gz';
         }
-
         function downloadFile(originalUrl, encodedName) {
             const decoded = decodeFilename(encodedName);
             const finalUrl = getDownloadUrl(originalUrl);
@@ -526,44 +423,28 @@
             document.body.removeChild(a);
         }
 
-        // ================================================================
-        //  层级目录核心逻辑
-        // ================================================================
-
-        /** 构建路径树，返回 { tree: {...}, rootFiles: [...] } */
         function buildFileTree(files) {
             const tree = {};
             const rootFiles = [];
-
             files.forEach(file => {
                 const path = file.path || 'Windows病毒库/';
-                // 规范化路径：去掉首尾空格，确保以 / 结尾
                 const normalizedPath = path.trim().replace(/\/+$/, '') + '/';
-                // 分割路径
                 const parts = normalizedPath.split('/').filter(p => p.length > 0);
-                if (parts.length === 0) {
-                    rootFiles.push(file);
-                    return;
-                }
-                // 逐层构建树
+                if (parts.length === 0) { rootFiles.push(file); return; }
                 let current = tree;
                 for (let i = 0; i < parts.length; i++) {
                     const part = parts[i];
                     if (i === parts.length - 1) {
-                        // 最后一层：文件列表
                         if (!current[part]) current[part] = [];
                         if (Array.isArray(current[part])) {
                             current[part].push(file);
                         } else {
-                            // 如果已经是对象（有子文件夹），则创建 files 字段
                             if (!current[part]._files) current[part]._files = [];
                             current[part]._files.push(file);
                         }
                     } else {
-                        // 中间层：子文件夹对象
                         if (!current[part]) current[part] = {};
                         if (Array.isArray(current[part])) {
-                            // 如果之前是文件列表，转为对象
                             const existingFiles = current[part];
                             current[part] = { _files: existingFiles };
                         }
@@ -571,73 +452,45 @@
                     }
                 }
             });
-
             return { tree, rootFiles };
         }
 
-        /** 获取指定路径下的文件和文件夹 */
         function getPathContent(tree, rootFiles, path) {
             if (!path || path === '') {
-                // 根目录：返回 rootFiles 和 tree 的第一层文件夹
                 const folders = Object.keys(tree).filter(k => !k.startsWith('_'));
                 return { folders, files: rootFiles };
             }
-
             const parts = path.split('/').filter(p => p.length > 0);
             let current = tree;
             for (let i = 0; i < parts.length; i++) {
                 const part = parts[i];
-                if (!current[part]) {
-                    return { folders: [], files: [] };
-                }
+                if (!current[part]) return { folders: [], files: [] };
                 if (i === parts.length - 1) {
-                    // 到达目标路径
                     const node = current[part];
-                    if (Array.isArray(node)) {
-                        return { folders: [], files: node };
-                    } else {
-                        // 是对象，提取子文件夹和文件
+                    if (Array.isArray(node)) return { folders: [], files: node };
+                    else {
                         const folders = Object.keys(node).filter(k => !k.startsWith('_'));
                         const files = node._files || [];
                         return { folders, files };
                     }
                 } else {
                     current = current[part];
-                    if (Array.isArray(current)) {
-                        // 路径中断（文件被当作文件夹），返回空
-                        return { folders: [], files: [] };
-                    }
+                    if (Array.isArray(current)) return { folders: [], files: [] };
                 }
             }
             return { folders: [], files: [] };
         }
 
-        /** 获取面包屑路径数组 */
         function getBreadcrumbParts(path) {
             if (!path) return [];
             return path.split('/').filter(p => p.length > 0);
         }
 
-        /** 切换目录 */
         function navigateTo(path) {
             currentPath = path || '';
             renderCurrentPath();
         }
 
-        /** 返回上级目录 */
-        function goUp() {
-            const parts = getBreadcrumbParts(currentPath);
-            if (parts.length <= 1) {
-                navigateTo('');
-            } else {
-                parts.pop();
-                navigateTo(parts.join('/'));
-            }
-        }
-
-        // ================================================================
-        //  渲染：文件 + 文件夹
-        // ================================================================
         function renderCurrentPath() {
             if (!allFiles.length) {
                 container.innerHTML = '<div class="loading">📁 暂无文件</div>';
@@ -645,41 +498,31 @@
                 updateBreadcrumb([]);
                 return;
             }
-
             const { tree, rootFiles } = buildFileTree(allFiles);
             const content = getPathContent(tree, rootFiles, currentPath);
-
-            // 更新统计
             const totalFiles = content.files.length;
             const totalFolders = content.folders.length;
             statsDiv.innerHTML = `<i class="fas fa-chart-bar"></i> 共 ${totalFiles} 个文件，${totalFolders} 个文件夹`;
-
-            // 更新面包屑
             const parts = getBreadcrumbParts(currentPath);
             updateBreadcrumb(parts);
 
-            // 构建 HTML
             let html = '';
-
-            // 如果有上级目录，显示返回按钮（面包屑已经包含，这里不加重复）
-            // 渲染文件夹
+            // 渲染文件夹（使用 style.css 中的 .folder-icon）
             if (content.folders.length > 0) {
                 content.folders.forEach(folderName => {
                     const subPath = currentPath ? currentPath + '/' + folderName : folderName;
-                    // 计算该文件夹下的文件数量
                     const subContent = getPathContent(tree, rootFiles, subPath);
                     const count = subContent.files.length;
                     html += `
                         <div class="folder-item" data-path="${escapeHtml(subPath)}">
-                            <div class="folder-icon"><i class="fas fa-folder"></i></div>
+                            <div class="folder-icon" style="width:60px;height:60px;flex-shrink:0;"></div>
                             <div class="folder-name">${escapeHtml(folderName)}</div>
                             <div class="folder-count">${count} 个文件</div>
                         </div>
                     `;
                 });
             }
-
-            // 渲染文件
+            // 渲染文件（使用 style.css 中的 .file-icon）
             if (content.files.length > 0) {
                 content.files.forEach(file => {
                     const isSel = selectedFiles.has(file);
@@ -689,40 +532,28 @@
                         <div class="file-item ${selectMode ? 'selectable' : ''} ${isSel ? ' selected' : ''}"
                              data-filename="${escapeHtml(file.name)}"
                              data-url="${escapeHtml(originalUrl)}">
-                            <div class="file-icon"></div>
+                            <div class="file-icon" style="width:60px;height:60px;margin:0 auto 10px;"></div>
                             <div class="file-name">${escapeHtml(displayName)}</div>
                             <div class="file-details">${formatSize(file.size)} ${selectMode ? '| 点击选中' : '| 点击下载'}</div>
                         </div>
                     `;
                 });
             }
-
             if (content.folders.length === 0 && content.files.length === 0) {
-                html = `
-                    <div class="empty-folder">
-                        <i class="fas fa-folder-open"></i>
-                        此目录为空
-                    </div>
-                `;
+                html = `<div class="empty-folder"><i class="fas fa-folder-open"></i>此目录为空</div>`;
             }
-
             container.innerHTML = html;
 
-            // 绑定事件：文件夹点击
             container.querySelectorAll('.folder-item').forEach(el => {
                 el.addEventListener('click', function() {
                     const path = this.dataset.path;
                     if (path) navigateTo(path);
                 });
             });
-
-            // 绑定文件点击事件
             container.querySelectorAll('.file-item').forEach(item => {
                 item.removeEventListener('click', handleFileClick);
                 item.addEventListener('click', handleFileClick);
             });
-
-            // 更新多选 UI
             updateUI();
         }
 
@@ -730,7 +561,6 @@
             const item = e.currentTarget;
             const originalUrl = item.dataset.url;
             const filename = item.dataset.filename;
-
             if (selectMode) {
                 const file = allFiles.find(f => f.name === filename);
                 if (file) {
@@ -748,12 +578,8 @@
             }
         }
 
-        // ================================================================
-        //  面包屑导航
-        // ================================================================
         function updateBreadcrumb(parts) {
             let html = `<span class="crumb-home" data-path="" data-level="-1"><i class="fas fa-home"></i> 根目录</span>`;
-
             let cumulativePath = '';
             parts.forEach((part, index) => {
                 cumulativePath = cumulativePath ? cumulativePath + '/' + part : part;
@@ -766,10 +592,7 @@
                     html += `<span class="crumb-item" data-path="${escapeHtml(cumulativePath)}">${escapeHtml(part)}</span>`;
                 }
             });
-
             breadcrumbNav.innerHTML = html;
-
-            // 绑定点击事件
             breadcrumbNav.querySelectorAll('.crumb-home, .crumb-item').forEach(el => {
                 el.addEventListener('click', function() {
                     const path = this.dataset.path || '';
@@ -778,9 +601,6 @@
             });
         }
 
-        // ================================================================
-        //  多选 UI
-        // ================================================================
         function updateUI() {
             const count = selectedFiles.size;
             document.getElementById('selectedCounter').innerText = count;
@@ -809,7 +629,6 @@
         }
 
         function selectAll() {
-            // 只选中当前路径下的文件
             const { tree, rootFiles } = buildFileTree(allFiles);
             const content = getPathContent(tree, rootFiles, currentPath);
             content.files.forEach(f => selectedFiles.add(f));
@@ -823,9 +642,6 @@
             updateUI();
         }
 
-        // ================================================================
-        //  批量下载
-        // ================================================================
         function showBatchModal() {
             if (selectedFiles.size === 0) return;
             document.getElementById('modalSelectedCount').innerText = selectedFiles.size;
@@ -867,15 +683,11 @@
             closeModal();
         }
 
-        // ================================================================
-        //  加载文件
-        // ================================================================
         async function loadFiles() {
             try {
                 const res = await fetch('release-cache.json?_=' + Date.now());
                 if (res.ok) {
                     const data = await res.json();
-                    // 兼容新格式（files 数组）和旧格式（直接数组）
                     if (data.files && Array.isArray(data.files)) {
                         allFiles = data.files;
                     } else if (Array.isArray(data)) {
@@ -883,7 +695,6 @@
                     } else {
                         throw new Error('缓存格式错误');
                     }
-                    // 确保每个文件都有 path 字段（旧格式兼容）
                     allFiles = allFiles.map(f => {
                         if (!f.path) f.path = 'Windows病毒库/';
                         if (!f.decoded_name) f.decoded_name = decodeFilename(f.name);
@@ -893,7 +704,6 @@
                     return;
                 }
                 console.log('缓存无效，尝试从 API 获取...');
-                // 降级：从 GitHub API 获取（旧方式）
                 const apiRes = await fetch('https://api.github.com/repos/xiaozhongziyuanku2025/xiaozhongziyuanku2025/releases/tags/Windows病毒库');
                 if (apiRes.ok) {
                     const apiData = await apiRes.json();
@@ -917,9 +727,6 @@
             }
         }
 
-        // ================================================================
-        //  搜索
-        // ================================================================
         function initSearch() {
             const toggle = document.getElementById('searchToggle');
             const bar = document.getElementById('searchBar');
@@ -966,7 +773,7 @@
                     list.innerHTML = matched.map(function(f) {
                         const originalUrl = f.download_url || '';
                         const name = f.decoded_name || decodeFilename(f.name);
-                        return '<div class="file-item" onclick="downloadFile(\'' + originalUrl + '\', \'' + f.name + '\')"><div class="file-icon"></div><div class="file-name">' + escapeHtml(name) + '</div><div class="file-details">' + formatSize(f.size) + ' | 点击下载</div></div>';
+                        return `<div class="file-item" onclick="downloadFile('${originalUrl}', '${f.name}')"><div class="file-icon" style="width:60px;height:60px;margin:0 auto 10px;"></div><div class="file-name">${escapeHtml(name)}</div><div class="file-details">${formatSize(f.size)} | 点击下载</div></div>`;
                     }).join('');
                 } else {
                     list.innerHTML = '<div style="text-align:center;padding:40px">😔 没有找到相关文件</div>';
@@ -974,9 +781,6 @@
             });
         }
 
-        // ================================================================
-        //  导航和菜单
-        // ================================================================
         document.getElementById('navToggle').addEventListener('click', function() {
             const sidebar = document.getElementById('sidebar');
             const overlay = document.getElementById('sidebarOverlay');
@@ -992,9 +796,6 @@
         document.getElementById('backButton').addEventListener('click', function() { history.back(); });
         document.getElementById('forwardButton').addEventListener('click', function() { history.forward(); });
 
-        // ================================================================
-        //  按钮绑定
-        // ================================================================
         document.getElementById('selectModeBtn').addEventListener('click', enterSelectMode);
         document.getElementById('exitSelectModeBtn').addEventListener('click', exitSelectMode);
         document.getElementById('selectAllBtn').addEventListener('click', selectAll);
@@ -1024,9 +825,6 @@
             speedTest();
         });
 
-        // ================================================================
-        //  🚀 启动
-        // ================================================================
         (async function init() {
             const statusEl = document.getElementById('proxyStatus');
             statusEl.textContent = '⏳ 检测IP...';
@@ -1058,9 +856,7 @@
                 statusEl.className = 'proxy-status success';
             }
 
-            console.log('✅ 初始化完成，当前代理:', getSelectedProxyKey(), '最佳:', bestProxyKey);
-            console.log('📁 当前路径:', currentPath);
-            console.log('📄 文件总数:', allFiles.length);
+            console.log('✅ 初始化完成');
         })();
     </script>
 </body>

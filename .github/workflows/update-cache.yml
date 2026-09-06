@@ -1,34 +1,100 @@
-name: Update Cache
+name: 更新 Release 缓存
 
 on:
   schedule:
-    - cron: '0 16 * * *'  # 每天 UTC 16:00
-  workflow_dispatch:
+    - cron: '0 16 * * *'   # 每日 UTC 16:00（北京时间 0:00）
+  workflow_dispatch:       # 支持手动触发
 
 jobs:
-  update:
+  update-cache:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: 检出仓库
+        uses: actions/checkout@v4
         with:
-          node-version: '18'
+          token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Fetch release data
+      - name: 获取所有 Release
+        id: get_releases
         run: |
-          RELEASE_URL=$(curl -s https://api.github.com/repos/${{ github.repository }}/releases/latest | jq -r .assets_url)
-          curl -s $RELEASE_URL > assets.json
-          cat assets.json | jq 'map({name: .name, size: .size, browser_download_url: .browser_download_url})' > release-cache.json
+          # 获取所有 Release，筛选以 Windows病毒库 开头的
+          RELEASES=$(curl -s -H "Accept: application/vnd.github.v3+json" \
+            https://api.github.com/repos/${{ github.repository }}/releases)
+          
+          # 筛选 Tag 以 "Windows病毒库" 开头的 Release
+          FILTERED=$(echo "$RELEASES" | jq '[.[] | select(.tag_name | startswith("Windows病毒库"))]')
+          echo "releases=$FILTERED" >> $GITHUB_OUTPUT
+          echo "筛选到以下 Release:"
+          echo "$FILTERED" | jq -r '.[].tag_name'
 
-      - name: Generate search index
-        run: node scripts/generate-search-index.js
+      - name: 构建缓存 JSON
+        id: build_cache
+        run: |
+          # 解析 Release 并构建 files 数组
+          FILES_JSON="[]"
+          
+          echo '${{ steps.get_releases.outputs.releases }}' | jq -c '.[]' | while read -r release; do
+            TAG=$(echo "$release" | jq -r '.tag_name')
+            # 解析路径：去掉 "Windows病毒库" 前缀，剩余部分按 - 分割
+            # 例如：Windows病毒库-GTX690-驱动 → Windows病毒库/GTX690/驱动
+            PATH_PART=$(echo "$TAG" | sed 's/^Windows病毒库//' | sed 's/^-//')
+            if [ -z "$PATH_PART" ]; then
+              PATH_FULL="Windows病毒库"
+            else
+              PATH_FULL="Windows病毒库/$(echo "$PATH_PART" | tr '-' '/')"
+            fi
+            echo "处理 Tag: $TAG → 路径: $PATH_FULL"
+            
+            # 获取该 Release 的 assets
+            ASSETS=$(echo "$release" | jq -c '.assets[]')
+            echo "$ASSETS" | while read -r asset; do
+              NAME=$(echo "$asset" | jq -r '.name')
+              SIZE=$(echo "$asset" | jq -r '.size')
+              URL=$(echo "$asset" | jq -r '.browser_download_url')
+              
+              # Base64 解码文件名主体（保留扩展名）
+              # 提取文件名主体（去掉扩展名）
+              BASE_NAME="${NAME%.*}"
+              EXT="${NAME##*.}"
+              if [ "$BASE_NAME" = "$NAME" ]; then
+                # 无扩展名
+                EXT=""
+                DECODED_NAME=""
+              else
+                # 解码主体
+                DECODED_BASE=$(echo "$BASE_NAME" | tr '-_' '+/' | base64 -d 2>/dev/null || echo "$BASE_NAME")
+                # 处理解码结果（可能是二进制，尝试转为 UTF-8 可读）
+                DECODED_BASE_CLEAN=$(echo "$DECODED_BASE" | iconv -f utf-8 -t utf-8//IGNORE 2>/dev/null || echo "$BASE_NAME")
+                DECODED_NAME="${DECODED_BASE_CLEAN}.${EXT}"
+              fi
+              
+              # 构建文件对象
+              FILE_OBJ=$(jq -n \
+                --arg name "$NAME" \
+                --arg decoded_name "$DECODED_NAME" \
+                --arg path "$PATH_FULL" \
+                --arg size "$SIZE" \
+                --arg url "$URL" \
+                '{name: $name, decoded_name: $decoded_name, path: $path, size: ($size | tonumber), download_url: $url}')
+              
+              # 追加到 FILES_JSON
+              FILES_JSON=$(echo "$FILES_JSON" | jq --argjson obj "$FILE_OBJ" '. + [$obj]')
+            done
+          done
+          
+          # 生成最终 JSON
+          TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          FINAL_JSON=$(echo '{"version":"1.0","updated_at":"'$TIMESTAMP'","files":'$FILES_JSON'}' | jq '.')
+          
+          echo "$FINAL_JSON" > release-cache.json
+          echo "✅ 缓存已生成，共 $(echo "$FINAL_JSON" | jq '.files | length') 个文件"
 
-      - name: Commit and push
+      - name: 提交并推送
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add release-cache.json search-index.json
-          git commit -m "Update cache and search index [skip ci]" || exit 0
+          git add release-cache.json
+          git diff --staged --quiet || git commit -m "chore: 自动更新 Release 缓存 [skip ci]"
           git push

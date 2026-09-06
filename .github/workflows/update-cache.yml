@@ -12,22 +12,19 @@ jobs:
       contents: write
     steps:
       - name: 检出仓库
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5   # v4 → v5，消除 Node.js 20 警告
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: 获取并生成缓存
         run: |
-          # 获取所有 Release
           RELEASES=$(curl -s -H "Accept: application/vnd.github.v3+json" \
             https://api.github.com/repos/${{ github.repository }}/releases)
 
-          # 使用 jq 一次性处理所有数据（筛选、路径解析、base64解码）
           FINAL_JSON=$(echo "$RELEASES" | jq '
             [.[] | select(.tag_name | startswith("Windows病毒库"))] as $releases |
             $releases | map(
               .tag_name as $tag |
-              # 解析路径：去掉前缀 "Windows病毒库"，按 "-" 分割
               ($tag | sub("^Windows病毒库"; "") | sub("^-"; "") | split("-") | join("/")) as $subpath |
               ($subpath | if . == "" then "Windows病毒库" else "Windows病毒库/" + . end) as $path |
               .assets[] |

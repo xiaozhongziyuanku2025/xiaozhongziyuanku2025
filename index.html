@@ -6,6 +6,231 @@
     <title>关于作者 - 小众资源库</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="css/style.css">
+    <style>
+        /* ===================== 教程弹窗样式 ===================== */
+        .tutorial-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85);
+            z-index: 10000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .tutorial-overlay.active { display: flex; }
+
+        .tutorial-modal {
+            background: #1a1a28;
+            border-radius: 16px;
+            border: 2px solid #4CAF50;
+            max-width: 900px;
+            width: 100%;
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.7);
+            overflow: hidden;
+            box-sizing: border-box;
+        }
+        .tutorial-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 25px;
+            background: linear-gradient(135deg, rgba(76,175,80,0.2), rgba(139,195,74,0.1));
+            border-bottom: 1px solid rgba(76,175,80,0.3);
+        }
+        .tutorial-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #4CAF50;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .tutorial-close {
+            background: rgba(255,255,255,0.05);
+            border: none;
+            color: #aaa;
+            font-size: 22px;
+            width: 36px; height: 36px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: 0.2s;
+            line-height: 1;
+        }
+        .tutorial-close:hover { background: rgba(244,67,54,0.2); color: #f44336; }
+
+        .tutorial-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 25px 30px;
+            line-height: 1.7;
+            font-size: 14.5px;
+            color: #d0d0d0;
+        }
+        .tutorial-body::-webkit-scrollbar { width: 8px; }
+        .tutorial-body::-webkit-scrollbar-track { background: rgba(255,255,255,0.05); border-radius: 4px; }
+        .tutorial-body::-webkit-scrollbar-thumb { background: #4CAF50; border-radius: 4px; }
+        .tutorial-body::-webkit-scrollbar-thumb:hover { background: #2E7D32; }
+
+        .tutorial-body h2 {
+            color: #4CAF50;
+            font-size: 1.15rem;
+            margin: 25px 0 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid rgba(76,175,80,0.25);
+        }
+        .tutorial-body h2:first-child { margin-top: 0; }
+        .tutorial-body h3 {
+            color: #8BC34A;
+            font-size: 1rem;
+            margin: 18px 0 8px;
+        }
+        .tutorial-body p { margin-bottom: 10px; }
+        .tutorial-body ul, .tutorial-body ol { margin: 8px 0 12px 24px; }
+        .tutorial-body li { margin-bottom: 6px; }
+
+        .tutorial-body code {
+            background: rgba(76,175,80,0.15);
+            color: #8BC34A;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 13px;
+            word-break: break-all;
+        }
+
+        .tutorial-body pre {
+            background: #0d0d15;
+            border: 1px solid rgba(76,175,80,0.25);
+            border-radius: 8px;
+            padding: 12px 16px;
+            margin: 10px 0 15px;
+            overflow-x: auto;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 13px;
+            color: #b0e0b0;
+        }
+        .tutorial-body pre::-webkit-scrollbar { height: 6px; }
+        .tutorial-body pre::-webkit-scrollbar-track { background: rgba(255,255,255,0.05); }
+        .tutorial-body pre::-webkit-scrollbar-thumb { background: #4CAF50; border-radius: 3px; }
+        .tutorial-body pre code {
+            background: transparent;
+            padding: 0;
+            color: inherit;
+            font-size: 13px;
+            word-break: normal;
+        }
+
+        .tutorial-body .url-box {
+            background: #0d0d15;
+            border: 1px dashed #4CAF50;
+            border-radius: 8px;
+            padding: 12px 16px;
+            margin: 10px 0;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 12.5px;
+            color: #8BC34A;
+            word-break: break-all;
+            user-select: all;
+        }
+
+        .tutorial-body .tip-box {
+            background: rgba(255,152,0,0.1);
+            border-left: 4px solid #ff9800;
+            padding: 10px 15px;
+            border-radius: 6px;
+            margin: 12px 0;
+            color: #ffcc80;
+            font-size: 13.5px;
+        }
+        .tutorial-body .success-box {
+            background: rgba(76,175,80,0.1);
+            border-left: 4px solid #4CAF50;
+            padding: 10px 15px;
+            border-radius: 6px;
+            margin: 12px 0;
+            color: #a5d6a7;
+            font-size: 13.5px;
+        }
+
+        .tutorial-body table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 12px 0;
+            font-size: 13.5px;
+        }
+        .tutorial-body th {
+            background: rgba(76,175,80,0.2);
+            color: #8BC34A;
+            padding: 10px;
+            text-align: left;
+            border: 1px solid rgba(76,175,80,0.25);
+        }
+        .tutorial-body td {
+            padding: 9px 10px;
+            border: 1px solid rgba(76,175,80,0.15);
+        }
+        .tutorial-body tr:nth-child(even) td { background: rgba(255,255,255,0.02); }
+
+        .tutorial-footer {
+            padding: 15px 25px;
+            background: rgba(20,20,30,0.8);
+            border-top: 1px solid rgba(76,175,80,0.3);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        .tutorial-checkbox {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13.5px;
+            color: #aaa;
+            cursor: pointer;
+            user-select: none;
+        }
+        .tutorial-checkbox input {
+            width: 16px; height: 16px;
+            cursor: pointer;
+            accent-color: #4CAF50;
+        }
+        .tutorial-ok-btn {
+            padding: 10px 28px;
+            background: linear-gradient(135deg, #4CAF50, #2E7D32);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        .tutorial-ok-btn:hover { transform: translateY(-2px); opacity: 0.9; }
+
+        /* 侧边栏"解码教程"菜单项 */
+        .nav-link.tutorial-link {
+            cursor: pointer;
+        }
+
+        @media (max-width: 768px) {
+            .tutorial-overlay { padding: 10px; }
+            .tutorial-header { padding: 15px 18px; }
+            .tutorial-title { font-size: 1.05rem; }
+            .tutorial-body { padding: 18px 18px; font-size: 13.5px; }
+            .tutorial-footer { padding: 12px 18px; }
+            .tutorial-ok-btn { padding: 9px 20px; font-size: 14px; }
+        }
+    </style>
 </head>
 <body>
     <div class="sidebar-overlay" id="sidebarOverlay"></div>
@@ -18,6 +243,200 @@
             <div class="password-buttons">
                 <button class="password-submit" id="passwordSubmit">确认</button>
                 <button class="password-cancel" id="passwordCancel">取消</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===================== 教程弹窗 ===================== -->
+    <div class="tutorial-overlay" id="tutorialOverlay">
+        <div class="tutorial-modal">
+            <div class="tutorial-header">
+                <div class="tutorial-title">
+                    <i class="fas fa-book-open"></i>
+                    <span>Base64 文件名解码工具 - 使用教程</span>
+                </div>
+                <button class="tutorial-close" id="tutorialCloseBtn" title="关闭">&times;</button>
+            </div>
+
+            <div class="tutorial-body">
+                <h2>📖 什么是这个脚本？</h2>
+                <p>你从本仓库下载的文件，文件名是 <strong>Base64 编码</strong> 的（比如 <code>R1RYNjkwLWRyaXZlci5leGU=</code>），解码后才是真正的文件名（如 <code>GTX690-driver.exe</code>）。</p>
+                <p>这个脚本会自动扫描目录下的所有文件，把 Base64 编码的文件名解码成原始名称，并自动处理重名冲突。</p>
+
+                <h2>📥 下载脚本</h2>
+                <p>脚本已放在仓库根目录，文件名：<strong>小众资源库专用解码工具.sh</strong></p>
+
+                <h3>直链下载</h3>
+                <div class="url-box">https://github.com/xiaozhongziyuanku2025/xiaozhongziyuanku2025/raw/main/小众资源库专用解码工具.sh</div>
+
+                <h3>ghproxy.org 加速下载</h3>
+                <div class="url-box">https://ghproxy.org/https://github.com/xiaozhongziyuanku2025/xiaozhongziyuanku2025/raw/main/小众资源库专用解码工具.sh</div>
+
+                <h3>ghproxy.com 加速下载</h3>
+                <div class="url-box">https://ghproxy.com/https://github.com/xiaozhongziyuanku2025/xiaozhongziyuanku2025/raw/main/小众资源库专用解码工具.sh</div>
+
+                <div class="tip-box">💡 加速代理的用法是在原始 URL 前加上代理前缀，所有命令行工具都支持这种格式。</div>
+
+                <h2>🚀 各系统使用方法</h2>
+
+                <h3>Windows 系统（Git Bash）</h3>
+                <p><strong>第一步：安装 Git Bash</strong>（如果还没有）</p>
+                <ul>
+                    <li>下载地址：https://git-scm.com/download/win</li>
+                    <li>安装时全部保持默认即可</li>
+                </ul>
+                <p><strong>第二步：进入下载目录</strong></p>
+                <pre><code>cd /c/Users/你的用户名/Downloads</code></pre>
+                <p><strong>第三步：下载脚本</strong></p>
+                <pre><code>curl -O https://github.com/xiaozhongziyuanku2025/xiaozhongziyuanku2025/raw/main/小众资源库专用解码工具.sh</code></pre>
+                <p>或使用加速：</p>
+                <pre><code>curl -O https://ghproxy.org/https://github.com/xiaozhongziyuanku2025/xiaozhongziyuanku2025/raw/main/小众资源库专用解码工具.sh</code></pre>
+                <p><strong>第四步：运行</strong></p>
+                <pre><code>bash 小众资源库专用解码工具.sh</code></pre>
+                <div class="tip-box">💡 盘符对应关系：C:\ → /c/，D:\ → /d/</div>
+
+                <h3>Windows 系统（WSL）</h3>
+                <p>安装 WSL（PowerShell 管理员运行）：</p>
+                <pre><code>wsl --install</code></pre>
+                <p>然后进入下载目录并运行：</p>
+                <pre><code>cd /mnt/c/Users/你的用户名/Downloads
+curl -O https://github.com/xiaozhongziyuanku2025/xiaozhongziyuanku2025/raw/main/小众资源库专用解码工具.sh
+bash 小众资源库专用解码工具.sh</code></pre>
+
+                <h3>macOS 系统</h3>
+                <pre><code>cd ~/Downloads
+curl -O https://github.com/xiaozhongziyuanku2025/xiaozhongziyuanku2025/raw/main/小众资源库专用解码工具.sh
+bash 小众资源库专用解码工具.sh</code></pre>
+                <div class="success-box">✅ macOS 自带 base64 命令，无需额外安装</div>
+
+                <h3>Linux 系统</h3>
+                <pre><code>cd ~/Downloads
+curl -O https://github.com/xiaozhongziyuanku2025/xiaozhongziyuanku2025/raw/main/小众资源库专用解码工具.sh
+bash 小众资源库专用解码工具.sh</code></pre>
+
+                <h3>Android 手机（Termux）</h3>
+                <p>从 F-Droid 下载 Termux（不要从 Google Play）：</p>
+                <pre><code>pkg update &amp;&amp; pkg upgrade
+pkg install bash curl
+cd /sdcard/Download
+curl -O https://github.com/xiaozhongziyuanku2025/xiaozhongziyuanku2025/raw/main/小众资源库专用解码工具.sh
+bash 小众资源库专用解码工具.sh</code></pre>
+
+                <h3>iPhone / iPad（iSH Shell）</h3>
+                <p>从 App Store 搜索 iSH Shell 下载：</p>
+                <pre><code>apk add curl
+cd /root
+curl -O https://github.com/xiaozhongziyuanku2025/xiaozhongziyuanku2025/raw/main/小众资源库专用解码工具.sh
+ash 小众资源库专用解码工具.sh</code></pre>
+
+                <h2>🖥️ 脚本界面说明</h2>
+                <p>运行后会显示文件夹和文件列表：</p>
+                <pre><code>========================================
+  Base64 文件名解码工具
+========================================
+
+当前目录: /c/Users/Downloads
+
+  [1] 📁 Windows病毒库-GTX690/
+  [2] 📁 Windows病毒库-RTX4090/
+  [3] 📄 R1RYNjkwLWRyaXZlci5leGU=
+  [4] 📄 R1RYNjkwLXRvb2wuZXhl
+
+选择方式：
+  - 数字: 3 (进入文件夹 或 解码文件)
+  - 范围: 3-7
+  - 多个: 2,4,6 (仅限文件)
+  - 全部: all (仅限文件)
+  - 切换目录: cd
+  - 退出: q
+
+请选择:</code></pre>
+
+                <table>
+                    <tr>
+                        <th>图标</th>
+                        <th>含义</th>
+                    </tr>
+                    <tr>
+                        <td>📁</td>
+                        <td>文件夹，输入编号进入</td>
+                    </tr>
+                    <tr>
+                        <td>📄</td>
+                        <td>文件，输入编号解码</td>
+                    </tr>
+                </table>
+
+                <p><strong>操作示例：</strong></p>
+                <ul>
+                    <li>输入 <code>1</code> → 进入 <code>Windows病毒库-GTX690/</code> 文件夹</li>
+                    <li>输入 <code>3</code> → 解码第 3 个文件</li>
+                    <li>输入 <code>3-4</code> → 解码第 3 到第 4 个文件</li>
+                    <li>输入 <code>3,4</code> → 解码第 3 和第 4 个文件</li>
+                    <li>输入 <code>all</code> → 解码当前目录所有文件（跳过文件夹）</li>
+                    <li>输入 <code>cd</code> → 切换到其他目录</li>
+                    <li>输入 <code>q</code> → 退出</li>
+                </ul>
+
+                <h2>📝 常见问题</h2>
+
+                <h3>Q: 运行提示 base64: command not found</h3>
+                <p><strong>Git Bash</strong> 中可能没有 base64 命令，两种解决方法：</p>
+                <p><strong>方法一</strong>：用 openssl 代替（Git Bash 自带）</p>
+                <p>打开脚本，把所有 <code>base64 -d</code> 替换为 <code>openssl base64 -d</code></p>
+                <p><strong>方法二</strong>：下载 base64.exe</p>
+                <p>从 https://github.com/kalbasit/base64/releases 下载，放到 <code>C:\Program Files\Git\usr\bin\</code></p>
+
+                <h3>Q: 运行提示 curl: command not found</h3>
+                <ul>
+                    <li>Ubuntu/Debian：<code>sudo apt install curl</code></li>
+                    <li>macOS：<code>brew install curl</code>（需先安装 Homebrew）</li>
+                    <li>Git Bash：curl 自带，如没有可手动下载脚本后放到目录</li>
+                </ul>
+
+                <h3>Q: 加速下载链接仍然很慢</h3>
+                <p>公共代理稳定性有限，可以尝试换用其他代理前缀：</p>
+                <ul>
+                    <li><code>https://ghproxy.net/</code></li>
+                    <li><code>https://gh-proxy.com/</code></li>
+                    <li><code>https://hub.gitmirror.com/</code></li>
+                </ul>
+
+                <h3>Q: 中文文件名显示乱码</h3>
+                <ul>
+                    <li><strong>Git Bash</strong>：右键标题栏 → Options → Text → Character set 选择 UTF-8</li>
+                    <li><strong>Linux/macOS</strong>：运行 <code>export LANG=zh_CN.UTF-8</code></li>
+                </ul>
+
+                <h3>Q: 无法切换盘符（C: / D:）</h3>
+                <p>Git Bash 中盘符格式为 <code>/c/</code>、<code>/d/</code>：</p>
+                <pre><code>cd /c/Users/Downloads   # 进入 C 盘
+cd /d/                   # 进入 D 盘</code></pre>
+                <p>运行脚本后输入 <code>cd</code> 也可以切换，例如输入 <code>/d/病毒样本</code></p>
+
+                <h3>Q: 下载脚本时中文文件名保存失败</h3>
+                <p>可以重命名为英文后再下载：</p>
+                <pre><code>curl -o decode.sh https://github.com/xiaozhongziyuanku2025/xiaozhongziyuanku2025/raw/main/小众资源库专用解码工具.sh
+bash decode.sh</code></pre>
+
+                <h3>Q: 脚本无法执行，提示 Permission denied</h3>
+                <pre><code>chmod +x 小众资源库专用解码工具.sh
+./小众资源库专用解码工具.sh</code></pre>
+                <p>或者直接用 bash 运行，不需要执行权限：</p>
+                <pre><code>bash 小众资源库专用解码工具.sh</code></pre>
+
+                <h2>📄 版权说明</h2>
+                <p>本脚本仅供学习研究使用，请勿用于商业或非法用途。使用本脚本带来的任何风险由用户自行承担。</p>
+            </div>
+
+            <div class="tutorial-footer">
+                <label class="tutorial-checkbox">
+                    <input type="checkbox" id="tutorialDontShow">
+                    <span>下次不再提示</span>
+                </label>
+                <button class="tutorial-ok-btn" id="tutorialOkBtn">
+                    <i class="fas fa-check"></i> 我已知晓
+                </button>
             </div>
         </div>
     </div>
@@ -37,7 +456,7 @@
             </div>
             <h1 class="site-title">小众资源库</h1>
         </header>
-        
+
         <div class="main-content">
             <div class="sidebar" id="sidebar">
                 <ul class="nav-menu">
@@ -56,9 +475,14 @@
                             <i class="fas fa-envelope"></i> 联系作者
                         </a>
                     </li>
+                    <li class="nav-item">
+                        <a href="javascript:void(0)" class="nav-link tutorial-link" id="showTutorialBtn">
+                            <i class="fas fa-book"></i> 解码教程
+                        </a>
+                    </li>
                 </ul>
             </div>
-            
+
             <div class="content-area">
                 <div class="author-info">
                     <div class="author-photo">
@@ -89,5 +513,58 @@
     </div>
 
     <script src="js/main.js"></script>
+
+    <!-- ===================== 教程弹窗脚本 ===================== -->
+    <script>
+    (function() {
+        var overlay = document.getElementById('tutorialOverlay');
+        var closeBtn = document.getElementById('tutorialCloseBtn');
+        var okBtn = document.getElementById('tutorialOkBtn');
+        var dontShow = document.getElementById('tutorialDontShow');
+        var showBtn = document.getElementById('showTutorialBtn');
+
+        function openTutorial() {
+            overlay.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeTutorial() {
+            if (dontShow.checked) {
+                localStorage.setItem('tutorialDontShow', '1');
+            }
+            overlay.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        // 页面加载时判断是否显示
+        if (localStorage.getItem('tutorialDontShow') !== '1') {
+            setTimeout(openTutorial, 500);
+        }
+
+        closeBtn.addEventListener('click', closeTutorial);
+        okBtn.addEventListener('click', closeTutorial);
+
+        // 点击遮罩关闭
+        overlay.addEventListener('click', function(e) {
+            if (e.target === overlay) closeTutorial();
+        });
+
+        // ESC 键关闭
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && overlay.classList.contains('active')) {
+                closeTutorial();
+            }
+        });
+
+        // 侧边栏"解码教程"按钮
+        if (showBtn) {
+            showBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                dontShow.checked = false;
+                openTutorial();
+            });
+        }
+    })();
+    </script>
 </body>
 </html>

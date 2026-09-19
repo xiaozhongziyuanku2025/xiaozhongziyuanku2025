@@ -117,6 +117,85 @@
         @keyframes slideUp { from { opacity: 0; transform: translateX(-50%) translateY(30px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
         @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
 
+        /* ===== 工具栏（排序 + 每页数量） ===== */
+        .toolbar {
+            margin: 15px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            padding: 10px 15px;
+            background: rgba(20,20,30,0.7);
+            border-radius: 8px;
+            border: 1px solid rgba(76,175,80,0.2);
+        }
+        .toolbar-left {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .toolbar label {
+            color: #aaa;
+            font-size: 14px;
+        }
+        .toolbar-select {
+            background: rgba(0,0,0,0.4);
+            border: 1px solid #4CAF50;
+            color: #fff;
+            padding: 6px 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .toolbar-select:focus { outline: none; }
+
+        /* ===== 分页控件 ===== */
+        .pagination {
+            margin: 25px 0 15px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+        .page-btn {
+            background: rgba(30,30,40,0.8);
+            border: 1px solid rgba(76,175,80,0.3);
+            color: #e0e0e0;
+            padding: 8px 14px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: 0.2s;
+            min-width: 40px;
+        }
+        .page-btn:hover:not(:disabled) {
+            background: rgba(76,175,80,0.2);
+            border-color: #4CAF50;
+            color: #4CAF50;
+        }
+        .page-btn.active {
+            background: #4CAF50;
+            color: white;
+            border-color: #4CAF50;
+            font-weight: 600;
+        }
+        .page-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+        .page-ellipsis {
+            color: #888;
+            padding: 0 4px;
+        }
+        .page-info {
+            color: #aaa;
+            font-size: 13px;
+            margin-left: 12px;
+        }
+
         @media (max-width: 768px) {
             .sidebar { display: none; position: fixed; top: 0; left: 0; height: 100%; width: 280px; background: rgba(20,20,30,0.95); z-index: 1000; padding: 20px; overflow-y: auto; }
             .sidebar.active { display: block; }
@@ -128,6 +207,9 @@
             .proxy-tip { bottom: 15px; padding: 10px 16px; font-size: 13px; }
             .breadcrumb-nav { font-size: 13px; padding: 8px 12px; flex-wrap: wrap; }
             .folder-item { padding: 12px 16px; }
+            .toolbar { flex-direction: column; align-items: stretch; }
+            .toolbar-left { justify-content: center; }
+            .page-info { margin-left: 0; width: 100%; text-align: center; }
         }
     </style>
 </head>
@@ -182,6 +264,8 @@
                         <a href="index.html" class="crumb-item">首页</a>
                         <span class="crumb-sep">></span>
                         <a href="resources.html" class="crumb-item">资源库</a>
+                        <span class="crumb-sep">></span>
+                        <a href="main-resources.html" class="crumb-item">小众资源库</a>
                         <span class="crumb-sep">></span>
                         <span class="crumb-current">Windows病毒库</span>
                     </span>
@@ -245,7 +329,7 @@
 
     <script>
         // ================================================================
-        //  完整版：层级目录 + IP检测 + 国家判断 + 下载解码
+        //  完整版：层级目录 + IP检测 + 国家判断 + 下载解码 + 排序分页
         // ================================================================
 
         const PROXY_MAP = {
@@ -263,6 +347,9 @@
         let isProxyAuto = true;
         let currentProxyKey = 'none';
         let currentPath = '';
+        let currentPage = 1;
+        let pageSize = 24;
+        let sortBy = 'name-asc';
 
         const container = document.getElementById('fileListContainer');
         const statsDiv = document.getElementById('fileStats');
@@ -294,6 +381,45 @@
             return str.replace(/[&<>]/g, function(m) {
                 return { '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m];
             });
+        }
+
+        function sortFiles(files, sortBy) {
+            const arr = [...files];
+            const getName = f => f.decoded_name || decodeFilename(f.name);
+            switch (sortBy) {
+                case 'name-asc': return arr.sort((a, b) => getName(a).localeCompare(getName(b), 'zh-CN'));
+                case 'name-desc': return arr.sort((a, b) => getName(b).localeCompare(getName(a), 'zh-CN'));
+                case 'size-asc': return arr.sort((a, b) => (a.size || 0) - (b.size || 0));
+                case 'size-desc': return arr.sort((a, b) => (b.size || 0) - (a.size || 0));
+                default: return arr;
+            }
+        }
+
+        function renderPagination(totalFiles, totalPages) {
+            if (totalPages <= 1) return '';
+            let html = '<div class="pagination">';
+            html += `<button class="page-btn" data-page="${currentPage - 1}" ${currentPage === 1 ? 'disabled' : ''}>上一页</button>`;
+
+            const pages = [];
+            for (let i = 1; i <= totalPages; i++) {
+                if (i === 1 || i === totalPages || Math.abs(i - currentPage) <= 2) {
+                    pages.push(i);
+                } else if (pages[pages.length - 1] !== '...') {
+                    pages.push('...');
+                }
+            }
+            pages.forEach(p => {
+                if (p === '...') {
+                    html += '<span class="page-ellipsis">...</span>';
+                } else {
+                    html += `<button class="page-btn ${p === currentPage ? 'active' : ''}" data-page="${p}">${p}</button>`;
+                }
+            });
+
+            html += `<button class="page-btn" data-page="${currentPage + 1}" ${currentPage === totalPages ? 'disabled' : ''}>下一页</button>`;
+            html += `<span class="page-info">共 ${totalFiles} 个文件，第 ${currentPage}/${totalPages} 页</span>`;
+            html += '</div>';
+            return html;
         }
 
         // ================================================================
@@ -424,8 +550,6 @@
             const decoded = decodeFilename(encodedName);
             const finalUrl = getDownloadUrl(originalUrl);
 
-            showProxyTip('⏳ 正在下载: ' + decoded);
-
             try {
                 const response = await fetch(finalUrl);
                 if (!response.ok) throw new Error('HTTP ' + response.status);
@@ -438,10 +562,8 @@
                 link.click();
                 document.body.removeChild(link);
                 setTimeout(() => URL.revokeObjectURL(link.href), 5000);
-                showProxyTip('✅ 下载完成: ' + decoded);
             } catch (e) {
                 console.error('下载失败:', e);
-                showProxyTip('⚠️ 下载失败，尝试直接打开', true);
                 window.open(finalUrl, '_blank');
             }
         }
@@ -450,7 +572,6 @@
             const files = Array.from(selectedFiles);
             if (files.length === 0) return;
 
-            showProxyTip('📥 开始批量下载 ' + files.length + ' 个文件...');
             const progressDiv = document.getElementById('progressBar');
             const progressFill = document.getElementById('progressFill');
             const progressText = document.getElementById('progressText');
@@ -497,7 +618,6 @@
 
             setTimeout(() => {
                 progressDiv.classList.remove('active');
-                showProxyTip('✅ 批量下载完成！');
             }, 2000);
             closeModal();
         }
@@ -612,6 +732,7 @@
 
         function navigateTo(path) {
             currentPath = path || '';
+            currentPage = 1;
             renderCurrentPath();
         }
 
@@ -632,7 +753,35 @@
             const parts = getBreadcrumbParts(currentPath);
             updateFileBreadcrumb(parts);
 
+            const sortedFiles = sortFiles(content.files, sortBy);
+            const totalPages = Math.max(1, Math.ceil(sortedFiles.length / pageSize));
+            if (currentPage > totalPages) currentPage = totalPages;
+            if (currentPage < 1) currentPage = 1;
+            const startIdx = (currentPage - 1) * pageSize;
+            const pageFiles = sortedFiles.slice(startIdx, startIdx + pageSize);
+
             let html = '';
+
+            html += `
+                <div class="toolbar">
+                    <div class="toolbar-left">
+                        <label>排序：</label>
+                        <select id="sortSelect" class="toolbar-select">
+                            <option value="name-asc" ${sortBy === 'name-asc' ? 'selected' : ''}>名称 A→Z</option>
+                            <option value="name-desc" ${sortBy === 'name-desc' ? 'selected' : ''}>名称 Z→A</option>
+                            <option value="size-asc" ${sortBy === 'size-asc' ? 'selected' : ''}>大小 小→大</option>
+                            <option value="size-desc" ${sortBy === 'size-desc' ? 'selected' : ''}>大小 大→小</option>
+                        </select>
+                        <label>每页：</label>
+                        <select id="pageSizeSelect" class="toolbar-select">
+                            <option value="12" ${pageSize === 12 ? 'selected' : ''}>12</option>
+                            <option value="24" ${pageSize === 24 ? 'selected' : ''}>24</option>
+                            <option value="48" ${pageSize === 48 ? 'selected' : ''}>48</option>
+                            <option value="96" ${pageSize === 96 ? 'selected' : ''}>96</option>
+                        </select>
+                    </div>
+                </div>
+            `;
 
             if (content.folders.length > 0) {
                 content.folders.forEach(folderName => {
@@ -649,8 +798,8 @@
                 });
             }
 
-            if (content.files.length > 0) {
-                content.files.forEach(file => {
+            if (pageFiles.length > 0) {
+                pageFiles.forEach(file => {
                     const isSel = selectedFiles.has(file);
                     const displayName = file.decoded_name || decodeFilename(file.name);
                     const originalUrl = file.download_url || file.browser_download_url || '';
@@ -668,6 +817,8 @@
 
             if (content.folders.length === 0 && content.files.length === 0) {
                 html = `<div class="empty-folder"><i class="fas fa-folder-open"></i>此目录为空</div>`;
+            } else {
+                html += renderPagination(totalFiles, totalPages);
             }
 
             container.innerHTML = html;
@@ -683,6 +834,35 @@
                 item.removeEventListener('click', handleFileClick);
                 item.addEventListener('click', handleFileClick);
             });
+
+            container.querySelectorAll('.page-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const page = parseInt(this.dataset.page);
+                    if (!isNaN(page) && page >= 1 && page <= totalPages && page !== currentPage) {
+                        currentPage = page;
+                        renderCurrentPath();
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }
+                });
+            });
+
+            const sortSel = document.getElementById('sortSelect');
+            if (sortSel) {
+                sortSel.addEventListener('change', function() {
+                    sortBy = this.value;
+                    currentPage = 1;
+                    renderCurrentPath();
+                });
+            }
+
+            const pageSizeSel = document.getElementById('pageSizeSelect');
+            if (pageSizeSel) {
+                pageSizeSel.addEventListener('change', function() {
+                    pageSize = parseInt(this.value);
+                    currentPage = 1;
+                    renderCurrentPath();
+                });
+            }
 
             updateUI();
         }

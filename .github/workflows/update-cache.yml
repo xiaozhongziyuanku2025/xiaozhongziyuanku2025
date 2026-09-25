@@ -19,7 +19,8 @@ jobs:
       - name: 获取并生成缓存
         run: |
           RELEASES=$(curl -s -H "Accept: application/vnd.github.v3+json" \
-            https://api.github.com/repos/${{ github.repository }}/releases)
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            "https://api.github.com/repos/${{ github.repository }}/releases?per_page=100")
 
           FINAL_JSON=$(echo "$RELEASES" | jq '
             [.[] | select(.tag_name | startswith("Windows病毒库"))] as $releases |

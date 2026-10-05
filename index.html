@@ -7,13 +7,23 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="css/style.css">
     <style>
+        /* 运行时间显示 */
+        .running-time {
+            font-family: 'Consolas', 'Monaco', monospace;
+            color: #4CAF50;
+            font-weight: 600;
+            font-size: 15px;
+            letter-spacing: 0.5px;
+            margin-top: 6px;
+        }
+
         /* ===================== 教程弹窗样式 ===================== */
         .tutorial-overlay {
             display: none;
             position: fixed;
             top: 0; left: 0;
             width: 100%; height: 100%;
-            background: rgba(0,0,0,0.55);
+            background: rgba(0,0,0,0.85);
             z-index: 10000;
             align-items: center;
             justify-content: center;
@@ -26,9 +36,9 @@
             background: #1a1a28;
             border-radius: 16px;
             border: 2px solid #4CAF50;
-            max-width: 680px;
+            max-width: 900px;
             width: 100%;
-            max-height: 72vh;
+            max-height: 90vh;
             display: flex;
             flex-direction: column;
             box-shadow: 0 20px 60px rgba(0,0,0,0.7);
@@ -217,10 +227,7 @@
         }
         .tutorial-ok-btn:hover { transform: translateY(-2px); opacity: 0.9; }
 
-        /* 侧边栏"解码教程"菜单项 */
-        .nav-link.tutorial-link {
-            cursor: pointer;
-        }
+        .nav-link.tutorial-link { cursor: pointer; }
 
         @media (max-width: 768px) {
             .tutorial-overlay { padding: 10px; }
@@ -269,11 +276,11 @@
                 <h3>直链下载</h3>
                 <div class="url-box">https://github.com/xiaozhongziyuanku2025/xiaozhongziyuanku2025/raw/main/小众资源库专用解码工具.sh</div>
 
-                <h3>gh-proxy.org 加速下载</h3>
-                <div class="url-box">https://gh-proxy.org/https://github.com/xiaozhongziyuanku2025/xiaozhongziyuanku2025/raw/main/小众资源库专用解码工具.sh</div>
+                <h3>ghproxy.org 加速下载</h3>
+                <div class="url-box">https://ghproxy.org/https://github.com/xiaozhongziyuanku2025/xiaozhongziyuanku2025/raw/main/小众资源库专用解码工具.sh</div>
 
-                <h3>gh-proxy.com 加速下载</h3>
-                <div class="url-box">https://gh-proxy.com/https://github.com/xiaozhongziyuanku2025/xiaozhongziyuanku2025/raw/main/小众资源库专用解码工具.sh</div>
+                <h3>ghproxy.com 加速下载</h3>
+                <div class="url-box">https://ghproxy.com/https://github.com/xiaozhongziyuanku2025/xiaozhongziyuanku2025/raw/main/小众资源库专用解码工具.sh</div>
 
                 <div class="tip-box">💡 加速代理的用法是在原始 URL 前加上代理前缀，所有命令行工具都支持这种格式。</div>
 
@@ -290,7 +297,7 @@
                 <p><strong>第三步：下载脚本</strong></p>
                 <pre><code>curl -O https://github.com/xiaozhongziyuanku2025/xiaozhongziyuanku2025/raw/main/小众资源库专用解码工具.sh</code></pre>
                 <p>或使用加速：</p>
-                <pre><code>curl -O https://gh-proxy.org/https://github.com/xiaozhongziyuanku2025/xiaozhongziyuanku2025/raw/main/小众资源库专用解码工具.sh</code></pre>
+                <pre><code>curl -O https://ghproxy.org/https://github.com/xiaozhongziyuanku2025/xiaozhongziyuanku2025/raw/main/小众资源库专用解码工具.sh</code></pre>
                 <p><strong>第四步：运行</strong></p>
                 <pre><code>bash 小众资源库专用解码工具.sh</code></pre>
                 <div class="tip-box">💡 盘符对应关系：C:\ → /c/，D:\ → /d/</div>
@@ -494,13 +501,15 @@ bash decode.sh</code></pre>
                             我是一名初一学生，喜爱钻研计算机安全防御、病毒样本、网页资源科学下载，科学使用谷歌，搜集网页资源等。
                         </p>
                         <p class="creation-date">网站成立日期：2025年10月1日</p>
+                        <p class="running-time" id="runningTime">本网站已稳定运行：计算中...</p>
                         <p class="author-description">
-                            这个网页成立日期为2025年10月1日，从此以后作者会不定时更新网站。因为作者没钱，且经历过那么一段不美好的回忆：
-                            下文件度盘要账号还限速，夸克要手机号，微云要手机号，城通要手机号......这对于没有手机号的人来说是十分不美好的，
-                            所以我特意选择了蓝奏云网盘。此网盘下载文件无需手机号并且不限速。
+                            曾经我要下载一些资源——音乐、电影、镜像、工具，结果找遍了各类平台，它们大多用百度网盘、迅雷网盘、夸克网盘等等来分享。上传几十个 G 的文件确实不成问题，我并不想指责他们选择什么网盘，毕竟这是个人选择，而且通过网盘分享文件还能赚点收益。但我们也有权利选择用什么工具来下载。
                         </p>
                         <p class="author-description">
-                            另外这个资源库是私密的，如果有人想要里面的文件，请回复作者。
+                            就拿最有"良心"的度盘来说吧。度盘如今一家独大，吃相也渐渐难看起来了——手机安装包恨不得把所有产业都塞进去：卖东西、云游戏、看广告换下载加速券，还内置了什么 AI。我真的服了，广告满天飞。为了下载一个资源，就要忍受这种吃内存的垃圾软件的折磨。下载速度更别提了，60 KB/s，度盘怎么不干脆说不充会员就不让用呢？虽说度盘 VIP 也就 100 来块，但有时候一年我们也就用两三次啊。加速券就更坑了（仅代表个人观点）。
+                        </p>
+                        <p class="author-description">
+                            所以我建了这个网页，直接使用 GitHub Release 部署文件。如果你在中国大陆，不开加速器、也不用我提供的代理地址，速度可能只比度盘快几十 KB——这可不是我限速，而是因为 GFW。有些文件超过 2GB，所以我用 7Z 分卷压缩。如果你下载的文件被分成了两个或多个，可以解压，至于如何解压，你可以上网搜索，或者问万能的 DeepSeek，我就不过多讲解了。我会持续更新资源库内容，如果有想问的，可以给我发邮件。
                         </p>
                         <div class="contact-info">
                             <p><strong>作者邮箱：</strong>cn.2345.com@outlook.com</p>
@@ -513,6 +522,46 @@ bash decode.sh</code></pre>
     </div>
 
     <script src="js/main.js"></script>
+
+    <!-- ===================== 运行时间计算 ===================== -->
+    <script>
+    (function() {
+        // 成立时间：2025-10-01 00:00:00（月份从 0 开始，所以是 9）
+        var startTime = new Date(2025, 9, 1, 0, 0, 0).getTime();
+        var el = document.getElementById('runningTime');
+
+        function updateRunningTime() {
+            var now = Date.now();
+            var diff = now - startTime;
+
+            if (diff < 0) {
+                el.textContent = '本网站已稳定运行：即将上线';
+                return;
+            }
+
+            var totalSeconds = Math.floor(diff / 1000);
+            var days = Math.floor(totalSeconds / 86400);
+            var hours = Math.floor((totalSeconds % 86400) / 3600);
+            var minutes = Math.floor((totalSeconds % 3600) / 60);
+            var seconds = totalSeconds % 60;
+
+            var years = Math.floor(days / 365);
+            var remainDays = days % 365;
+
+            var text;
+            if (years > 0) {
+                text = years + ' 年 ' + remainDays + ' 天 ' + hours + ' 小时 ' + minutes + ' 分 ' + seconds + ' 秒';
+            } else {
+                text = days + ' 天 ' + hours + ' 小时 ' + minutes + ' 分 ' + seconds + ' 秒';
+            }
+
+            el.textContent = '本网站已稳定运行：' + text;
+        }
+
+        updateRunningTime();
+        setInterval(updateRunningTime, 1000);
+    })();
+    </script>
 
     <!-- ===================== 教程弹窗脚本 ===================== -->
     <script>

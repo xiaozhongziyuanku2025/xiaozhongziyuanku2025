@@ -8,19 +8,22 @@
     <link rel="stylesheet" href="css/style.css">
     <style>
         /* ========== 基础布局 ========== */
-        * { box-sizing: border-box; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             color: #e0e0e0;
             font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-            margin: 0; min-height: 100vh;
-            background-attachment: fixed;
+            min-height: 100vh;
+            /* 背景由 style.css 控制，不在此处覆盖 */
         }
-        .container { max-width: 1400px; margin: 0 auto; padding: 15px; }
+        .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
         
-        /* ========== 头部与侧边栏 ========== */
-        header { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid rgba(76,175,80,0.3); margin-bottom: 20px; }
-        .site-title { font-size: 1.5rem; margin: 0; background: linear-gradient(135deg, #4CAF50, #8BC34A); -webkit-background-clip: text; background-clip: text; color: transparent; }
-        
+        /* ========== 头部与菜单 ========== */
+        header { display: flex; justify-content: space-between; align-items: center; padding: 15px 0; border-bottom: 1px solid rgba(76,175,80,0.3); margin-bottom: 25px; flex-wrap: wrap; gap: 15px; }
+        .site-title { font-size: 1.8rem; background: linear-gradient(135deg, #4CAF50, #8BC34A); -webkit-background-clip: text; background-clip: text; color: transparent; }
+        .header-controls { display: flex; gap: 10px; }
+        .nav-toggle { background: rgba(76,175,80,0.2); border: none; color: #4CAF50; padding: 10px 15px; border-radius: 8px; cursor: pointer; font-size: 18px; transition: 0.3s; }
+        .nav-toggle:hover { background: rgba(76,175,80,0.4); }
+
         .sidebar { display: none; position: fixed; top: 0; left: 0; height: 100%; width: 250px; background: rgba(20,20,30,0.95); z-index: 2000; padding: 20px; border-right: 1px solid rgba(76,175,80,0.3); }
         .sidebar.active { display: block; }
         .sidebar-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 1999; }
@@ -30,68 +33,86 @@
         .nav-link { color: #e0e0e0; text-decoration: none; display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 8px; transition: 0.3s; }
         .nav-link:hover, .nav-link.active { background: rgba(76,175,80,0.2); color: #4CAF50; }
 
-        /* ========== 顶部控制栏 ========== */
-        .top-controls { background: rgba(20,20,30,0.7); border-radius: 10px; padding: 15px; margin-bottom: 15px; border: 1px solid rgba(76,175,80,0.2); }
+        /* ========== 顶部控制面板 ========== */
+        .control-panel { background: rgba(20,20,30,0.6); padding: 20px; border-radius: 12px; margin-bottom: 20px; border: 1px solid rgba(76,175,80,0.2); }
         
-        .breadcrumb-nav { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; font-size: 14px; margin-bottom: 15px; }
-        .crumb-item { color: #aaa; text-decoration: none; cursor: pointer; padding: 4px 8px; border-radius: 4px; transition: 0.2s; }
+        /* 面包屑 */
+        .breadcrumb-nav { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; padding: 10px 14px; margin-bottom: 18px; background: rgba(0,0,0,0.3); border-radius: 8px; border: 1px solid rgba(76,175,80,0.15); font-size: 14px; }
+        .crumb-item { color: #aaa; cursor: pointer; padding: 4px 8px; border-radius: 4px; transition: 0.2s; text-decoration: none; }
         .crumb-item:hover { background: rgba(76,175,80,0.15); color: #4CAF50; }
-        .crumb-current { color: #4CAF50; font-weight: bold; padding: 4px 8px; }
+        .crumb-current { color: #4CAF50; font-weight: 600; padding: 4px 8px; }
         .crumb-sep { color: #666; margin: 0 4px; }
-        .crumb-divider { color: #4CAF50; margin: 0 10px; }
-        
-        .toolbar-row { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
-        .toolbar-left { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-        
-        select, input[type="text"] { background: rgba(0,0,0,0.4); border: 1px solid #4CAF50; color: #fff; padding: 8px 12px; border-radius: 6px; outline: none; }
-        select:focus, input[type="text"]:focus { border-color: #8BC34A; }
-        .btn { background: rgba(76,175,80,0.2); border: 1px solid #4CAF50; color: #4CAF50; padding: 8px 15px; border-radius: 6px; cursor: pointer; transition: 0.3s; font-size: 14px; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; }
-        .btn:hover { background: rgba(76,175,80,0.4); color: #fff; }
+        .crumb-divider { color: #4CAF50; font-weight: bold; margin: 0 10px; user-select: none; }
 
-        /* ========== 列表视图与网格视图 ========== */
-        .file-container { position: relative; min-height: 200px; background: rgba(20,20,30,0.5); border-radius: 10px; border: 1px solid rgba(76,175,80,0.2); overflow: hidden; }
+        /* 工具栏 */
+        .toolbar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 15px; }
+        .toolbar-left, .toolbar-right { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+        
+        /* 表单控件文字与输入框 */
+        label { color: #aaa; font-size: 14px; }
+        select, input[type="text"] { background: rgba(0,0,0,0.4); border: 1px solid #4CAF50; color: #fff; padding: 6px 10px; border-radius: 6px; outline: none; font-size: 14px; }
+        select:focus, input[type="text"]:focus { border-color: #8BC34A; }
+        
+        /* 按钮 */
+        .btn { background: rgba(76,175,80,0.2); border: 1px solid #4CAF50; color: #4CAF50; padding: 8px 16px; border-radius: 6px; cursor: pointer; transition: 0.3s; font-size: 14px; display: inline-flex; align-items: center; gap: 6px; font-weight: 500; text-decoration: none; }
+        .btn:hover { background: rgba(76,175,80,0.4); color: #fff; }
+        
+        /* 搜索框 */
+        .search-container { display: flex; align-items: center; gap: 10px; }
+        .search-icon { background: rgba(76,175,80,0.2); border: none; color: #4CAF50; font-size: 16px; padding: 10px 15px; border-radius: 8px; cursor: pointer; transition: 0.3s; }
+        .search-icon:hover { background: rgba(76,175,80,0.4); }
+        .search-bar { display: none; }
+        .search-bar.active { display: flex; gap: 10px; align-items: center; }
+
+        /* 源码包 */
+        .source-pkg-box { display: none; gap: 10px; align-items: center; margin-left: 10px; }
+        .source-pkg-box.active { display: flex; }
+
+        /* ================= 列表与网格样式 ================= */
+        .file-container { position: relative; min-height: 300px; background: rgba(20,20,30,0.5); border-radius: 10px; border: 1px solid rgba(76,175,80,0.2); overflow: hidden; }
         
         .file-list-view { width: 100%; border-collapse: collapse; }
         .file-list-view th, .file-list-view td { padding: 12px 15px; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.05); }
-        .file-list-view th { background: rgba(0,0,0,0.2); color: #aaa; font-size: 13px; font-weight: normal; }
+        .file-list-view th { background: rgba(0,0,0,0.3); color: #aaa; font-size: 13px; font-weight: normal; }
+        .file-list-view tr { cursor: pointer; transition: 0.2s; }
         .file-list-view tr:hover { background: rgba(76,175,80,0.1); }
-        .file-list-view tr.selected { background: rgba(76,175,80,0.2); }
-        
-        .file-grid-view { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 15px; padding: 15px; }
-        .grid-item { background: rgba(30,30,40,0.8); border-radius: 8px; padding: 15px; text-align: center; border: 1px solid transparent; cursor: pointer; position: relative; }
-        .grid-item:hover { border-color: rgba(76,175,80,0.5); }
+        .file-list-view tr.selected { background: rgba(76,175,80,0.15); }
+
+        .file-grid-view { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 15px; padding: 20px; }
+        .grid-item { background: rgba(30,30,40,0.8); border-radius: 10px; padding: 15px; text-align: center; border: 2px solid transparent; cursor: pointer; position: relative; transition: 0.3s; }
+        .grid-item:hover { border-color: rgba(76,175,80,0.4); background: rgba(40,40,50,0.9); }
         .grid-item.selected { border-color: #4CAF50; background: rgba(76,175,80,0.15); }
+
+        /* 图标 */
+        .file-icon-svg { width: 24px; height: 24px; background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23667eea"><path d="M6 2c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6H6z"/></svg>') no-repeat center; background-size: contain; flex-shrink: 0; }
+        .folder-icon-svg { width: 24px; height: 24px; background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23FFC107"><path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/></svg>') no-repeat center; background-size: contain; flex-shrink: 0; }
+        .grid-item .folder-icon-svg, .grid-item .file-icon-svg { width: 50px; height: 50px; margin: 0 auto 10px; }
         
-        .item-name { display: flex; align-items: center; gap: 10px; font-weight: 500; word-break: break-all; }
-        .item-icon { font-size: 18px; color: #4CAF50; flex-shrink: 0; }
-        .item-size, .item-time { font-size: 12px; color: #888; }
-        .checkbox { width: 16px; height: 16px; cursor: pointer; accent-color: #4CAF50; }
+        .item-name { display: flex; align-items: center; gap: 10px; font-weight: 500; word-break: break-all; font-size: 15px; }
+        .item-size, .item-time { font-size: 13px; color: #888; }
+        
+        /* 复选框样式 */
+        .checkbox { width: 16px; height: 16px; cursor: pointer; accent-color: #4CAF50; display: inline-block; }
 
         /* ========== 加载动画 ========== */
-        .loading-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(20,20,30,0.8); display: none; align-items: center; justify-content: center; flex-direction: column; z-index: 10; }
+        .loading-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(20,20,30,0.8); display: none; align-items: center; justify-content: center; flex-direction: column; z-index: 10; backdrop-filter: blur(2px); }
         .loading-overlay.active { display: flex; }
         .spinner { width: 40px; height: 40px; border: 4px solid rgba(76,175,80,0.3); border-top-color: #4CAF50; border-radius: 50%; animation: spin 1s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
 
-        /* ========== 分页 ========== */
-        .pagination { display: flex; justify-content: center; align-items: center; gap: 8px; padding: 15px; flex-wrap: wrap; border-top: 1px solid rgba(255,255,255,0.05); }
-        .page-btn { background: rgba(30,30,40,0.8); border: 1px solid rgba(76,175,80,0.3); color: #e0e0e0; padding: 6px 12px; border-radius: 6px; cursor: pointer; }
-        .page-btn.active { background: #4CAF50; color: #fff; border-color: #4CAF50; }
-        .page-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        /* ========== 悬浮操作栏 (OpenList风格) ========== */
+        .action-bar { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: #1e1e2e; border: 2px solid #4CAF50; border-radius: 30px; padding: 10px 20px; display: none; align-items: center; gap: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.6); z-index: 1000; }
+        .action-bar.active { display: flex; }
+        .action-bar span { color: #4CAF50; font-weight: bold; white-space: nowrap; }
 
-        /* ========== 悬浮工具栏 (OpenList 风格) ========== */
+        /* ========== 左下角悬浮栏 (小三点) ========== */
         .left-toolbar { position: fixed; bottom: 30px; left: 30px; display: flex; flex-direction: column; gap: 10px; z-index: 1000; }
         .toolbar-btn { width: 45px; height: 45px; border-radius: 50%; background: #1e1e2e; border: 1px solid #4CAF50; color: #4CAF50; display: flex; align-items: center; justify-content: center; font-size: 20px; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.5); transition: 0.3s; }
         .toolbar-btn:hover { background: #4CAF50; color: #fff; transform: scale(1.1); }
         .toolbar-extra { display: none; flex-direction: column; gap: 10px; }
         .toolbar-extra.active { display: flex; }
-
-        /* ========== 多选操作栏 ========== */
-        .action-bar { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: #1e1e2e; border: 1px solid #4CAF50; border-radius: 30px; padding: 10px 20px; display: none; align-items: center; gap: 15px; box-shadow: 0 4px 20px rgba(0,0,0,0.6); z-index: 1000; }
-        .action-bar.active { display: flex; }
-        .action-bar span { color: #4CAF50; font-weight: bold; }
-
-        /* ========== 抽屉面板 (本地设置) ========== */
+        
+        /* 设置抽屉 */
         .drawer-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1998; display: none; }
         .drawer-overlay.active { display: block; }
         .drawer { position: fixed; top: 0; right: -350px; width: 350px; height: 100%; background: #1a1a28; z-index: 2001; transition: right 0.3s ease; border-left: 1px solid #4CAF50; padding: 20px; overflow-y: auto; box-shadow: -5px 0 20px rgba(0,0,0,0.5); }
@@ -101,12 +122,18 @@
         .drawer-close { background: none; border: none; color: #aaa; font-size: 20px; cursor: pointer; }
         .setting-item { margin-bottom: 20px; }
         .setting-item label { display: block; font-size: 13px; color: #aaa; margin-bottom: 8px; }
-        .setting-item input, .setting-item select { width: 100%; }
+        .setting-item input { width: 100%; }
+
+        /* 分页 */
+        .pagination { display: flex; justify-content: center; align-items: center; gap: 8px; padding: 20px; border-top: 1px solid rgba(255,255,255,0.05); }
+        .page-btn { background: rgba(30,30,40,0.8); border: 1px solid rgba(76,175,80,0.3); color: #e0e0e0; padding: 6px 12px; border-radius: 6px; cursor: pointer; }
+        .page-btn.active { background: #4CAF50; color: #fff; border-color: #4CAF50; }
+        .page-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
         @media (max-width: 768px) {
-            .toolbar-row { flex-direction: column; align-items: stretch; }
-            .toolbar-left { justify-content: space-between; }
-            .file-list-view th:nth-child(4), .file-list-view td:nth-child(4) { display: none; } /* 手机端隐藏时间列 */
+            .toolbar { flex-direction: column; align-items: stretch; }
+            .toolbar-left, .toolbar-right { justify-content: space-between; }
+            .file-list-view th:nth-child(4), .file-list-view td:nth-child(4) { display: none; } /* 手机隐藏时间 */
             .action-bar { width: 90%; flex-wrap: wrap; justify-content: center; border-radius: 15px; }
             .left-toolbar { bottom: 20px; left: 15px; }
         }
@@ -140,59 +167,41 @@
             <label>Aria2 RPC 密钥 (Secret Token)</label>
             <input type="text" id="aria2Secret" placeholder="留空则无">
         </div>
-        <div class="setting-item">
-            <label>全局默认布局</label>
-            <select id="defaultLayout">
-                <option value="list">列表视图</option>
-                <option value="grid">网格视图</option>
-            </select>
-        </div>
-        <div class="setting-item">
-            <label>每页显示数量 (无限制易卡顿)</label>
-            <select id="pageSizeSelect">
-                <option value="0">无限制</option>
-                <option value="24">24</option>
-                <option value="48">48</option>
-                <option value="96">96</option>
-                <option value="200">200</option>
-            </select>
-        </div>
     </div>
 
-    <!-- 悬浮工具栏 -->
+    <!-- 左下角悬浮栏 (小三点) -->
     <div class="left-toolbar">
         <div class="toolbar-extra" id="toolbarExtra">
-            <div class="toolbar-btn" id="btnSelectAll" title="全选/取消全选"><i class="fas fa-check-square"></i></div>
+            <!-- 全选按钮 (仅多选模式下显示) -->
+            <div class="toolbar-btn" id="btnSelectAll" title="全选/取消全选" style="display: none;"><i class="fas fa-check-square"></i></div>
+            <!-- 多选模式开关 -->
+            <div class="toolbar-btn" id="btnMultiSelect" title="多选模式"><i class="fas fa-list-ul"></i></div>
+            <!-- 本地设置 -->
             <div class="toolbar-btn" id="btnSettings" title="本地设置"><i class="fas fa-cog"></i></div>
         </div>
+        <!-- 展开/收起小三点 -->
         <div class="toolbar-btn" id="btnMore" title="更多"><i class="fas fa-ellipsis-h"></i></div>
-    </div>
-
-    <!-- 多选操作栏 -->
-    <div class="action-bar" id="actionBar">
-        <span>已选 <span id="selectedCount">0</span> 项</span>
-        <button class="btn" id="btnDownload"><i class="fas fa-download"></i> 下载</button>
-        <button class="btn" id="btnAria2"><i class="fas fa-cloud-download-alt"></i> 发至 Aria2</button>
-        <button class="btn" id="btnCopy"><i class="fas fa-copy"></i> 复制链接</button>
-        <button class="btn" style="background:rgba(244,67,54,0.2); border-color:#f44336; color:#f44336;" id="btnCancelSelect"><i class="fas fa-times"></i></button>
     </div>
 
     <div class="container">
         <header>
             <div class="header-controls">
-                <button class="btn" id="navToggle" style="padding: 10px;"><i class="fas fa-bars"></i></button>
+                <button class="nav-toggle" id="navToggle"><i class="fas fa-bars"></i></button>
             </div>
             <h1 class="site-title">小众资源库</h1>
         </header>
 
-        <div class="top-controls">
-            <div class="breadcrumb-nav" id="breadcrumb">
+        <div class="control-panel">
+            <!-- 面包屑 -->
+            <div class="breadcrumb-nav" id="breadcrumbNav">
                 <span class="crumb-item" data-path=""><i class="fas fa-home"></i> 根目录</span>
             </div>
 
-            <div class="toolbar-row">
+            <!-- 工具栏 -->
+            <div class="toolbar">
                 <div class="toolbar-left">
-                    <select id="proxySelect" style="width: 140px;">
+                    <label><i class="fas fa-globe"></i> 加速模式：</label>
+                    <select id="proxySelect">
                         <option value="auto">自动 (推荐)</option>
                         <option value="gh-proxy.org">gh-proxy.org</option>
                         <option value="gh-proxy.com">gh-proxy.com</option>
@@ -202,33 +211,61 @@
                         <option value="github.moeyy.xyz">github.moeyy.xyz</option>
                         <option value="none">不使用代理</option>
                     </select>
-                    <select id="layoutSelect" style="width: 100px;">
+                    
+                    <label><i class="fas fa-eye"></i> 视图：</label>
+                    <select id="layoutSelect">
                         <option value="list">列表</option>
                         <option value="grid">网格</option>
                     </select>
-                </div>
-                
-                <div class="toolbar-left" style="flex: 1; justify-content: flex-end;">
-                    <div id="sourcePkgBtns" style="display:none; gap:5px; margin-right:10px;">
+                    
+                    <label><i class="fas fa-list-ol"></i> 每页：</label>
+                    <select id="pageSizeSelect">
+                        <option value="0">无限制</option>
+                        <option value="24">24</option>
+                        <option value="48">48</option>
+                        <option value="96">96</option>
+                    </select>
+
+                    <!-- 源码包下载 -->
+                    <div class="source-pkg-box" id="sourcePkgBtns">
+                        <span style="color:#aaa;">源码包：</span>
                         <a class="btn" id="zipLink" href="#" target="_blank"><i class="fas fa-file-archive"></i> .zip</a>
                         <a class="btn" id="tarLink" href="#" target="_blank"><i class="fas fa-file-archive"></i> .tar.gz</a>
                     </div>
-                    <select id="searchScope" style="width: 100px;">
-                        <option value="all">全库</option>
-                        <option value="dir">当前目录</option>
-                    </select>
-                    <input type="text" id="searchInput" placeholder="搜索文件..." style="width: 150px;">
+                </div>
+                
+                <div class="toolbar-right">
+                    <div class="search-container">
+                        <div class="search-bar" id="searchBar">
+                            <select id="searchScope">
+                                <option value="all">全库</option>
+                                <option value="dir">当前目录</option>
+                            </select>
+                            <input type="text" id="searchInput" placeholder="搜索文件...">
+                        </div>
+                        <button class="search-icon" id="searchToggle"><i class="fas fa-search"></i></button>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <div class="file-container">
+        <!-- 文件列表区 -->
+        <div class="file-container" id="fileContainer">
             <div class="loading-overlay" id="loadingOverlay">
                 <div class="spinner"></div>
                 <div style="margin-top:15px; color:#4CAF50; font-weight:bold;">读取目录中...</div>
             </div>
             <div id="fileListContainer"></div>
         </div>
+    </div>
+
+    <!-- 悬浮多选操作栏 -->
+    <div class="action-bar" id="actionBar">
+        <span>已选 <span id="selectedCount">0</span> 项</span>
+        <button class="btn" id="btnDownload"><i class="fas fa-download"></i> 下载</button>
+        <button class="btn" id="btnAria2"><i class="fas fa-cloud-download-alt"></i> 发至 Aria2</button>
+        <button class="btn" id="btnCopy"><i class="fas fa-copy"></i> 复制链接</button>
+        <button class="btn" style="background:rgba(244,67,54,0.2); border-color:#f44336; color:#f44336;" id="btnCancelSelect"><i class="fas fa-times"></i> 取消</button>
     </div>
 
     <script>
@@ -248,53 +285,31 @@
         let currentPath = '';
         let selectedFiles = new Set();
         let currentProxyKey = 'none';
-        let userCountry = 'OTHER';
         
         let currentPage = 1;
-        let pageSize = 0; // 0 代表无限制
+        let pageSize = 0;
         let currentLayout = 'list';
         let searchKeyword = '';
         let searchScope = 'all';
+        let isSelectMode = false; // 默认不开启多选模式
 
-        // ================= 初始化与设置 =================
+        // ================= 初始化 =================
         document.addEventListener('DOMContentLoaded', () => {
-            loadSettings();
+            pageSize = parseInt(localStorage.getItem('pageSize') || '0');
+            currentLayout = localStorage.getItem('layout') || 'list';
+            
+            document.getElementById('pageSizeSelect').value = pageSize;
+            document.getElementById('layoutSelect').value = currentLayout;
+
+            const savedRpc = localStorage.getItem('aria2Rpc');
+            if (savedRpc) document.getElementById('aria2Rpc').value = savedRpc;
+            const savedSecret = localStorage.getItem('aria2Secret');
+            if (savedSecret) document.getElementById('aria2Secret').value = savedSecret;
+
             detectCountry().then(country => {
                 applyProxyByCountry(country);
                 loadFiles();
             });
-        });
-
-        function loadSettings() {
-            const aRpc = localStorage.getItem('aria2Rpc') || 'http://localhost:6800/jsonrpc';
-            const aSecret = localStorage.getItem('aria2Secret') || '';
-            const dLayout = localStorage.getItem('defaultLayout') || 'list';
-            const pSize = localStorage.getItem('pageSize') || '0';
-
-            document.getElementById('aria2Rpc').value = aRpc;
-            document.getElementById('aria2Secret').value = aSecret;
-            document.getElementById('defaultLayout').value = dLayout;
-            document.getElementById('pageSizeSelect').value = pSize;
-            
-            currentLayout = dLayout;
-            pageSize = parseInt(pSize);
-            document.getElementById('layoutSelect').value = currentLayout;
-        }
-
-        // 保存设置
-        document.getElementById('aria2Rpc').addEventListener('change', e => localStorage.setItem('aria2Rpc', e.target.value));
-        document.getElementById('aria2Secret').addEventListener('change', e => localStorage.setItem('aria2Secret', e.target.value));
-        document.getElementById('defaultLayout').addEventListener('change', e => {
-            localStorage.setItem('defaultLayout', e.target.value);
-            currentLayout = e.target.value;
-            document.getElementById('layoutSelect').value = currentLayout;
-            renderFiles();
-        });
-        document.getElementById('pageSizeSelect').addEventListener('change', e => {
-            localStorage.setItem('pageSize', e.target.value);
-            pageSize = parseInt(e.target.value);
-            currentPage = 1;
-            renderFiles();
         });
 
         // ================= 网络与代理 =================
@@ -304,16 +319,10 @@
             try {
                 const res = await fetch('https://ipinfo.io/json', { signal: AbortSignal.timeout(3000) });
                 const data = await res.json();
-                userCountry = data.country ? data.country.toUpperCase() : 'OTHER';
-            } catch(e) {
-                try {
-                    const res = await fetch('https://ip-api.com/json/', { signal: AbortSignal.timeout(3000) });
-                    const data = await res.json();
-                    userCountry = data.countryCode ? data.countryCode.toUpperCase() : 'OTHER';
-                } catch(err) { userCountry = 'OTHER'; }
-            }
-            sessionStorage.setItem('userCountry', userCountry);
-            return userCountry;
+                const c = data.country ? data.country.toUpperCase() : 'OTHER';
+                sessionStorage.setItem('userCountry', c);
+                return c;
+            } catch(e) { return 'OTHER'; }
         }
 
         function applyProxyByCountry(country) {
@@ -329,7 +338,7 @@
         document.getElementById('proxySelect').addEventListener('change', e => {
             const val = e.target.value;
             currentProxyKey = (val === 'auto') ? DEFAULT_PROXY : val;
-            updateSourcePkgLinks(); // 切换代理更新源码包链接
+            updateSourcePkgLinks();
         });
 
         function getDownloadUrl(originalUrl) {
@@ -343,14 +352,6 @@
                 const res = await fetch('release-cache.json?_=' + Date.now());
                 const data = await res.json();
                 allFiles = data.files || [];
-                // 确保兼容旧的没有 tag 的数据
-                allFiles = allFiles.map(f => {
-                    if (!f.tag) {
-                        let p = f.path || '';
-                        f.tag = p ? 'Windows病毒库-' + p.replace(/\//g, '-') : 'Windows病毒库';
-                    }
-                    return f;
-                });
                 navigateTo('');
             } catch(e) {
                 document.getElementById('fileListContainer').innerHTML = '<div style="padding:40px;text-align:center;color:#f44336;">加载数据失败，请刷新</div>';
@@ -367,7 +368,7 @@
             const loading = document.getElementById('loadingOverlay');
             loading.classList.add('active');
             
-            const delay = Math.floor(Math.random() * 5000) + 1000; // 1000ms - 6000ms
+            const delay = Math.floor(Math.random() * 5000) + 1000; // 1s - 6s
             
             setTimeout(() => {
                 renderBreadcrumb();
@@ -378,11 +379,9 @@
             }, delay);
         }
 
-        // 构建树和获取当前路径内容
         function getPathContent(path) {
             const folders = new Set();
             const files = [];
-            
             allFiles.forEach(f => {
                 const fPath = f.path || '';
                 if (fPath === path) {
@@ -399,7 +398,6 @@
         function renderFiles() {
             const { folders, files } = getPathContent(currentPath);
             
-            // 搜索过滤
             let filteredFiles = files;
             let filteredFolders = folders;
             
@@ -407,14 +405,13 @@
                 const kw = searchKeyword.toLowerCase();
                 if (searchScope === 'all') {
                     filteredFiles = allFiles.filter(f => (f.decoded_name || f.name).toLowerCase().includes(kw));
-                    filteredFolders = []; // 全库搜索不显示文件夹
+                    filteredFolders = [];
                 } else {
                     filteredFiles = files.filter(f => (f.decoded_name || f.name).toLowerCase().includes(kw));
                     filteredFolders = folders.filter(folder => folder.toLowerCase().includes(kw));
                 }
             }
 
-            // 分页处理
             const totalItems = filteredFolders.length + filteredFiles.length;
             let displayFolders = filteredFolders;
             let displayFiles = filteredFiles;
@@ -424,71 +421,62 @@
                 if (currentPage > totalPages) currentPage = Math.max(1, totalPages);
                 const start = (currentPage - 1) * pageSize;
                 const end = start + pageSize;
-                
-                // 合并处理分页（先文件夹后文件）
                 const combined = [...filteredFolders.map(f => ({ type: 'folder', name: f })), ...filteredFiles.map(f => ({ type: 'file', data: f }))];
                 const paged = combined.slice(start, end);
-                
                 displayFolders = paged.filter(i => i.type === 'folder').map(i => i.name);
                 displayFiles = paged.filter(i => i.type === 'file').map(i => i.data);
             }
 
             const container = document.getElementById('fileListContainer');
-            
             if (totalItems === 0) {
-                container.innerHTML = '<div style="padding:50px;text-align:center;color:#888;"><i class="fas fa-folder-open" style="font-size:40px;margin-bottom:10px;"></i><br>此目录为空</div>';
+                container.innerHTML = '<div style="padding:60px;text-align:center;color:#888;"><i class="fas fa-folder-open" style="font-size:48px;margin-bottom:15px;color:#555;"></i><br>此目录为空</div>';
                 return;
             }
 
             let html = '';
+            // 重点：只有当 isSelectMode 为 true 时，才在表头/网格项渲染复选框
             if (currentLayout === 'list') {
-                html += '<table class="file-list-view"><thead><tr>';
-                html += '<th width="40"><input type="checkbox" class="checkbox" id="headerCheckbox"></th>';
+                html += `<table class="file-list-view"><thead><tr>`;
+                if (isSelectMode) html += '<th width="40"><input type="checkbox" class="checkbox" id="headerCheckbox"></th>';
                 html += '<th>文件名</th><th width="100">大小</th><th width="160">修改时间</th>';
                 html += '</tr></thead><tbody>';
 
-                // 渲染文件夹
                 displayFolders.forEach(folder => {
                     const subPath = currentPath ? currentPath + '/' + folder : folder;
                     html += `<tr data-type="folder" data-path="${subPath}">
-                        <td><input type="checkbox" class="checkbox row-check" disabled></td>
-                        <td><div class="item-name"><i class="fas fa-folder item-icon" style="color:#FFC107;"></i> ${folder}</div></td>
+                        ${isSelectMode ? '<td><input type="checkbox" class="checkbox" disabled></td>' : ''}
+                        <td><div class="item-name"><div class="folder-icon-svg"></div> ${folder}</div></td>
                         <td class="item-size">-</td>
                         <td class="item-time">-</td>
                     </tr>`;
                 });
 
-                // 渲染文件
                 displayFiles.forEach(file => {
                     const name = file.decoded_name || file.name;
-                    const size = formatSize(file.size);
-                    const time = formatTime(file.updated_at);
                     const isSel = selectedFiles.has(file);
                     html += `<tr data-type="file" data-name="${file.name}" class="${isSel ? 'selected' : ''}">
-                        <td><input type="checkbox" class="checkbox row-check" ${isSel ? 'checked' : ''}></td>
-                        <td><div class="item-name"><i class="fas fa-file item-icon" style="color:#64b5f6;"></i> ${name}</div></td>
-                        <td class="item-size">${size}</td>
-                        <td class="item-time">${time}</td>
+                        ${isSelectMode ? `<td><input type="checkbox" class="checkbox row-check" ${isSel ? 'checked' : ''}></td>` : ''}
+                        <td><div class="item-name"><div class="file-icon-svg"></div> ${name}</div></td>
+                        <td class="item-size">${formatSize(file.size)}</td>
+                        <td class="item-time">${formatTime(file.updated_at)}</td>
                     </tr>`;
                 });
                 html += '</tbody></table>';
             } else {
-                html += '<div class="file-grid-view">';
-                // 渲染文件夹
+                html += `<div class="file-grid-view">`;
                 displayFolders.forEach(folder => {
                     const subPath = currentPath ? currentPath + '/' + folder : folder;
                     html += `<div class="grid-item" data-type="folder" data-path="${subPath}">
-                        <i class="fas fa-folder item-icon" style="font-size:40px;color:#FFC107;margin-bottom:10px;"></i>
-                        <div class="item-name" style="justify-content:center;">${folder}</div>
+                        <div class="folder-icon-svg"></div>
+                        <div class="item-name" style="justify-content:center; font-size:14px;">${folder}</div>
                     </div>`;
                 });
-                // 渲染文件
                 displayFiles.forEach(file => {
                     const name = file.decoded_name || file.name;
                     const isSel = selectedFiles.has(file);
                     html += `<div class="grid-item ${isSel ? 'selected' : ''}" data-type="file" data-name="${file.name}">
-                        <div style="position:absolute;top:10px;left:10px;"><input type="checkbox" class="checkbox row-check" ${isSel ? 'checked' : ''}></div>
-                        <i class="fas fa-file item-icon" style="font-size:40px;color:#64b5f6;margin-bottom:10px;"></i>
+                        ${isSelectMode ? `<div style="position:absolute;top:10px;left:10px;"><input type="checkbox" class="checkbox row-check" ${isSel ? 'checked' : ''}></div>` : ''}
+                        <div class="file-icon-svg"></div>
                         <div class="item-name" style="justify-content:center; font-size:13px;">${name}</div>
                         <div class="item-size" style="margin-top:5px;">${formatSize(file.size)}</div>
                     </div>`;
@@ -496,7 +484,6 @@
                 html += '</div>';
             }
 
-            // 分页栏
             if (pageSize > 0 && totalItems > pageSize) {
                 const totalPages = Math.ceil(totalItems / pageSize);
                 html += '<div class="pagination">';
@@ -507,42 +494,40 @@
             }
 
             container.innerHTML = html;
+            bindRowEvents(displayFiles);
+        }
 
-            // 绑定事件
-            container.querySelectorAll('tr[data-type="folder"]').forEach(el => {
+        function bindRowEvents(displayFiles) {
+            const container = document.getElementById('fileListContainer');
+            
+            container.querySelectorAll('[data-type="folder"]').forEach(el => {
                 el.addEventListener('click', () => navigateTo(el.dataset.path));
             });
-            container.querySelectorAll('div[data-type="folder"]').forEach(el => {
-                el.addEventListener('click', () => navigateTo(el.dataset.path));
-            });
 
-            container.querySelectorAll('tr[data-type="file"], div[data-type="file"]').forEach(el => {
+            container.querySelectorAll('[data-type="file"]').forEach(el => {
                 el.addEventListener('click', (e) => {
-                    if (e.target.type === 'checkbox' || e.target.closest('input')) return; // 点击复选框不触发行点击
+                    if (e.target.type === 'checkbox') return; 
                     const filename = el.dataset.name;
                     const fileObj = allFiles.find(f => f.name === filename);
                     if (!fileObj) return;
 
-                    if (selectedFiles.size > 0 || e.ctrlKey || e.metaKey) {
-                        // 多选模式
+                    if (isSelectMode) {
                         toggleSelect(fileObj, el.querySelector('.row-check'));
                     } else {
-                        // 单选直接下载
                         downloadSingle(fileObj);
                     }
                 });
             });
 
-            container.querySelectorAll('.row-check:not(:disabled)').forEach(cb => {
+            container.querySelectorAll('.row-check').forEach(cb => {
                 cb.addEventListener('change', (e) => {
-                    const tr = e.target.closest('tr') || e.target.closest('.grid-item');
-                    const filename = tr.dataset.name;
+                    const row = e.target.closest('tr') || e.target.closest('.grid-item');
+                    const filename = row.dataset.name;
                     const fileObj = allFiles.find(f => f.name === filename);
                     if (fileObj) toggleSelect(fileObj, e.target);
                 });
             });
 
-            // 顶部全选
             const headerCb = document.getElementById('headerCheckbox');
             if (headerCb) {
                 headerCb.addEventListener('change', (e) => {
@@ -583,9 +568,9 @@
             document.getElementById('actionBar').classList.toggle('active', count > 0);
         }
 
-        // ================= 路径与面包屑 =================
+        // ================= 面包屑与源码包 =================
         function renderBreadcrumb() {
-            const container = document.getElementById('breadcrumb');
+            const container = document.getElementById('breadcrumbNav');
             let html = `<span class="crumb-item" data-path=""><i class="fas fa-home"></i> 根目录</span>`;
             if (currentPath) {
                 const parts = currentPath.split('/');
@@ -606,24 +591,28 @@
             });
         }
 
-        // 更新源码包按钮
         function updateSourcePkgLinks() {
             const pkgDiv = document.getElementById('sourcePkgBtns');
             if (!currentPath) {
-                pkgDiv.style.display = 'none';
+                pkgDiv.classList.remove('active');
                 return;
             }
-            const currentTag = 'Windows病毒库-' + currentPath.replace(/\//g, '-');
-            // 检查 allFiles 里有没有这个 tag 的文件
-            const hasTag = allFiles.some(f => f.tag === currentTag);
-            if (hasTag) {
-                pkgDiv.style.display = 'flex';
-                const base = `https://github.com/xiaozhongziyuanku2025/xiaozhongziyuanku2025/archive/refs/tags/${encodeURIComponent(currentTag)}`;
+            const { files } = getPathContent(currentPath);
+            let tag = '';
+            if (files.length > 0) {
+                tag = files[0].tag;
+            } else {
+                tag = 'Windows病毒库-' + currentPath.replace(/\//g, '-');
+            }
+            
+            if (tag) {
+                pkgDiv.classList.add('active');
+                const base = `https://github.com/xiaozhongziyuanku2025/xiaozhongziyuanku2025/archive/refs/tags/${encodeURIComponent(tag)}`;
                 const prefix = (currentProxyKey === 'none') ? '' : PROXY_MAP[currentProxyKey];
                 document.getElementById('zipLink').href = prefix + base + '.zip';
                 document.getElementById('tarLink').href = prefix + base + '.tar.gz';
             } else {
-                pkgDiv.style.display = 'none';
+                pkgDiv.classList.remove('active');
             }
         }
 
@@ -655,17 +644,26 @@
             });
         });
 
+        // 【真实可用的 Aria2 发送】
         document.getElementById('btnAria2').addEventListener('click', async () => {
             if (selectedFiles.size === 0) return;
-            const rpc = document.getElementById('aria2Rpc').value;
-            const secret = document.getElementById('aria2Secret').value;
             
-            if (!rpc) return alert('请先在设置中填写 Aria2 RPC 地址');
+            const rpc = document.getElementById('aria2Rpc').value.trim();
+            const secret = document.getElementById('aria2Secret').value.trim();
+            
+            if (!rpc) return alert('请点击小三点 -> 设置，填写 Aria2 RPC 链接');
 
             const urls = Array.from(selectedFiles).map(f => getDownloadUrl(f.download_url));
             const tokenParam = secret ? [`token:${secret}`] : [];
             
             let success = 0;
+            let errorMsg = '';
+
+            const btn = document.getElementById('btnAria2');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 发送中...';
+            btn.disabled = true;
+
             for (const url of urls) {
                 const payload = {
                     jsonrpc: "2.0", method: "aria2.addUri", id: "qwer",
@@ -677,15 +675,28 @@
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(payload)
                     });
-                    if (res.ok) success++;
+                    const data = await res.json();
+                    if (data.result) {
+                        success++;
+                    } else {
+                        errorMsg = data.error ? data.error.message : '返回格式未知';
+                    }
                 } catch (e) {
-                    console.error('Aria2 error', e);
+                    errorMsg = '网络请求失败 (可能是浏览器拦截了本地请求，或Aria2未启动)';
                 }
             }
-            alert(`成功发送 ${success} 个任务到 Aria2`);
-            selectedFiles.clear();
-            renderFiles();
-            updateActionBar();
+
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+
+            if (success > 0) {
+                alert(`成功发送 ${success} 个任务到 Aria2`);
+                selectedFiles.clear();
+                renderFiles();
+                updateActionBar();
+            } else {
+                alert(`发送失败！\n原因: ${errorMsg}\n\n请确保：\n1. Aria2 已启动并开启了 --enable-rpc\n2. 允许了跨域请求`);
+            }
         });
 
         document.getElementById('btnCancelSelect').addEventListener('click', () => {
@@ -694,7 +705,7 @@
             updateActionBar();
         });
 
-        // ================= 辅助工具 =================
+        // ================= 工具与 UI 交互 =================
         function formatSize(bytes) {
             if (!bytes) return '-';
             if (bytes < 1024) return bytes + ' B';
@@ -708,10 +719,70 @@
             return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
         }
 
-        // ================= UI 交互绑定 =================
         document.getElementById('layoutSelect').addEventListener('change', e => {
             currentLayout = e.target.value;
+            localStorage.setItem('layout', currentLayout);
             renderFiles();
+        });
+
+        document.getElementById('pageSizeSelect').addEventListener('change', e => {
+            pageSize = parseInt(e.target.value);
+            localStorage.setItem('pageSize', pageSize);
+            currentPage = 1;
+            renderFiles();
+        });
+
+        // 左下角悬浮栏展开/收起
+        document.getElementById('btnMore').addEventListener('click', () => {
+            document.getElementById('toolbarExtra').classList.toggle('active');
+        });
+
+        // 多选模式开关
+        document.getElementById('btnMultiSelect').addEventListener('click', function() {
+            isSelectMode = !isSelectMode;
+            if (isSelectMode) {
+                this.style.background = '#4CAF50';
+                this.style.color = '#fff';
+                document.getElementById('btnSelectAll').style.display = 'flex';
+            } else {
+                this.style.background = '#1e1e2e';
+                this.style.color = '#4CAF50';
+                document.getElementById('btnSelectAll').style.display = 'none';
+                selectedFiles.clear();
+                updateActionBar();
+            }
+            renderFiles();
+        });
+
+        // 全选按钮
+        document.getElementById('btnSelectAll').addEventListener('click', () => {
+            const { files } = getPathContent(currentPath);
+            if (selectedFiles.size === files.length && files.length > 0) {
+                selectedFiles.clear();
+            } else {
+                files.forEach(f => selectedFiles.add(f));
+            }
+            renderFiles();
+            updateActionBar();
+        });
+
+        // 设置抽屉
+        document.getElementById('btnSettings').addEventListener('click', () => {
+            document.getElementById('settingsDrawer').classList.add('active');
+            document.getElementById('drawerOverlay').classList.add('active');
+        });
+        const closeDrawer = () => {
+            document.getElementById('settingsDrawer').classList.remove('active');
+            document.getElementById('drawerOverlay').classList.remove('active');
+            localStorage.setItem('aria2Rpc', document.getElementById('aria2Rpc').value.trim());
+            localStorage.setItem('aria2Secret', document.getElementById('aria2Secret').value.trim());
+        };
+        document.getElementById('closeDrawer').addEventListener('click', closeDrawer);
+        document.getElementById('drawerOverlay').addEventListener('click', closeDrawer);
+
+        // 搜索与侧边栏
+        document.getElementById('searchToggle').addEventListener('click', () => {
+            document.getElementById('searchBar').classList.toggle('active');
         });
 
         document.getElementById('searchInput').addEventListener('input', e => {
@@ -728,7 +799,6 @@
             }
         });
 
-        // 侧边栏
         document.getElementById('navToggle').addEventListener('click', () => {
             document.getElementById('sidebar').classList.add('active');
             document.getElementById('sidebarOverlay').classList.add('active');
@@ -736,35 +806,6 @@
         document.getElementById('sidebarOverlay').addEventListener('click', () => {
             document.getElementById('sidebar').classList.remove('active');
             document.getElementById('sidebarOverlay').classList.remove('active');
-        });
-
-        // 抽屉设置
-        document.getElementById('btnSettings').addEventListener('click', () => {
-            document.getElementById('settingsDrawer').classList.add('active');
-            document.getElementById('drawerOverlay').classList.add('active');
-        });
-        const closeDrawer = () => {
-            document.getElementById('settingsDrawer').classList.remove('active');
-            document.getElementById('drawerOverlay').classList.remove('active');
-        };
-        document.getElementById('closeDrawer').addEventListener('click', closeDrawer);
-        document.getElementById('drawerOverlay').addEventListener('click', closeDrawer);
-
-        // 悬浮工具栏展开/收起
-        document.getElementById('btnMore').addEventListener('click', () => {
-            document.getElementById('toolbarExtra').classList.toggle('active');
-        });
-
-        // 悬浮全选
-        document.getElementById('btnSelectAll').addEventListener('click', () => {
-            const { files } = getPathContent(currentPath);
-            if (selectedFiles.size === files.length && files.length > 0) {
-                selectedFiles.clear();
-            } else {
-                files.forEach(f => selectedFiles.add(f));
-            }
-            renderFiles();
-            updateActionBar();
         });
     </script>
 </body>

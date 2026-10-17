@@ -17,7 +17,7 @@
             margin-top: 6px;
         }
 
-        /* ===================== 教程弹窗样式 ===================== */
+        /* ===================== 教程弹窗通用样式 ===================== */
         .tutorial-overlay {
             display: none;
             position: fixed;
@@ -254,7 +254,7 @@
         </div>
     </div>
 
-    <!-- ===================== 教程弹窗 ===================== -->
+    <!-- ===================== 弹窗 1：解码工具教程 ===================== -->
     <div class="tutorial-overlay" id="tutorialOverlay">
         <div class="tutorial-modal">
             <div class="tutorial-header">
@@ -448,6 +448,74 @@ bash decode.sh</code></pre>
         </div>
     </div>
 
+    <!-- ===================== 弹窗 2：Aria2 下载教程 ===================== -->
+    <div class="tutorial-overlay" id="aria2Overlay">
+        <div class="tutorial-modal">
+            <div class="tutorial-header">
+                <div class="tutorial-title">
+                    <i class="fas fa-cloud-download-alt"></i>
+                    <span>Aria2 联动下载 - 使用教程</span>
+                </div>
+                <button class="tutorial-close" id="aria2CloseBtn" title="关闭">&times;</button>
+            </div>
+
+            <div class="tutorial-body">
+                <h2>📖 什么是 Aria2 联动？</h2>
+                <p>本资源库支持将选中的文件“发送至 Aria2”进行多线程高速下载。Aria2 是一款轻量级的命令行下载工具，比浏览器自带下载快得多。</p>
+                <div class="tip-box">💡 注意：必须在电脑端后台运行 Aria2 并开启 RPC 服务，网页才能连上它。手机端如果不运行 Aria2，请直接使用网页自带的“下载”按钮。</div>
+
+                <h2>🚀 第一步：启动 Aria2 (必须开启 RPC)</h2>
+                <p>如果你下载的是 Aria2 的可执行文件，请打开命令行（CMD 或终端），输入以下命令启动：</p>
+                <pre><code>aria2c --enable-rpc --rpc-listen-all=true --rpc-allow-origin-all</code></pre>
+                <p><strong>参数说明：</strong></p>
+                <ul>
+                    <li><code>--enable-rpc</code>：开启远程控制功能（必须）</li>
+                    <li><code>--rpc-allow-origin-all</code>：允许跨域请求（必须，否则网页连不上）</li>
+                </ul>
+                <p>如果你设置了密码，启动命令需要加上：</p>
+                <pre><code>aria2c --enable-rpc --rpc-allow-origin-all --rpc-secret=你的密码</code></pre>
+
+                <h2>⚙️ 第二步：在网页中配置</h2>
+                <ol>
+                    <li>回到资源浏览页，点击左下角的 <strong>“小三点”</strong> 按钮，展开悬浮菜单。</li>
+                    <li>点击 <strong>齿轮图标（本地设置）</strong>。</li>
+                    <li>在弹出的设置面板中，确认 <code>Aria2 RPC 链接</code>（默认是 <code>http://localhost:6800/jsonrpc</code>）。</li>
+                    <li>如果你在启动时设置了密码，请在 <code>Aria2 RPC 密钥</code> 中填入一模一样的密码。</li>
+                </ol>
+
+                <h2>📥 第三步：开始下载</h2>
+                <ol>
+                    <li>点击左下角“小三点”，点击 <strong>多选模式</strong>。</li>
+                    <li>勾选你想要下载的文件。</li>
+                    <li>点击底部弹出的 <strong>“发至 Aria2”</strong> 按钮。如果提示“发送成功”，去 Aria2 的界面（或控制台）就能看到下载任务了。</li>
+                </ol>
+
+                <h2>⚠️ 常见报错解决</h2>
+                <h3>1. 提示“网络请求失败”或“被浏览器拦截”</h3>
+                <p><strong>原因</strong>：因为网页是 <code>https://</code> 的安全连接，而你的 Aria2 是本地 <code>http://</code>，浏览器出于安全机制拦截了请求（混合内容拦截）。</p>
+                <p><strong>解决方法</strong>：点击浏览器地址栏左侧的 <strong>“锁”</strong> 图标 → 点击 <strong>“网站设置”</strong> → 找到 <strong>“不安全内容”</strong>（Insecure content），将其改为 <strong>“允许”</strong>。刷新网页即可。</p>
+
+                <h3>2. 提示“未授权”或“Token 错误”</h3>
+                <p><strong>原因</strong>：你在启动 Aria2 时加了 <code>--rpc-secret</code>，但网页设置里没填，或者填错了。</p>
+                <p><strong>解决方法</strong>：检查网页设置中的密钥是否与启动命令中的密码完全一致。</p>
+
+                <h3>3. 如何配置代理让 Aria2 下载更快？</h3>
+                <p>Aria2 不走浏览器的代理。如果你在国内需要加速下载，可以在启动 Aria2 时加上代理参数（假设你有本地代理软件，端口为 7890）：</p>
+                <pre><code>aria2c --enable-rpc --rpc-allow-origin-all --all-proxy=http://127.0.0.1:7890</code></pre>
+            </div>
+
+            <div class="tutorial-footer">
+                <label class="tutorial-checkbox">
+                    <input type="checkbox" id="aria2DontShow">
+                    <span>下次不再提示</span>
+                </label>
+                <button class="tutorial-ok-btn" id="aria2OkBtn">
+                    <i class="fas fa-check"></i> 我已知晓
+                </button>
+            </div>
+        </div>
+    </div>
+
     <div class="container">
         <header>
             <div class="header-controls">
@@ -485,6 +553,11 @@ bash decode.sh</code></pre>
                     <li class="nav-item">
                         <a href="javascript:void(0)" class="nav-link tutorial-link" id="showTutorialBtn">
                             <i class="fas fa-book"></i> 解码教程
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="javascript:void(0)" class="nav-link tutorial-link" id="showAria2Btn">
+                            <i class="fas fa-cloud-download-alt"></i> Aria2 教程
                         </a>
                     </li>
                 </ul>
@@ -566,11 +639,37 @@ bash decode.sh</code></pre>
     <!-- ===================== 教程弹窗脚本 ===================== -->
     <script>
     (function() {
+        // 1. 解码工具弹窗逻辑
         var overlay = document.getElementById('tutorialOverlay');
         var closeBtn = document.getElementById('tutorialCloseBtn');
         var okBtn = document.getElementById('tutorialOkBtn');
         var dontShow = document.getElementById('tutorialDontShow');
         var showBtn = document.getElementById('showTutorialBtn');
+
+        // 2. Aria2 弹窗逻辑
+        var aOverlay = document.getElementById('aria2Overlay');
+        var aCloseBtn = document.getElementById('aria2CloseBtn');
+        var aOkBtn = document.getElementById('aria2OkBtn');
+        var aDontShow = document.getElementById('aria2DontShow');
+        var showABtn = document.getElementById('showAria2Btn');
+
+        // 核心顺序控制逻辑
+        function checkAndShowPopups() {
+            // 先检查解码教程
+            if (localStorage.getItem('tutorialDontShow') !== '1') {
+                openTutorial();
+            } else {
+                // 如果解码教程跳过了，接着检查 Aria2 教程
+                checkAndShowAria2();
+            }
+        }
+
+        function checkAndShowAria2() {
+            // 检查 Aria2 教程
+            if (localStorage.getItem('aria2DontShow') !== '1') {
+                openAria2Tutorial();
+            }
+        }
 
         function openTutorial() {
             overlay.classList.add('active');
@@ -583,29 +682,34 @@ bash decode.sh</code></pre>
             }
             overlay.classList.remove('active');
             document.body.style.overflow = '';
+            
+            // 关闭解码后，延迟一点弹出 Aria2，体验更好
+            setTimeout(checkAndShowAria2, 300);
         }
 
-        // 页面加载时判断是否显示
-        if (localStorage.getItem('tutorialDontShow') !== '1') {
-            setTimeout(openTutorial, 500);
+        function openAria2Tutorial() {
+            aOverlay.classList.add('active');
+            document.body.style.overflow = 'hidden';
         }
 
+        function closeAria2Tutorial() {
+            if (aDontShow.checked) {
+                localStorage.setItem('aria2DontShow', '1');
+            }
+            aOverlay.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        // 页面加载时判断
+        setTimeout(checkAndShowPopups, 500);
+
+        // --- 事件绑定 ---
+        // 解码教程
         closeBtn.addEventListener('click', closeTutorial);
         okBtn.addEventListener('click', closeTutorial);
-
-        // 点击遮罩关闭
         overlay.addEventListener('click', function(e) {
             if (e.target === overlay) closeTutorial();
         });
-
-        // ESC 键关闭
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape' && overlay.classList.contains('active')) {
-                closeTutorial();
-            }
-        });
-
-        // 侧边栏"解码教程"按钮
         if (showBtn) {
             showBtn.addEventListener('click', function(e) {
                 e.preventDefault();
@@ -613,6 +717,28 @@ bash decode.sh</code></pre>
                 openTutorial();
             });
         }
+
+        // Aria2 教程
+        aCloseBtn.addEventListener('click', closeAria2Tutorial);
+        aOkBtn.addEventListener('click', closeAria2Tutorial);
+        aOverlay.addEventListener('click', function(e) {
+            if (e.target === aOverlay) closeAria2Tutorial();
+        });
+        if (showABtn) {
+            showABtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                aDontShow.checked = false;
+                openAria2Tutorial();
+            });
+        }
+
+        // ESC 键关闭
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                if (overlay.classList.contains('active')) closeTutorial();
+                if (aOverlay.classList.contains('active')) closeAria2Tutorial();
+            }
+        });
     })();
     </script>
 </body>

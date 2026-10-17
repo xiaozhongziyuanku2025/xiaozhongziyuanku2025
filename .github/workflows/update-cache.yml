@@ -34,13 +34,11 @@ jobs:
 
           echo "获取完成，开始生成 JSON..."
           FINAL_JSON=$(echo "$RELEASES" | jq '
-            # 解析所有 tag，无论什么前缀
+            # 解析所有 tag
             .[] | 
             .tag_name as $tag |
-            # 智能去前缀：如果有 "Windows病毒库-" 或 "Windows病毒库"，去掉它；如果没有，保留原样
-            ($tag | sub("^Windows病毒库-"; "") | sub("^Windows病毒库$"; "")) as $clean_tag |
-            # 如果为空，则为根目录；否则将 - 转为 / 实现层级
-            (if $clean_tag == "" then "" else ($clean_tag | split("-") | join("/")) end) as $path |
+            # 直接保留原前缀，将 - 转为 / 实现真实层级
+            ($tag | split("-") | join("/")) as $path |
             .assets[] |
             {
               name: .name,

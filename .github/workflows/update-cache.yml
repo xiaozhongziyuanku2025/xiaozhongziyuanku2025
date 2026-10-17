@@ -22,70 +22,51 @@ jobs:
           RELEASES="[]"
           PAGE=1
           while true; do
-            echo "正在获取第 $PAGE 页..."
             BATCH=$(curl -s -H "Accept: application/vnd.github.v3+json" \
               -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
               "https://api.github.com/repos/${{ github.repository }}/releases?per_page=100&page=$PAGE")
-            
-            # 获取当前页的数量
             COUNT=$(echo "$BATCH" | jq 'length')
-            
-            # 如果数量为0，说明到底了，退出循环
-            if [ "$COUNT" -eq 0 ]; then
-              break
-            fi
-            
-            # 合并到总列表
+            if [ "$COUNT" -eq 0 ]; then break; fi
             RELEASES=$(echo "$RELEASES $BATCH" | jq -s 'add')
-            
-            # 如果当前页不足100，说明是最后一页，退出循环
-            if [ "$COUNT" -lt 100 ]; then
-              break
-            fi
-            
+            if [ "$COUNT" -lt 100 ]; then break; fi
             PAGE=$((PAGE+1))
           done
 
           echo "获取完成，开始生成 JSON..."
           FINAL_JSON=$(echo "$RELEASES" | jq '
-            [.[] | select(.tag_name | startswith("Windows病毒库"))] as $releases |
-            $releases | map(
-              .tag_name as $tag |
-              # 解析子路径
-              ($tag | sub("^Windows病毒库"; "") | sub("^-"; "") | split("-") | join("/")) as $subpath |
-              ($subpath | if . == "" then "" else . end) as $path |
-              .assets[] |
-              {
-                name: .name,
-                decoded_name: (
-                  (.name | split(".")) as $parts |
-                  if ($parts | length) > 1 then
-                    (($parts[0:-1] | join("")) | try (gsub("-"; "+") | gsub("_"; "/") | @base64d) catch null) as $whole |
-                    if $whole then
-                      $whole + "." + $parts[-1]
-                    else
-                      (($parts[0:-1] | map(
-                        . as $seg |
-                        ($seg | try (gsub("-"; "+") | gsub("_"; "/") | @base64d) catch $seg)
-                      ) | join(".")) + "." + $parts[-1])
-                    end
-                  else
-                    (.name | try (gsub("-"; "+") | gsub("_"; "/") | @base64d) catch .)
-                  end
-                ),
-                path: $path,
-                tag: $tag,
-                size: .size,
-                updated_at: .updated_at,
-                download_url: .browser_download_url
-              }
-            ) as $files |
+            # 解析所有 tag，无论什么前缀
+            .[] | 
+            .tag_name as $tag |
+            # 智能去前缀：如果有 "Windows病毒库-" 或 "Windows病毒库"，去掉它；如果没有，保留原样
+            ($tag | sub("^Windows病毒库-"; "") | sub("^Windows病毒库$"; "")) as $clean_tag |
+            # 如果为空，则为根目录；否则将 - 转为 / 实现层级
+            (if $clean_tag == "" then "" else ($clean_tag | split("-") | join("/")) end) as $path |
+            .assets[] |
             {
-              version: "1.0",
-              updated_at: (now | strftime("%Y-%m-%dT%H:%M:%SZ")),
-              files: $files
+              name: .name,
+              decoded_name: (
+                (.name | split(".")) as $parts |
+                if ($parts | length) > 1 then
+                  (($parts[0:-1] | join("")) | try (gsub("-"; "+") | gsub("_"; "/") | @base64d) catch null) as $whole |
+                  if $whole then
+                    $whole + "." + $parts[-1]
+                  else
+                    (($parts[0:-1] | map(
+                      . as $seg |
+                      ($seg | try (gsub("-"; "+") | gsub("_"; "/") | @base64d) catch $seg)
+                    ) | join(".")) + "." + $parts[-1])
+                  end
+                else
+                  (.name | try (gsub("-"; "+") | gsub("_"; "/") | @base64d) catch .)
+                end
+              ),
+              path: $path,
+              tag: $tag,
+              size: .size,
+              updated_at: .updated_at,
+              download_url: .browser_download_url
             }
-          ')
+          ' | jq -s '{ version: "1.0", updated_at: (now | strftime("%Y-%m-%dT%H:%M:%SZ")), files: . }')
 
           echo "$FINAL_JSON" > release-cache.json
           echo "✅ 缓存已生成，共 $(echo "$FINAL_JSON" | jq '.files | length') 个文件"

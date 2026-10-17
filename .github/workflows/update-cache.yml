@@ -18,14 +18,40 @@ jobs:
 
       - name: 获取并生成缓存
         run: |
-          RELEASES=$(curl -s -H "Accept: application/vnd.github.v3+json" \
-            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
-            "https://api.github.com/repos/${{ github.repository }}/releases?per_page=100")
+          echo "开始获取 Releases (支持翻页)..."
+          RELEASES="[]"
+          PAGE=1
+          while true; do
+            echo "正在获取第 $PAGE 页..."
+            BATCH=$(curl -s -H "Accept: application/vnd.github.v3+json" \
+              -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+              "https://api.github.com/repos/${{ github.repository }}/releases?per_page=100&page=$PAGE")
+            
+            # 获取当前页的数量
+            COUNT=$(echo "$BATCH" | jq 'length')
+            
+            # 如果数量为0，说明到底了，退出循环
+            if [ "$COUNT" -eq 0 ]; then
+              break
+            fi
+            
+            # 合并到总列表
+            RELEASES=$(echo "$RELEASES $BATCH" | jq -s 'add')
+            
+            # 如果当前页不足100，说明是最后一页，退出循环
+            if [ "$COUNT" -lt 100 ]; then
+              break
+            fi
+            
+            PAGE=$((PAGE+1))
+          done
 
+          echo "获取完成，开始生成 JSON..."
           FINAL_JSON=$(echo "$RELEASES" | jq '
             [.[] | select(.tag_name | startswith("Windows病毒库"))] as $releases |
             $releases | map(
               .tag_name as $tag |
+              # 解析子路径
               ($tag | sub("^Windows病毒库"; "") | sub("^-"; "") | split("-") | join("/")) as $subpath |
               ($subpath | if . == "" then "" else . end) as $path |
               .assets[] |
@@ -48,7 +74,9 @@ jobs:
                   end
                 ),
                 path: $path,
+                tag: $tag,
                 size: .size,
+                updated_at: .updated_at,
                 download_url: .browser_download_url
               }
             ) as $files |

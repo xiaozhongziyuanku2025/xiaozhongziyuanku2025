@@ -13,7 +13,6 @@
             color: #e0e0e0;
             font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
             min-height: 100vh;
-            /* 背景由 style.css 控制，不在此处覆盖 */
         }
         .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
         
@@ -56,6 +55,7 @@
         /* 按钮 */
         .btn { background: rgba(76,175,80,0.2); border: 1px solid #4CAF50; color: #4CAF50; padding: 8px 16px; border-radius: 6px; cursor: pointer; transition: 0.3s; font-size: 14px; display: inline-flex; align-items: center; gap: 6px; font-weight: 500; text-decoration: none; }
         .btn:hover { background: rgba(76,175,80,0.4); color: #fff; }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
         
         /* 搜索框 */
         .search-container { display: flex; align-items: center; gap: 10px; }
@@ -100,12 +100,12 @@
         .spinner { width: 40px; height: 40px; border: 4px solid rgba(76,175,80,0.3); border-top-color: #4CAF50; border-radius: 50%; animation: spin 1s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
 
-        /* ========== 悬浮操作栏 (OpenList风格) ========== */
+        /* ========== 悬浮操作栏 ========== */
         .action-bar { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: #1e1e2e; border: 2px solid #4CAF50; border-radius: 30px; padding: 10px 20px; display: none; align-items: center; gap: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.6); z-index: 1000; }
         .action-bar.active { display: flex; }
         .action-bar span { color: #4CAF50; font-weight: bold; white-space: nowrap; }
 
-        /* ========== 左下角悬浮栏 (小三点) ========== */
+        /* ========== 左下角悬浮栏 ========== */
         .left-toolbar { position: fixed; bottom: 30px; left: 30px; display: flex; flex-direction: column; gap: 10px; z-index: 1000; }
         .toolbar-btn { width: 45px; height: 45px; border-radius: 50%; background: #1e1e2e; border: 1px solid #4CAF50; color: #4CAF50; display: flex; align-items: center; justify-content: center; font-size: 20px; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.5); transition: 0.3s; }
         .toolbar-btn:hover { background: #4CAF50; color: #fff; transform: scale(1.1); }
@@ -172,8 +172,6 @@
     <!-- 左下角悬浮栏 (小三点) -->
     <div class="left-toolbar">
         <div class="toolbar-extra" id="toolbarExtra">
-            <!-- 全选按钮 (仅多选模式下显示) -->
-            <div class="toolbar-btn" id="btnSelectAll" title="全选/取消全选" style="display: none;"><i class="fas fa-check-square"></i></div>
             <!-- 多选模式开关 -->
             <div class="toolbar-btn" id="btnMultiSelect" title="多选模式"><i class="fas fa-list-ul"></i></div>
             <!-- 本地设置 -->
@@ -291,7 +289,7 @@
         let currentLayout = 'list';
         let searchKeyword = '';
         let searchScope = 'all';
-        let isSelectMode = false; // 默认不开启多选模式
+        let isSelectMode = false; // 默认关闭多选模式
 
         // ================= 初始化 =================
         document.addEventListener('DOMContentLoaded', () => {
@@ -358,7 +356,6 @@
             }
         }
 
-        // 1-6秒随机延迟的转圈加载
         function navigateTo(path) {
             currentPath = path || '';
             currentPage = 1;
@@ -434,7 +431,6 @@
             }
 
             let html = '';
-            // 重点：只有当 isSelectMode 为 true 时，才在表头/网格项渲染复选框
             if (currentLayout === 'list') {
                 html += `<table class="file-list-view"><thead><tr>`;
                 if (isSelectMode) html += '<th width="40"><input type="checkbox" class="checkbox" id="headerCheckbox"></th>';
@@ -602,7 +598,8 @@
             if (files.length > 0) {
                 tag = files[0].tag;
             } else {
-                tag = 'Windows病毒库-' + currentPath.replace(/\//g, '-');
+                // 直接反推：路径转回 Tag
+                tag = currentPath.replace(/\//g, '-');
             }
             
             if (tag) {
@@ -644,7 +641,7 @@
             });
         });
 
-        // 【真实可用的 Aria2 发送】
+        // 【修复版 Aria2 批量发送，增加详细错误弹窗】
         document.getElementById('btnAria2').addEventListener('click', async () => {
             if (selectedFiles.size === 0) return;
             
@@ -654,48 +651,42 @@
             if (!rpc) return alert('请点击小三点 -> 设置，填写 Aria2 RPC 链接');
 
             const urls = Array.from(selectedFiles).map(f => getDownloadUrl(f.download_url));
-            const tokenParam = secret ? [`token:${secret}`] : [];
-            
-            let success = 0;
-            let errorMsg = '';
+            const params = secret ? [`token:${secret}`, urls] : [urls];
+
+            const payload = {
+                jsonrpc: "2.0", 
+                method: "aria2.addUri", 
+                id: "qwer",
+                params: params
+            };
 
             const btn = document.getElementById('btnAria2');
             const originalText = btn.innerHTML;
             btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 发送中...';
             btn.disabled = true;
 
-            for (const url of urls) {
-                const payload = {
-                    jsonrpc: "2.0", method: "aria2.addUri", id: "qwer",
-                    params: [...tokenParam, [url]]
-                };
-                try {
-                    const res = await fetch(rpc, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(payload)
-                    });
-                    const data = await res.json();
-                    if (data.result) {
-                        success++;
-                    } else {
-                        errorMsg = data.error ? data.error.message : '返回格式未知';
-                    }
-                } catch (e) {
-                    errorMsg = '网络请求失败 (可能是浏览器拦截了本地请求，或Aria2未启动)';
+            try {
+                const res = await fetch(rpc, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+                
+                if (data.result) {
+                    alert(`成功发送 ${urls.length} 个任务到 Aria2`);
+                    selectedFiles.clear();
+                    renderFiles();
+                    updateActionBar();
+                } else {
+                    alert(`Aria2 拒绝请求：\n${data.error ? data.error.message : JSON.stringify(data)}`);
                 }
-            }
-
-            btn.innerHTML = originalText;
-            btn.disabled = false;
-
-            if (success > 0) {
-                alert(`成功发送 ${success} 个任务到 Aria2`);
-                selectedFiles.clear();
-                renderFiles();
-                updateActionBar();
-            } else {
-                alert(`发送失败！\n原因: ${errorMsg}\n\n请确保：\n1. Aria2 已启动并开启了 --enable-rpc\n2. 允许了跨域请求`);
+            } catch (e) {
+                console.error(e);
+                alert(`连接 Aria2 失败！\n\n原因：浏览器拦截了请求或 Aria2 未启动。\n请检查：\n1. Aria2 是否用 --enable-rpc --rpc-allow-origin-all 启动？\n2. 如果网页是 https，是否在浏览器允许了“不安全内容”？\n3. 端口 6800 是否被占用？`);
+            } finally {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
             }
         });
 
@@ -743,27 +734,13 @@
             if (isSelectMode) {
                 this.style.background = '#4CAF50';
                 this.style.color = '#fff';
-                document.getElementById('btnSelectAll').style.display = 'flex';
             } else {
                 this.style.background = '#1e1e2e';
                 this.style.color = '#4CAF50';
-                document.getElementById('btnSelectAll').style.display = 'none';
                 selectedFiles.clear();
                 updateActionBar();
             }
             renderFiles();
-        });
-
-        // 全选按钮
-        document.getElementById('btnSelectAll').addEventListener('click', () => {
-            const { files } = getPathContent(currentPath);
-            if (selectedFiles.size === files.length && files.length > 0) {
-                selectedFiles.clear();
-            } else {
-                files.forEach(f => selectedFiles.add(f));
-            }
-            renderFiles();
-            updateActionBar();
         });
 
         // 设置抽屉

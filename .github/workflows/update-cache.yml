@@ -34,29 +34,36 @@ jobs:
 
           echo "获取完成，开始生成 JSON..."
           FINAL_JSON=$(echo "$RELEASES" | jq '
-            # 解析所有 tag
             .[] | 
             .tag_name as $tag |
-            # 直接保留原前缀，将 - 转为 / 实现真实层级
             ($tag | split("-") | join("/")) as $path |
             .assets[] |
             {
               name: .name,
               decoded_name: (
-                (.name | split(".")) as $parts |
-                if ($parts | length) > 1 then
-                  (($parts[0:-1] | join("")) | try (gsub("-"; "+") | gsub("_"; "/") | @base64d) catch null) as $whole |
-                  if $whole then
-                    $whole + "." + $parts[-1]
+                # 1. 先剥离末尾的 3 位数字后缀 (如 .001)
+                (.name | capture("(?<base>.*)\\.(?<num>\\d{3})$") // {"base": .name, "num": ""}) as $match |
+                
+                # 2. 对 base 部分进行解码
+                ($match.base | split(".")) as $parts |
+                (
+                  if ($parts | length) > 1 then
+                    (($parts[0:-1] | join("")) | try (gsub("-"; "+") | gsub("_"; "/") | @base64d) catch null) as $whole |
+                    if $whole then
+                      $whole + "." + $parts[-1]
+                    else
+                      (($parts[0:-1] | map(
+                        . as $seg |
+                        ($seg | try (gsub("-"; "+") | gsub("_"; "/") | @base64d) catch $seg)
+                      ) | join(".")) + "." + $parts[-1])
+                    end
                   else
-                    (($parts[0:-1] | map(
-                      . as $seg |
-                      ($seg | try (gsub("-"; "+") | gsub("_"; "/") | @base64d) catch $seg)
-                    ) | join(".")) + "." + $parts[-1])
+                    ($match.base | try (gsub("-"; "+") | gsub("_"; "/") | @base64d) catch .)
                   end
-                else
-                  (.name | try (gsub("-"; "+") | gsub("_"; "/") | @base64d) catch .)
-                end
+                ) as $decoded_base |
+                
+                # 3. 拼回数字后缀
+                (if $match.num != "" then $decoded_base + "." + $match.num else $decoded_base end)
               ),
               path: $path,
               tag: $tag,

@@ -455,8 +455,8 @@
             
             files.forEach(f => {
                 const name = f.decoded_name || f.name;
-                // 只要以 .001 到 .999 结尾，全部识别为分卷
-                const match = name.match(/^(.*)\.(\d{3})$/);
+                // 匹配以点加数字结尾的文件（如 .001, .01, .1）
+                const match = name.match(/^(.*)\.(\d+)$/);
                 
                 if (match) {
                     const baseName = match[1]; // 比如 "xxx.7z"
@@ -489,8 +489,8 @@
                     f.parts.sort((a, b) => {
                         const nameA = a.decoded_name || a.name;
                         const nameB = b.decoded_name || b.name;
-                        const numA = parseInt(nameA.slice(-3), 10) || 0;
-                        const numB = parseInt(nameB.slice(-3), 10) || 0;
+                        const numA = parseInt(nameA.split('.').pop(), 10) || 0;
+                        const numB = parseInt(nameB.split('.').pop(), 10) || 0;
                         return numA - numB;
                     });
                 }

@@ -1,33 +1,42 @@
 {
   "version": "1.0",
-  "updated_at": "2026-10-18T08:36:36Z",
+  "updated_at": "2026-10-18T08:44:12Z",
   "files": [
     {
       "name": "zh-cn_windows_11_enterprise_ltsc_2024_x64_dvd_cff9cd2d.7z.003",
       "decoded_name": "�\u001f���\"��0��u���z�k�ǿ��\u001c�m6��z��ow�\u001f\u007f�\u001d�.7z.003",
-      "path": "",
-      "tag": "",
+      "path": "System/Windows/Lite/Windows11",
+      "tag": "System-Windows-Lite-Windows11",
       "size": 1572864000,
       "updated_at": "2026-10-18T08:15:24Z",
-      "download_url": "https://github.com/xiaozhongziyuanku2025/xiaozhongziyuanku2025/releases/download/untagged-64ce005151d233f25d80/zh-cn_windows_11_enterprise_ltsc_2024_x64_dvd_cff9cd2d.7z.003"
+      "download_url": "https://github.com/xiaozhongziyuanku2025/xiaozhongziyuanku2025/releases/download/System-Windows-Lite-Windows11/zh-cn_windows_11_enterprise_ltsc_2024_x64_dvd_cff9cd2d.7z.003"
     },
     {
       "name": "zh-cn_windows_11_enterprise_ltsc_2024_x64_dvd_cff9cd2d.7z.004",
       "decoded_name": "�\u001f���\"��0��u���z�k�ǿ��\u001c�m6��z��ow�\u001f\u007f�\u001d�.7z.004",
-      "path": "",
-      "tag": "",
+      "path": "System/Windows/Lite/Windows11",
+      "tag": "System-Windows-Lite-Windows11",
       "size": 568928482,
       "updated_at": "2026-10-18T08:19:18Z",
-      "download_url": "https://github.com/xiaozhongziyuanku2025/xiaozhongziyuanku2025/releases/download/untagged-64ce005151d233f25d80/zh-cn_windows_11_enterprise_ltsc_2024_x64_dvd_cff9cd2d.7z.004"
+      "download_url": "https://github.com/xiaozhongziyuanku2025/xiaozhongziyuanku2025/releases/download/System-Windows-Lite-Windows11/zh-cn_windows_11_enterprise_ltsc_2024_x64_dvd_cff9cd2d.7z.004"
     },
     {
       "name": "zh-cn_windows_11_enterprise_ltsc_2024_x64_dvd_cff9cd2d.7z.001",
       "decoded_name": "�\u001f���\"��0��u���z�k�ǿ��\u001c�m6��z��ow�\u001f\u007f�\u001d�.7z.001",
-      "path": "",
-      "tag": "",
+      "path": "System/Windows/Lite/Windows11",
+      "tag": "System-Windows-Lite-Windows11",
       "size": 1572864000,
       "updated_at": "2026-10-18T08:29:24Z",
-      "download_url": "https://github.com/xiaozhongziyuanku2025/xiaozhongziyuanku2025/releases/download/untagged-64ce005151d233f25d80/zh-cn_windows_11_enterprise_ltsc_2024_x64_dvd_cff9cd2d.7z.001"
+      "download_url": "https://github.com/xiaozhongziyuanku2025/xiaozhongziyuanku2025/releases/download/System-Windows-Lite-Windows11/zh-cn_windows_11_enterprise_ltsc_2024_x64_dvd_cff9cd2d.7z.001"
+    },
+    {
+      "name": "zh-cn_windows_11_enterprise_ltsc_2024_x64_dvd_cff9cd2d.7z.002",
+      "decoded_name": "�\u001f���\"��0��u���z�k�ǿ��\u001c�m6��z��ow�\u001f\u007f�\u001d�.7z.002",
+      "path": "System/Windows/Lite/Windows11",
+      "tag": "System-Windows-Lite-Windows11",
+      "size": 1572864000,
+      "updated_at": "2026-10-18T08:39:27Z",
+      "download_url": "https://github.com/xiaozhongziyuanku2025/xiaozhongziyuanku2025/releases/download/System-Windows-Lite-Windows11/zh-cn_windows_11_enterprise_ltsc_2024_x64_dvd_cff9cd2d.7z.002"
     }
   ]
 }

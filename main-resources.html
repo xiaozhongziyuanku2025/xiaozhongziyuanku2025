@@ -102,7 +102,7 @@
             white-space: normal;
             word-break: break-all;
             display: -webkit-box;
-            -webkit-line-clamp: 2; /* 列表模式默认最多2行 */
+            -webkit-line-clamp: 2; 
             -webkit-box-orient: vertical;
         }
 
@@ -223,7 +223,7 @@
     <div class="modal-overlay" id="splitModal">
         <div class="modal-box">
             <div class="modal-header">
-                <div class="modal-title"><i class="fas fa-box-open"></i> 分卷下载</div>
+                <div class="modal-title"><i class="fas fa-box-open"></i> 分卷下载 - <span id="splitModalTitle"></span></div>
                 <button class="modal-close" id="closeSplitModal">&times;</button>
             </div>
             <div class="modal-body" id="splitModalBody">
@@ -350,13 +350,12 @@
         let searchScope = 'all';
         let isSelectMode = false; 
         let filenameDisplay = 'truncate'; // truncate 或 wrap
-        let currentSplitFile = null; // 当前查看的分卷文件
+        let currentSplitFile = null; 
 
         // ================= 初始化 =================
         document.addEventListener('DOMContentLoaded', () => {
             pageSize = parseInt(localStorage.getItem('pageSize') || '0');
             
-            // 手机端默认网格视图
             const isMobile = window.innerWidth <= 768;
             const savedLayout = localStorage.getItem('layout');
             if (savedLayout) {
@@ -422,6 +421,7 @@
                 const res = await fetch('release-cache.json?_=' + Date.now());
                 const data = await res.json();
                 allFiles = data.files || [];
+                console.log('[小众资源库] 原始文件数据加载完成，共', allFiles.length, '条记录');
                 navigateTo('');
             } catch(e) {
                 document.getElementById('fileListContainer').innerHTML = '<div style="padding:40px;text-align:center;color:#f44336;">加载数据失败，请刷新</div>';
@@ -448,29 +448,34 @@
             }, delay);
         }
 
-        // 合并分卷文件
+        // 【核心修复】合并分卷文件，支持 .7z.001 / .001 等格式
         function mergeSplitFiles(files) {
             const fileMap = new Map();
             const result = [];
             
             files.forEach(f => {
                 const name = f.decoded_name || f.name;
-                // 匹配 .7z.001 或 .zip.001 等
-                const match = name.match(/^(.*\.(?:7z|zip|rar))\.(\d{3})$/);
+                // 只要以 .001 到 .999 结尾，全部识别为分卷
+                const match = name.match(/^(.*)\.(\d{3})$/);
+                
                 if (match) {
-                    const baseName = match[1];
-                    if (!fileMap.has(baseName)) {
-                        fileMap.set(baseName, {
+                    const baseName = match[1]; // 比如 "xxx.7z"
+                    const key = (f.path || '') + '/' + baseName;
+                    
+                    if (!fileMap.has(key)) {
+                        fileMap.set(key, {
                             isSplit: true,
                             decoded_name: baseName,
                             name: baseName,
                             size: 0,
                             updated_at: f.updated_at,
-                            parts: []
+                            parts: [],
+                            tag: f.tag,
+                            path: f.path
                         });
-                        result.push(fileMap.get(baseName));
+                        result.push(fileMap.get(key));
                     }
-                    const virtualFile = fileMap.get(baseName);
+                    const virtualFile = fileMap.get(key);
                     virtualFile.parts.push(f);
                     virtualFile.size += (f.size || 0);
                 } else {
@@ -478,9 +483,16 @@
                 }
             });
             
+            // 排序分卷文件（按末尾数字从小到大）
             result.forEach(f => {
                 if (f.isSplit) {
-                    f.parts.sort((a, b) => a.name.localeCompare(b.name));
+                    f.parts.sort((a, b) => {
+                        const nameA = a.decoded_name || a.name;
+                        const nameB = b.decoded_name || b.name;
+                        const numA = parseInt(nameA.slice(-3), 10) || 0;
+                        const numB = parseInt(nameB.slice(-3), 10) || 0;
+                        return numA - numB;
+                    });
                 }
             });
             
@@ -515,7 +527,6 @@
             if (searchKeyword) {
                 const kw = searchKeyword.toLowerCase();
                 if (searchScope === 'all') {
-                    // 全库搜索也需要处理分卷
                     const allMerged = mergeSplitFiles(allFiles);
                     filteredFiles = allMerged.filter(f => (f.decoded_name || f.name).toLowerCase().includes(kw));
                     filteredFolders = [];
@@ -625,7 +636,8 @@
                 el.addEventListener('click', (e) => {
                     if (e.target.type === 'checkbox') return; 
                     const filename = el.dataset.name;
-                    const fileObj = allFiles.find(f => f.name === filename) || displayFiles.find(f => f.name === filename);
+                    // 在 displayFiles 里找，因为 allFiles 里没有合并的虚拟对象
+                    const fileObj = displayFiles.find(f => f.name === filename);
                     
                     if (!fileObj) return;
 
@@ -645,7 +657,7 @@
                 cb.addEventListener('change', (e) => {
                     const row = e.target.closest('tr') || e.target.closest('.grid-item');
                     const filename = row.dataset.name;
-                    const fileObj = allFiles.find(f => f.name === filename) || displayFiles.find(f => f.name === filename);
+                    const fileObj = displayFiles.find(f => f.name === filename);
                     if (fileObj) toggleSelect(fileObj, e.target);
                 });
             });
@@ -722,7 +734,7 @@
             const { files } = getPathContent(currentPath);
             let tag = '';
             if (files.length > 0) {
-                tag = files[0].tag || files[0].parts?.[0]?.tag;
+                tag = files[0].tag || (files[0].parts && files[0].parts[0].tag);
             } else {
                 tag = currentPath.replace(/\//g, '-');
             }
@@ -753,8 +765,9 @@
         // 分卷下载相关
         function showSplitModal(fileObj) {
             currentSplitFile = fileObj;
+            document.getElementById('splitModalTitle').innerText = fileObj.decoded_name || fileObj.name;
             const body = document.getElementById('splitModalBody');
-            let html = `<p style="margin-bottom:15px; color:#aaa; font-size:14px;">检测到这是一个分卷压缩包，共 ${fileObj.parts.length} 个部分。请下载全部分卷后放在同一目录解压。</p>`;
+            let html = `<p style="margin-bottom:15px; color:#ff9800; font-size:14px;"><i class="fas fa-info-circle"></i> 这是一个分卷压缩包，共 ${fileObj.parts.length} 个部分。请下载全部分卷并放在同一目录下解压。</p>`;
             
             fileObj.parts.forEach(part => {
                 const url = getDownloadUrl(part.download_url);
@@ -773,7 +786,7 @@
             if (!currentSplitFile) return;
             const links = currentSplitFile.parts.map(part => getDownloadUrl(part.download_url)).join('\n');
             navigator.clipboard.writeText(links).then(() => {
-                alert('已复制全部分卷链接');
+                alert('已复制全部分卷链接到剪贴板，可直接导入 IDM 等下载器。');
             });
         });
 
@@ -787,11 +800,16 @@
         // 批量下载
         document.getElementById('btnDownload').addEventListener('click', () => {
             if (selectedFiles.size === 0) return;
+            let count = 0;
             selectedFiles.forEach(f => {
                 if (f.isSplit) {
-                    f.parts.forEach(part => downloadSingle(part));
+                    f.parts.forEach(part => {
+                        setTimeout(() => downloadSingle(part), count * 500);
+                        count++;
+                    });
                 } else {
-                    downloadSingle(f);
+                    setTimeout(() => downloadSingle(f), count * 500);
+                    count++;
                 }
             });
             selectedFiles.clear();
@@ -864,7 +882,7 @@
                 }
             } catch (e) {
                 console.error(e);
-                alert(`连接 Aria2 失败！\n\n原因：浏览器拦截了请求或 Aria2 未启动。\n请检查：\n1. Aria2 是否用 --enable-rpc --rpc-allow-origin-all 启动？\n2. 如果网页是 https，是否在浏览器允许了“不安全内容”？\n3. 端口 6800 是否被占用？`);
+                alert(`连接 Aria2 失败！\n\n原因：浏览器拦截了请求或 Aria2 未启动。\n请检查：\n1. Aria2 是否用 --enable-rpc --rpc-allow-origin-all 启动？\n2. 如果网页是 https，是否在浏览器允许了“不安全内容”？`);
             } finally {
                 btn.innerHTML = originalText;
                 btn.disabled = false;

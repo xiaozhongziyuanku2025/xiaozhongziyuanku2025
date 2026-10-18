@@ -34,44 +34,46 @@ jobs:
 
           echo "获取完成，开始生成 JSON..."
           FINAL_JSON=$(echo "$RELEASES" | jq '
-            .[] | 
-            .tag_name as $tag |
-            ($tag | split("-") | join("/")) as $path |
-            .assets[] |
-            {
-              name: .name,
-              decoded_name: (
-                # 1. 先剥离末尾的 3 位数字后缀 (如 .001)
-                (.name | capture("(?<base>.*)\\.(?<num>\\d{3})$") // {"base": .name, "num": ""}) as $match |
-                
-                # 2. 对 base 部分进行解码
-                ($match.base | split(".")) as $parts |
-                (
-                  if ($parts | length) > 1 then
-                    (($parts[0:-1] | join("")) | try (gsub("-"; "+") | gsub("_"; "/") | @base64d) catch null) as $whole |
-                    if $whole then
-                      $whole + "." + $parts[-1]
-                    else
-                      (($parts[0:-1] | map(
-                        . as $seg |
-                        ($seg | try (gsub("-"; "+") | gsub("_"; "/") | @base64d) catch $seg)
-                      ) | join(".")) + "." + $parts[-1])
-                    end
-                  else
-                    ($match.base | try (gsub("-"; "+") | gsub("_"; "/") | @base64d) catch .)
-                  end
-                ) as $decoded_base |
-                
-                # 3. 拼回数字后缀
-                (if $match.num != "" then $decoded_base + "." + $match.num else $decoded_base end)
-              ),
-              path: $path,
-              tag: $tag,
-              size: .size,
-              updated_at: .updated_at,
-              download_url: .browser_download_url
-            }
-          ' | jq -s '{ version: "1.0", updated_at: (now | strftime("%Y-%m-%dT%H:%M:%SZ")), files: . }')
+            def decode_base_str:
+              try (gsub("-"; "+") | gsub("_"; "/") | @base64d) catch .;
+            
+            def decode_filename:
+              split(".") as $parts |
+              if ($parts | length) > 1 then
+                (($parts[0:-1] | join("")) | decode_base_str) as $whole |
+                if $whole != ($parts[0:-1] | join("")) then
+                  $whole + "." + $parts[-1]
+                else
+                  (($parts[0:-1] | map(decode_base_str)) | join(".")) + "." + $parts[-1]
+                end
+              else
+                decode_base_str
+              end;
+            
+            def decode_name:
+              if test("\\.\\d+$") then
+                capture("(?<base>.*)\\.(?<num>\\d+)$") as $m |
+                ($m.base | decode_filename) + "." + $m.num
+              else
+                decode_filename
+              end;
+          
+            [.[] | .tag_name as $tag | 
+             ( $tag | split("-") | join("/") ) as $path | 
+             .assets[] | 
+             .name as $name |
+             {
+               name: $name,
+               decoded_name: ($name | decode_name),
+               path: $path,
+               tag: $tag,
+               size: .size,
+               updated_at: .updated_at,
+               download_url: .browser_download_url
+             }
+            ] | 
+            { version: "1.0", updated_at: (now | strftime("%Y-%m-%dT%H:%M:%SZ")), files: . }
+          ')
 
           echo "$FINAL_JSON" > release-cache.json
           echo "✅ 缓存已生成，共 $(echo "$FINAL_JSON" | jq '.files | length') 个文件"

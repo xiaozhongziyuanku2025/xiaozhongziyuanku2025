@@ -71,14 +71,14 @@
         /* ================= 列表与网格样式 ================= */
         .file-container { position: relative; min-height: 300px; background: rgba(20,20,30,0.5); border-radius: 10px; border: 1px solid rgba(76,175,80,0.2); overflow: hidden; }
         
-        .file-list-view { width: 100%; border-collapse: collapse; table-layout: fixed; /* 固定表格布局防止撑破 */ }
+        .file-list-view { width: 100%; border-collapse: collapse; table-layout: fixed; }
         .file-list-view th, .file-list-view td { padding: 12px 15px; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.05); }
         .file-list-view th { background: rgba(0,0,0,0.3); color: #aaa; font-size: 13px; font-weight: normal; }
         .file-list-view tr { cursor: pointer; transition: 0.2s; }
         .file-list-view tr:hover { background: rgba(76,175,80,0.1); }
         .file-list-view tr.selected { background: rgba(76,175,80,0.15); }
 
-        .file-grid-view { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 15px; padding: 20px; }
+        .file-grid-view { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 15px; padding: 20px; }
         .grid-item { background: rgba(30,30,40,0.8); border-radius: 10px; padding: 15px; text-align: center; border: 2px solid transparent; cursor: pointer; position: relative; transition: 0.3s; overflow: hidden; }
         .grid-item:hover { border-color: rgba(76,175,80,0.4); background: rgba(40,40,50,0.9); }
         .grid-item.selected { border-color: #4CAF50; background: rgba(76,175,80,0.15); }
@@ -88,7 +88,7 @@
         .folder-icon-svg { width: 24px; height: 24px; background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23FFC107"><path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/></svg>') no-repeat center; background-size: contain; flex-shrink: 0; }
         .grid-item .folder-icon-svg, .grid-item .file-icon-svg { width: 50px; height: 50px; margin: 0 auto 10px; }
         
-        /* 限制文件名最多显示为单行，并显示省略号 */
+        /* 限制文件名 */
         .item-name { display: flex; align-items: center; gap: 10px; font-weight: 500; font-size: 15px; overflow: hidden; }
         .name-text { 
             white-space: nowrap; 
@@ -97,23 +97,25 @@
             flex: 1; 
             display: block;
         }
+        /* 换行模式 */
+        .name-text.multi-line {
+            white-space: normal;
+            word-break: break-all;
+            display: -webkit-box;
+            -webkit-line-clamp: 2; /* 列表模式默认最多2行 */
+            -webkit-box-orient: vertical;
+        }
+
         .item-size, .item-time { font-size: 13px; color: #888; }
         
         /* 复选框样式 */
         .checkbox { width: 16px; height: 16px; cursor: pointer; accent-color: #4CAF50; display: inline-block; }
 
-        /* ========== 加载动画 (修复全屏居中) ========== */
+        /* ========== 加载动画 ========== */
         .loading-overlay { 
-            position: fixed; /* 改为 fixed，固定在全屏幕 */
-            top: 0; left: 0; 
-            width: 100vw; height: 100vh; 
-            background: rgba(20,20,30,0.85); /* 加深背景 */
-            display: none; 
-            align-items: center; 
-            justify-content: center; 
-            flex-direction: column; 
-            z-index: 9999; /* 提高层级，覆盖所有内容 */
-            backdrop-filter: blur(4px); 
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; 
+            background: rgba(20,20,30,0.85); display: none; align-items: center; justify-content: center; flex-direction: column; 
+            z-index: 9999; backdrop-filter: blur(4px); 
         }
         .loading-overlay.active { display: flex; }
         .spinner { width: 50px; height: 50px; border: 5px solid rgba(76,175,80,0.3); border-top-color: #4CAF50; border-radius: 50%; animation: spin 1s linear infinite; }
@@ -141,7 +143,21 @@
         .drawer-close { background: none; border: none; color: #aaa; font-size: 20px; cursor: pointer; }
         .setting-item { margin-bottom: 20px; }
         .setting-item label { display: block; font-size: 13px; color: #aaa; margin-bottom: 8px; }
-        .setting-item input { width: 100%; }
+        .setting-item input, .setting-item select { width: 100%; }
+
+        /* ========== 分卷下载弹窗 ========== */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 3000; display: none; align-items: center; justify-content: center; }
+        .modal-overlay.active { display: flex; }
+        .modal-box { background: #1e1e2e; border: 2px solid #4CAF50; border-radius: 12px; width: 90%; max-width: 600px; max-height: 80vh; display: flex; flex-direction: column; box-shadow: 0 10px 30px rgba(0,0,0,0.8); }
+        .modal-header { padding: 15px 20px; border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: space-between; align-items: center; }
+        .modal-title { color: #4CAF50; font-size: 16px; font-weight: bold; }
+        .modal-close { background: none; border: none; color: #aaa; font-size: 20px; cursor: pointer; }
+        .modal-body { padding: 15px 20px; overflow-y: auto; flex: 1; }
+        .modal-footer { padding: 15px 20px; border-top: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: flex-end; gap: 10px; }
+        
+        .part-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; background: rgba(0,0,0,0.3); border-radius: 6px; margin-bottom: 8px; }
+        .part-item span { font-size: 13px; color: #ccc; word-break: break-all; margin-right: 10px; }
+        .part-item .btn { padding: 4px 10px; font-size: 12px; white-space: nowrap; }
 
         /* 分页 */
         .pagination { display: flex; justify-content: center; align-items: center; gap: 8px; padding: 20px; border-top: 1px solid rgba(255,255,255,0.05); }
@@ -153,12 +169,16 @@
             .toolbar { flex-direction: column; align-items: stretch; }
             .toolbar-left, .toolbar-right { justify-content: space-between; }
             
-            /* 手机端极致压缩列宽，隐藏修改时间和大小列 */
             .file-list-view th:nth-child(3), .file-list-view td:nth-child(3),
             .file-list-view th:nth-child(4), .file-list-view td:nth-child(4) { display: none; }
             
             .action-bar { width: 90%; flex-wrap: wrap; justify-content: center; border-radius: 15px; }
             .left-toolbar { bottom: 20px; left: 15px; }
+            
+            /* 手机网格模式下文件名最多显示3行 */
+            .grid-item .name-text.multi-line {
+                -webkit-line-clamp: 3; 
+            }
         }
     </style>
 </head>
@@ -190,17 +210,38 @@
             <label>Aria2 RPC 密钥 (Secret Token)</label>
             <input type="text" id="aria2Secret" placeholder="留空则无">
         </div>
+        <div class="setting-item">
+            <label>文件名显示</label>
+            <select id="filenameDisplay">
+                <option value="truncate">单行省略</option>
+                <option value="wrap">完整换行</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- 分卷下载弹窗 -->
+    <div class="modal-overlay" id="splitModal">
+        <div class="modal-box">
+            <div class="modal-header">
+                <div class="modal-title"><i class="fas fa-box-open"></i> 分卷下载</div>
+                <button class="modal-close" id="closeSplitModal">&times;</button>
+            </div>
+            <div class="modal-body" id="splitModalBody">
+                <!-- 动态生成 -->
+            </div>
+            <div class="modal-footer">
+                <button class="btn" id="btnCopyAllParts"><i class="fas fa-copy"></i> 复制全部链接</button>
+                <button class="btn" id="btnCloseSplit" style="background:rgba(244,67,54,0.2); border-color:#f44336; color:#f44336;">关闭</button>
+            </div>
+        </div>
     </div>
 
     <!-- 左下角悬浮栏 (小三点) -->
     <div class="left-toolbar">
         <div class="toolbar-extra" id="toolbarExtra">
-            <!-- 多选模式开关 -->
             <div class="toolbar-btn" id="btnMultiSelect" title="多选模式"><i class="fas fa-list-ul"></i></div>
-            <!-- 本地设置 -->
             <div class="toolbar-btn" id="btnSettings" title="本地设置"><i class="fas fa-cog"></i></div>
         </div>
-        <!-- 展开/收起小三点 -->
         <div class="toolbar-btn" id="btnMore" title="更多"><i class="fas fa-ellipsis-h"></i></div>
     </div>
 
@@ -213,12 +254,10 @@
         </header>
 
         <div class="control-panel">
-            <!-- 面包屑 -->
             <div class="breadcrumb-nav" id="breadcrumbNav">
                 <span class="crumb-item" data-path=""><i class="fas fa-home"></i> 根目录</span>
             </div>
 
-            <!-- 工具栏 -->
             <div class="toolbar">
                 <div class="toolbar-left">
                     <label><i class="fas fa-globe"></i> 加速模式：</label>
@@ -247,7 +286,6 @@
                         <option value="96">96</option>
                     </select>
 
-                    <!-- 源码包下载 -->
                     <div class="source-pkg-box" id="sourcePkgBtns">
                         <span style="color:#aaa;">源码包：</span>
                         <a class="btn" id="zipLink" href="#" target="_blank"><i class="fas fa-file-archive"></i> .zip</a>
@@ -270,9 +308,7 @@
             </div>
         </div>
 
-        <!-- 文件列表区 -->
         <div class="file-container" id="fileContainer">
-            <!-- 加载层放到最外层，使用 fixed 定位 -->
             <div class="loading-overlay" id="loadingOverlay">
                 <div class="spinner"></div>
                 <div style="margin-top:15px; color:#4CAF50; font-weight:bold;">读取目录中...</div>
@@ -281,7 +317,6 @@
         </div>
     </div>
 
-    <!-- 悬浮多选操作栏 -->
     <div class="action-bar" id="actionBar">
         <span>已选 <span id="selectedCount">0</span> 项</span>
         <button class="btn" id="btnDownload"><i class="fas fa-download"></i> 下载</button>
@@ -314,14 +349,27 @@
         let searchKeyword = '';
         let searchScope = 'all';
         let isSelectMode = false; 
+        let filenameDisplay = 'truncate'; // truncate 或 wrap
+        let currentSplitFile = null; // 当前查看的分卷文件
 
         // ================= 初始化 =================
         document.addEventListener('DOMContentLoaded', () => {
             pageSize = parseInt(localStorage.getItem('pageSize') || '0');
-            currentLayout = localStorage.getItem('layout') || 'list';
             
+            // 手机端默认网格视图
+            const isMobile = window.innerWidth <= 768;
+            const savedLayout = localStorage.getItem('layout');
+            if (savedLayout) {
+                currentLayout = savedLayout;
+            } else {
+                currentLayout = isMobile ? 'grid' : 'list';
+            }
+            
+            filenameDisplay = localStorage.getItem('filenameDisplay') || 'truncate';
+
             document.getElementById('pageSizeSelect').value = pageSize;
             document.getElementById('layoutSelect').value = currentLayout;
+            document.getElementById('filenameDisplay').value = filenameDisplay;
 
             const savedRpc = localStorage.getItem('aria2Rpc');
             if (savedRpc) document.getElementById('aria2Rpc').value = savedRpc;
@@ -389,7 +437,7 @@
             const loading = document.getElementById('loadingOverlay');
             loading.classList.add('active');
             
-            const delay = Math.floor(Math.random() * 5000) + 1000; // 1s - 6s
+            const delay = Math.floor(Math.random() * 5000) + 1000;
             
             setTimeout(() => {
                 renderBreadcrumb();
@@ -400,9 +448,49 @@
             }, delay);
         }
 
+        // 合并分卷文件
+        function mergeSplitFiles(files) {
+            const fileMap = new Map();
+            const result = [];
+            
+            files.forEach(f => {
+                const name = f.decoded_name || f.name;
+                // 匹配 .7z.001 或 .zip.001 等
+                const match = name.match(/^(.*\.(?:7z|zip|rar))\.(\d{3})$/);
+                if (match) {
+                    const baseName = match[1];
+                    if (!fileMap.has(baseName)) {
+                        fileMap.set(baseName, {
+                            isSplit: true,
+                            decoded_name: baseName,
+                            name: baseName,
+                            size: 0,
+                            updated_at: f.updated_at,
+                            parts: []
+                        });
+                        result.push(fileMap.get(baseName));
+                    }
+                    const virtualFile = fileMap.get(baseName);
+                    virtualFile.parts.push(f);
+                    virtualFile.size += (f.size || 0);
+                } else {
+                    result.push(f);
+                }
+            });
+            
+            result.forEach(f => {
+                if (f.isSplit) {
+                    f.parts.sort((a, b) => a.name.localeCompare(b.name));
+                }
+            });
+            
+            return result;
+        }
+
         function getPathContent(path) {
             const folders = new Set();
-            const files = [];
+            let files = [];
+            
             allFiles.forEach(f => {
                 const fPath = f.path || '';
                 if (fPath === path) {
@@ -413,6 +501,8 @@
                     if (nextLevel) folders.add(nextLevel);
                 }
             });
+
+            files = mergeSplitFiles(files);
             return { folders: Array.from(folders), files };
         }
 
@@ -425,7 +515,9 @@
             if (searchKeyword) {
                 const kw = searchKeyword.toLowerCase();
                 if (searchScope === 'all') {
-                    filteredFiles = allFiles.filter(f => (f.decoded_name || f.name).toLowerCase().includes(kw));
+                    // 全库搜索也需要处理分卷
+                    const allMerged = mergeSplitFiles(allFiles);
+                    filteredFiles = allMerged.filter(f => (f.decoded_name || f.name).toLowerCase().includes(kw));
                     filteredFolders = [];
                 } else {
                     filteredFiles = files.filter(f => (f.decoded_name || f.name).toLowerCase().includes(kw));
@@ -454,11 +546,12 @@
                 return;
             }
 
+            const nameClass = filenameDisplay === 'wrap' ? 'name-text multi-line' : 'name-text';
+
             let html = '';
             if (currentLayout === 'list') {
                 html += `<table class="file-list-view"><thead><tr>`;
                 if (isSelectMode) html += '<th width="40"><input type="checkbox" class="checkbox" id="headerCheckbox"></th>';
-                // 名称列自适应，大小和时间固定宽度
                 html += '<th>文件名</th><th width="100">大小</th><th width="160">修改时间</th>';
                 html += '</tr></thead><tbody>';
 
@@ -466,7 +559,7 @@
                     const subPath = currentPath ? currentPath + '/' + folder : folder;
                     html += `<tr data-type="folder" data-path="${subPath}">
                         ${isSelectMode ? '<td><input type="checkbox" class="checkbox" disabled></td>' : ''}
-                        <td><div class="item-name"><div class="folder-icon-svg"></div> <span class="name-text" title="${folder}">${folder}</span></div></td>
+                        <td><div class="item-name"><div class="folder-icon-svg"></div> <span class="${nameClass}" title="${folder}">${folder}</span></div></td>
                         <td class="item-size">-</td>
                         <td class="item-time">-</td>
                     </tr>`;
@@ -475,9 +568,10 @@
                 displayFiles.forEach(file => {
                     const name = file.decoded_name || file.name;
                     const isSel = selectedFiles.has(file);
+                    const splitIcon = file.isSplit ? '<i class="fas fa-box-open" style="color:#ff9800; margin-left:5px;" title="分卷压缩"></i>' : '';
                     html += `<tr data-type="file" data-name="${file.name}" class="${isSel ? 'selected' : ''}">
                         ${isSelectMode ? `<td><input type="checkbox" class="checkbox row-check" ${isSel ? 'checked' : ''}></td>` : ''}
-                        <td><div class="item-name"><div class="file-icon-svg"></div> <span class="name-text" title="${name}">${name}</span></div></td>
+                        <td><div class="item-name"><div class="file-icon-svg"></div> <span class="${nameClass}" title="${name}">${name}</span>${splitIcon}</div></td>
                         <td class="item-size">${formatSize(file.size)}</td>
                         <td class="item-time">${formatTime(file.updated_at)}</td>
                     </tr>`;
@@ -489,16 +583,18 @@
                     const subPath = currentPath ? currentPath + '/' + folder : folder;
                     html += `<div class="grid-item" data-type="folder" data-path="${subPath}">
                         <div class="folder-icon-svg"></div>
-                        <div class="item-name" style="justify-content:center; font-size:14px;"><span class="name-text" title="${folder}">${folder}</span></div>
+                        <div class="item-name" style="justify-content:center; font-size:14px;"><span class="${nameClass}" title="${folder}">${folder}</span></div>
                     </div>`;
                 });
                 displayFiles.forEach(file => {
                     const name = file.decoded_name || file.name;
                     const isSel = selectedFiles.has(file);
+                    const splitIcon = file.isSplit ? '<div style="position:absolute;top:10px;right:10px;color:#ff9800;font-size:14px;" title="分卷压缩"><i class="fas fa-box-open"></i></div>' : '';
                     html += `<div class="grid-item ${isSel ? 'selected' : ''}" data-type="file" data-name="${file.name}">
                         ${isSelectMode ? `<div style="position:absolute;top:10px;left:10px;"><input type="checkbox" class="checkbox row-check" ${isSel ? 'checked' : ''}></div>` : ''}
+                        ${splitIcon}
                         <div class="file-icon-svg"></div>
-                        <div class="item-name" style="justify-content:center; font-size:13px;"><span class="name-text" title="${name}">${name}</span></div>
+                        <div class="item-name" style="justify-content:center; font-size:13px;"><span class="${nameClass}" title="${name}">${name}</span></div>
                         <div class="item-size" style="margin-top:5px;">${formatSize(file.size)}</div>
                     </div>`;
                 });
@@ -529,13 +625,18 @@
                 el.addEventListener('click', (e) => {
                     if (e.target.type === 'checkbox') return; 
                     const filename = el.dataset.name;
-                    const fileObj = allFiles.find(f => f.name === filename);
+                    const fileObj = allFiles.find(f => f.name === filename) || displayFiles.find(f => f.name === filename);
+                    
                     if (!fileObj) return;
 
                     if (isSelectMode) {
                         toggleSelect(fileObj, el.querySelector('.row-check'));
                     } else {
-                        downloadSingle(fileObj);
+                        if (fileObj.isSplit) {
+                            showSplitModal(fileObj);
+                        } else {
+                            downloadSingle(fileObj);
+                        }
                     }
                 });
             });
@@ -544,7 +645,7 @@
                 cb.addEventListener('change', (e) => {
                     const row = e.target.closest('tr') || e.target.closest('.grid-item');
                     const filename = row.dataset.name;
-                    const fileObj = allFiles.find(f => f.name === filename);
+                    const fileObj = allFiles.find(f => f.name === filename) || displayFiles.find(f => f.name === filename);
                     if (fileObj) toggleSelect(fileObj, e.target);
                 });
             });
@@ -621,7 +722,7 @@
             const { files } = getPathContent(currentPath);
             let tag = '';
             if (files.length > 0) {
-                tag = files[0].tag;
+                tag = files[0].tag || files[0].parts?.[0]?.tag;
             } else {
                 tag = currentPath.replace(/\//g, '-');
             }
@@ -649,9 +750,50 @@
             document.body.removeChild(link);
         }
 
+        // 分卷下载相关
+        function showSplitModal(fileObj) {
+            currentSplitFile = fileObj;
+            const body = document.getElementById('splitModalBody');
+            let html = `<p style="margin-bottom:15px; color:#aaa; font-size:14px;">检测到这是一个分卷压缩包，共 ${fileObj.parts.length} 个部分。请下载全部分卷后放在同一目录解压。</p>`;
+            
+            fileObj.parts.forEach(part => {
+                const url = getDownloadUrl(part.download_url);
+                const name = part.decoded_name || part.name;
+                html += `<div class="part-item">
+                    <span>${name}</span>
+                    <a href="${url}" class="btn" target="_blank"><i class="fas fa-download"></i> 下载</a>
+                </div>`;
+            });
+            
+            body.innerHTML = html;
+            document.getElementById('splitModal').classList.add('active');
+        }
+
+        document.getElementById('btnCopyAllParts').addEventListener('click', () => {
+            if (!currentSplitFile) return;
+            const links = currentSplitFile.parts.map(part => getDownloadUrl(part.download_url)).join('\n');
+            navigator.clipboard.writeText(links).then(() => {
+                alert('已复制全部分卷链接');
+            });
+        });
+
+        document.getElementById('closeSplitModal').addEventListener('click', () => {
+            document.getElementById('splitModal').classList.remove('active');
+        });
+        document.getElementById('btnCloseSplit').addEventListener('click', () => {
+            document.getElementById('splitModal').classList.remove('active');
+        });
+
+        // 批量下载
         document.getElementById('btnDownload').addEventListener('click', () => {
             if (selectedFiles.size === 0) return;
-            selectedFiles.forEach(f => downloadSingle(f));
+            selectedFiles.forEach(f => {
+                if (f.isSplit) {
+                    f.parts.forEach(part => downloadSingle(part));
+                } else {
+                    downloadSingle(f);
+                }
+            });
             selectedFiles.clear();
             renderFiles();
             updateActionBar();
@@ -659,9 +801,16 @@
 
         document.getElementById('btnCopy').addEventListener('click', () => {
             if (selectedFiles.size === 0) return;
-            const links = Array.from(selectedFiles).map(f => getDownloadUrl(f.download_url)).join('\n');
-            navigator.clipboard.writeText(links).then(() => {
-                alert('已复制 ' + selectedFiles.size + ' 个链接到剪贴板');
+            let links = [];
+            selectedFiles.forEach(f => {
+                if (f.isSplit) {
+                    links = links.concat(f.parts.map(part => getDownloadUrl(part.download_url)));
+                } else {
+                    links.push(getDownloadUrl(f.download_url));
+                }
+            });
+            navigator.clipboard.writeText(links.join('\n')).then(() => {
+                alert('已复制 ' + links.length + ' 个链接到剪贴板');
             });
         });
 
@@ -674,7 +823,15 @@
             
             if (!rpc) return alert('请点击小三点 -> 设置，填写 Aria2 RPC 链接');
 
-            const urls = Array.from(selectedFiles).map(f => getDownloadUrl(f.download_url));
+            let urls = [];
+            selectedFiles.forEach(f => {
+                if (f.isSplit) {
+                    urls = urls.concat(f.parts.map(part => getDownloadUrl(part.download_url)));
+                } else {
+                    urls.push(getDownloadUrl(f.download_url));
+                }
+            });
+
             const params = secret ? [`token:${secret}`, urls] : [urls];
 
             const payload = {
@@ -780,6 +937,13 @@
         };
         document.getElementById('closeDrawer').addEventListener('click', closeDrawer);
         document.getElementById('drawerOverlay').addEventListener('click', closeDrawer);
+
+        // 文件名显示设置
+        document.getElementById('filenameDisplay').addEventListener('change', e => {
+            filenameDisplay = e.target.value;
+            localStorage.setItem('filenameDisplay', filenameDisplay);
+            renderFiles();
+        });
 
         // 搜索与侧边栏
         document.getElementById('searchToggle').addEventListener('click', () => {

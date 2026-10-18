@@ -1,7 +1,34 @@
 {
   "version": "1.0",
-  "updated_at": "2026-10-18T09:15:53Z",
+  "updated_at": "2026-10-18T10:29:33Z",
   "files": [
+    {
+      "name": "U1dfRFZEOV9XSU5fRU5UX0xUU0NfMjAyMV82NEJJVF9DaG5TaW1wX01MRl9YMjItODQ0MDI.7z.003",
+      "decoded_name": "SW_DVD9_WIN_ENT_LTSC_2021_64BIT_ChnSimp_MLF_X22-84402.7z.003",
+      "path": "System/Windows/Offical/Windows10/LTSC",
+      "tag": "System-Windows-Offical-Windows10-LTSC",
+      "size": 849907970,
+      "updated_at": "2026-10-18T09:56:44Z",
+      "download_url": "https://github.com/xiaozhongziyuanku2025/xiaozhongziyuanku2025/releases/download/System-Windows-Offical-Windows10-LTSC/U1dfRFZEOV9XSU5fRU5UX0xUU0NfMjAyMV82NEJJVF9DaG5TaW1wX01MRl9YMjItODQ0MDI.7z.003"
+    },
+    {
+      "name": "U1dfRFZEOV9XSU5fRU5UX0xUU0NfMjAyMV82NEJJVF9DaG5TaW1wX01MRl9YMjItODQ0MDI.7z.001",
+      "decoded_name": "SW_DVD9_WIN_ENT_LTSC_2021_64BIT_ChnSimp_MLF_X22-84402.7z.001",
+      "path": "System/Windows/Offical/Windows10/LTSC",
+      "tag": "System-Windows-Offical-Windows10-LTSC",
+      "size": 2097152000,
+      "updated_at": "2026-10-18T10:10:43Z",
+      "download_url": "https://github.com/xiaozhongziyuanku2025/xiaozhongziyuanku2025/releases/download/System-Windows-Offical-Windows10-LTSC/U1dfRFZEOV9XSU5fRU5UX0xUU0NfMjAyMV82NEJJVF9DaG5TaW1wX01MRl9YMjItODQ0MDI.7z.001"
+    },
+    {
+      "name": "U1dfRFZEOV9XSU5fRU5UX0xUU0NfMjAyMV82NEJJVF9DaG5TaW1wX01MRl9YMjItODQ0MDI.7z.002",
+      "decoded_name": "SW_DVD9_WIN_ENT_LTSC_2021_64BIT_ChnSimp_MLF_X22-84402.7z.002",
+      "path": "System/Windows/Offical/Windows10/LTSC",
+      "tag": "System-Windows-Offical-Windows10-LTSC",
+      "size": 2097152000,
+      "updated_at": "2026-10-18T10:24:41Z",
+      "download_url": "https://github.com/xiaozhongziyuanku2025/xiaozhongziyuanku2025/releases/download/System-Windows-Offical-Windows10-LTSC/U1dfRFZEOV9XSU5fRU5UX0xUU0NfMjAyMV82NEJJVF9DaG5TaW1wX01MRl9YMjItODQ0MDI.7z.002"
+    },
     {
       "name": "emgtY25fd2luZG93c18xMV9lbnRlcnByaXNlX2x0c2NfMjAyNF94NjRfZHZkX2NmZjljZDJk.7z.003",
       "decoded_name": "zh-cn_windows_11_enterprise_ltsc_2024_x64_dvd_cff9cd2d.7z.003",
@@ -10830,15 +10857,6 @@
       "download_url": "https://github.com/xiaozhongziyuanku2025/xiaozhongziyuanku2025/releases/download/Windows%E7%97%85%E6%AF%92%E5%BA%93-GTX690-tianyi/5rSb5aSp5L6d.exe"
     },
     {
-      "name": "6JSh5b6Q5Z2k55eF5q-SMi4w.exe",
-      "decoded_name": "蔡徐坤病毒2.0.exe",
-      "path": "Windows病毒库/GTX690/cxk",
-      "tag": "Windows病毒库-GTX690-cxk",
-      "size": 38080512,
-      "updated_at": "2026-09-05T10:29:01Z",
-      "download_url": "https://github.com/xiaozhongziyuanku2025/xiaozhongziyuanku2025/releases/download/Windows%E7%97%85%E6%AF%92%E5%BA%93-GTX690-cxk/6JSh5b6Q5Z2k55eF5q-SMi4w.exe"
-    },
-    {
       "name": "44CQ6JSh5b6Q5Z2k55eF5q-SMi4x44CRQmlsaWJpbGnliqnmiYtfMjM4XzE5MzI0MQ.exe",
       "decoded_name": "【蔡徐坤病毒2.1】Bilibili助手_238_193241.exe",
       "path": "Windows病毒库/GTX690/cxk",
@@ -10855,6 +10873,15 @@
       "size": 22351872,
       "updated_at": "2026-09-05T10:29:21Z",
       "download_url": "https://github.com/xiaozhongziyuanku2025/xiaozhongziyuanku2025/releases/download/Windows%E7%97%85%E6%AF%92%E5%BA%93-GTX690-cxk/6JSh5b6Q5Z2k.exe"
+    },
+    {
+      "name": "6JSh5b6Q5Z2k55eF5q-SMi4w.exe",
+      "decoded_name": "蔡徐坤病毒2.0.exe",
+      "path": "Windows病毒库/GTX690/cxk",
+      "tag": "Windows病毒库-GTX690-cxk",
+      "size": 38080512,
+      "updated_at": "2026-09-05T10:29:01Z",
+      "download_url": "https://github.com/xiaozhongziyuanku2025/xiaozhongziyuanku2025/releases/download/Windows%E7%97%85%E6%AF%92%E5%BA%93-GTX690-cxk/6JSh5b6Q5Z2k55eF5q-SMi4w.exe"
     },
     {
       "name": "44CQ6JSh5b6Q5Z2k55eF5q-SMi4x44CRQmlsaWJpbGnliqnmiYtAMjM4XzE5MzI0MQ.exe",

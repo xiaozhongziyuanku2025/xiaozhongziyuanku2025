@@ -1,7 +1,25 @@
 {
   "version": "1.0",
-  "updated_at": "2026-11-02T23:15:30Z",
+  "updated_at": "2026-11-03T21:21:49Z",
   "files": [
+    {
+      "name": "dzExLTI1aDIteDY0LXpoLWNuLWNvcmUtcHJvZmVzc2lvbmFsLTI2MjAwLjgzMjgtMmRlOGY0Njg.7z.002",
+      "decoded_name": "w11-25h2-x64-zh-cn-core-professional-26200.8328-2de8f468.7z.002",
+      "path": "System/Windows/UUP_Dump_Update/Windows11/25H2",
+      "tag": "System-Windows-UUP_Dump_Update-Windows11-25H2",
+      "size": 2097152000,
+      "updated_at": "2026-11-03T13:17:04Z",
+      "download_url": "https://github.com/xiaozhongziyuanku2025/xiaozhongziyuanku2025/releases/download/untagged-3d976b437bbd20f6a0df/dzExLTI1aDIteDY0LXpoLWNuLWNvcmUtcHJvZmVzc2lvbmFsLTI2MjAwLjgzMjgtMmRlOGY0Njg.7z.002"
+    },
+    {
+      "name": "dzExLTI1aDIteDY0LWVuLXVzLWNvcmUtcHJvZmVzc2lvbmFsLTI2MjAwLjgzMjgtMmRlOGY0Njg.7z.002",
+      "decoded_name": "w11-25h2-x64-en-us-core-professional-26200.8328-2de8f468.7z.002",
+      "path": "System/Windows/UUP_Dump_Update/Windows11/25H2",
+      "tag": "System-Windows-UUP_Dump_Update-Windows11-25H2",
+      "size": 2097152000,
+      "updated_at": "2026-11-03T13:21:22Z",
+      "download_url": "https://github.com/xiaozhongziyuanku2025/xiaozhongziyuanku2025/releases/download/untagged-3d976b437bbd20f6a0df/dzExLTI1aDIteDY0LWVuLXVzLWNvcmUtcHJvZmVzc2lvbmFsLTI2MjAwLjgzMjgtMmRlOGY0Njg.7z.002"
+    },
     {
       "name": "dzExLTI0aDIteDY0LWVuLXVzLWNvcmUtcHJvZmVzc2lvbmFsLTI2MTAwLjgzMjgtNTY2MjAwMGQ.7z.002",
       "decoded_name": "w11-24h2-x64-en-us-core-professional-26100.8328-5662000d.7z.002",
@@ -10542,6 +10560,33 @@
       "download_url": "https://github.com/xiaozhongziyuanku2025/xiaozhongziyuanku2025/releases/download/Windows%E7%97%85%E6%AF%92%E5%BA%93-hopejieshuo-CrazySeries/SWNvbkNyYXp5.exe"
     },
     {
+      "name": "aG9wZVZpcnVz.exe",
+      "decoded_name": "hopeVirus.exe",
+      "path": "Windows病毒库/hopejieshuo",
+      "tag": "Windows病毒库-hopejieshuo",
+      "size": 77824,
+      "updated_at": "2026-09-05T09:10:17Z",
+      "download_url": "https://github.com/xiaozhongziyuanku2025/xiaozhongziyuanku2025/releases/download/Windows%E7%97%85%E6%AF%92%E5%BA%93-hopejieshuo/aG9wZVZpcnVz.exe"
+    },
+    {
+      "name": "dGVtcA.exe",
+      "decoded_name": "temp.exe",
+      "path": "Windows病毒库/hopejieshuo",
+      "tag": "Windows病毒库-hopejieshuo",
+      "size": 401460,
+      "updated_at": "2026-09-05T09:10:18Z",
+      "download_url": "https://github.com/xiaozhongziyuanku2025/xiaozhongziyuanku2025/releases/download/Windows%E7%97%85%E6%AF%92%E5%BA%93-hopejieshuo/dGVtcA.exe"
+    },
+    {
+      "name": "dmVyc2lvbg.txt",
+      "decoded_name": "version.txt",
+      "path": "Windows病毒库/hopejieshuo",
+      "tag": "Windows病毒库-hopejieshuo",
+      "size": 412,
+      "updated_at": "2026-09-05T09:10:20Z",
+      "download_url": "https://github.com/xiaozhongziyuanku2025/xiaozhongziyuanku2025/releases/download/Windows%E7%97%85%E6%AF%92%E5%BA%93-hopejieshuo/dmVyc2lvbg.txt"
+    },
+    {
       "name": "SWNvbkNyYXp5.cpp",
       "decoded_name": "IconCrazy.cpp",
       "path": "Windows病毒库/hopejieshuo",
@@ -10639,33 +10684,6 @@
       "size": 589872,
       "updated_at": "2026-09-05T09:10:17Z",
       "download_url": "https://github.com/xiaozhongziyuanku2025/xiaozhongziyuanku2025/releases/download/Windows%E7%97%85%E6%AF%92%E5%BA%93-hopejieshuo/WWVhaChoYXJtZnVsKQ.exe"
-    },
-    {
-      "name": "aG9wZVZpcnVz.exe",
-      "decoded_name": "hopeVirus.exe",
-      "path": "Windows病毒库/hopejieshuo",
-      "tag": "Windows病毒库-hopejieshuo",
-      "size": 77824,
-      "updated_at": "2026-09-05T09:10:17Z",
-      "download_url": "https://github.com/xiaozhongziyuanku2025/xiaozhongziyuanku2025/releases/download/Windows%E7%97%85%E6%AF%92%E5%BA%93-hopejieshuo/aG9wZVZpcnVz.exe"
-    },
-    {
-      "name": "dGVtcA.exe",
-      "decoded_name": "temp.exe",
-      "path": "Windows病毒库/hopejieshuo",
-      "tag": "Windows病毒库-hopejieshuo",
-      "size": 401460,
-      "updated_at": "2026-09-05T09:10:18Z",
-      "download_url": "https://github.com/xiaozhongziyuanku2025/xiaozhongziyuanku2025/releases/download/Windows%E7%97%85%E6%AF%92%E5%BA%93-hopejieshuo/dGVtcA.exe"
-    },
-    {
-      "name": "dmVyc2lvbg.txt",
-      "decoded_name": "version.txt",
-      "path": "Windows病毒库/hopejieshuo",
-      "tag": "Windows病毒库-hopejieshuo",
-      "size": 412,
-      "updated_at": "2026-09-05T09:10:20Z",
-      "download_url": "https://github.com/xiaozhongziyuanku2025/xiaozhongziyuanku2025/releases/download/Windows%E7%97%85%E6%AF%92%E5%BA%93-hopejieshuo/dmVyc2lvbg.txt"
     },
     {
       "name": "5a6J5Y2T5Zu-5qCH55eF5q-SIDAuMX4xLjAgKDEuMCBhbmQgYmV0YSk.zip",

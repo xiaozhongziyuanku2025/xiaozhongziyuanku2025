@@ -1,4 +1,4 @@
-name: 蓝奏云拟真解析
+name: 蓝奏云极速源码解析
 
 on:
   workflow_dispatch:
@@ -19,12 +19,10 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: 安装 Playwright 及隐身插件
-        run: |
-          pip install playwright playwright-stealth
-          python -m playwright install chromium --with-deps
+      - name: 安装依赖
+        run: pip install requests
 
-      - name: 运行拟真浏览器解析
+      - name: 运行源码解析
         env:
           FOLDER_URL: "https://wwbmd.lanzout.com/b011mmapdg"
           GLOBAL_PWD: "1234"
@@ -36,5 +34,5 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add lanzou-cache.json
-          git diff --staged --quiet || git commit -m "chore: 自动更新蓝奏云层级缓存 [skip ci]"
+          git diff --staged --quiet || git commit -m "chore: 极速更新蓝奏云层级 [skip ci]"
           git push

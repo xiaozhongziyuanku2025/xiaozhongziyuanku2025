@@ -1,4 +1,4 @@
-name: 蓝奏云云端全量解析
+name: 蓝奏云拟真解析
 
 on:
   workflow_dispatch:
@@ -19,12 +19,12 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: 安装 Playwright 及浏览器
+      - name: 安装 Playwright 及隐身插件
         run: |
-          pip install playwright
+          pip install playwright playwright-stealth
           python -m playwright install chromium --with-deps
 
-      - name: 运行自动化浏览器解析
+      - name: 运行拟真浏览器解析
         env:
           FOLDER_URL: "https://wwbmd.lanzout.com/b011mmapdg"
           GLOBAL_PWD: "1234"

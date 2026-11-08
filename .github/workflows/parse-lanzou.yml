@@ -1,0 +1,99 @@
+name: 蓝奏云自动层级解析
+
+on:
+  schedule:
+    - cron: '0 * * * *' # 每小时的第 0 分钟自动执行一次
+  workflow_dispatch:      # 支持在 Actions 页面手动点击运行测试
+
+jobs:
+  parse-lanzou:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write     # 允许 Action 向仓库写入文件
+    steps:
+      - name: 检出仓库
+        uses: actions/checkout@v5
+
+      - name: 安装 Node.js 环境
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 安装解析依赖库
+        run: npm install lanzou-api
+
+      - name: 递归解析文件夹并生成 JSON
+        env:
+          # 【请修改这里】填写你的文件夹分享链接和统一的密码
+          FOLDER_URL: "https://wwbmd.lanzout.com/b011mmapdg"
+          GLOBAL_PWD: "1234"
+        run: |
+          cat << 'EOF' > parse.js
+          const { loadShareUrl } = require('lanzou-api');
+          const fs = require('fs');
+
+          // 递归解析函数：自动拼接层级路径
+          async function parseFolder(url, pwd, currentPath = '蓝奏云专属') {
+              try {
+                  // 调用库解析分享链接
+                  const res = await loadShareUrl(url, pwd);
+                  
+                  if (!res || !res.list) {
+                      console.log(`❌ 无法解析: ${url} (可能被风控或密码错误)`);
+                      return [];
+                  }
+
+                  let results = [];
+                  for (const item of res.list) {
+                      // 如果是子文件夹，递归进去，路径加上文件夹名
+                      if (item.type === 'folder') {
+                          console.log(`  > 发现子文件夹: ${item.name}`);
+                          const subPath = `${currentPath}/${item.name}`;
+                          const subFiles = await parseFolder(item.url, pwd, subPath);
+                          results = results.concat(subFiles);
+                      } 
+                      // 如果是文件，保存信息
+                      else {
+                          console.log(`  + 找到文件: ${item.name} -> ${currentPath}`);
+                          results.push({
+                              name: item.name,
+                              url: item.url,
+                              pwd: pwd,
+                              path: currentPath,
+                              size: item.size,
+                              direct_url: item.directLink, // 库直接解析好的直链
+                              updated_at: new Date().toISOString()
+                          });
+                      }
+                  }
+                  return results;
+              } catch (e) {
+                  console.error(`❌ 解析异常: ${url}`, e.message);
+                  return [];
+              }
+          }
+
+          (async () => {
+              const rootUrl = process.env.FOLDER_URL;
+              const pwd = process.env.GLOBAL_PWD;
+
+              console.log(`开始解析根目录: ${rootUrl}`);
+              const allFiles = await parseFolder(rootUrl, pwd);
+              
+              // 写入最终 JSON
+              fs.writeFileSync('lanzou-cache.json', JSON.stringify(allFiles, null, 2));
+              console.log(`\n✅ 解析完成！共提取 ${allFiles.length} 个文件，层级已保留。`);
+          })();
+          EOF
+          
+          # 运行脚本
+          node parse.js
+
+      - name: 提交并推送
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add lanzou-cache.json
+          # 如果没有变化则不产生提交
+          git diff --staged --quiet || git commit -m "chore: 自动更新蓝奏云直链缓存 [skip ci]"
+          git push

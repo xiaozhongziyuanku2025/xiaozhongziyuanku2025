@@ -1,9 +1,9 @@
-name: 蓝奏云自动层级解析
+name: 蓝奏云层级全量解析 (Cookie穿透版)
 
 on:
   schedule:
-    - cron: '0 * * * *' # 每小时的第 0 分钟自动执行一次
-  workflow_dispatch:      # 支持在 Actions 页面手动点击运行测试
+    - cron: '0 * * * *' # 每小时的第 0 分钟自动执行
+  workflow_dispatch:      # 支持在 Actions 页面手动点击运行
 
 jobs:
   parse-lanzou:
@@ -14,86 +14,127 @@ jobs:
       - name: 检出仓库
         uses: actions/checkout@v5
 
-      - name: 安装 Node.js 环境
-        uses: actions/setup-node@v4
+      - name: 安装 Python 环境
+        uses: actions/setup-python@v5
         with:
-          node-version: '20'
+          python-version: '3.11'
 
-      - name: 安装解析依赖库
-        run: npm install lanzou-api
+      - name: 安装依赖
+        run: pip install requests
 
       - name: 递归解析文件夹并生成 JSON
         env:
-          # 【请修改这里】填写你的文件夹分享链接和统一的密码
+          # 【配置区】请确认这是你要解析的文件夹分享链接和密码
           FOLDER_URL: "https://wwbmd.lanzout.com/b011mmapdg"
           GLOBAL_PWD: "1234"
+          # 读取你在仓库 Secrets 里配置的最新 Cookie
+          LANZOU_COOKIE: ${{ secrets.LANZOU_COOKIE }}
         run: |
-          cat << 'EOF' > parse.js
-          const { loadShareUrl } = require('lanzou-api');
-          const fs = require('fs');
+          python3 - <<'PY'
+          import os, json, time, re, requests
+          from urllib.parse import urlparse
 
-          // 递归解析函数：自动拼接层级路径
-          async function parseFolder(url, pwd, currentPath = '蓝奏云专属') {
-              try {
-                  // 调用库解析分享链接
-                  const res = await loadShareUrl(url, pwd);
-                  
-                  if (!res || !res.list) {
-                      console.log(`❌ 无法解析: ${url} (可能被风控或密码错误)`);
-                      return [];
-                  }
+          FOLDER_URL = os.environ.get('FOLDER_URL')
+          GLOBAL_PWD = os.environ.get('GLOBAL_PWD', '')
+          COOKIE = os.environ.get('LANZOU_COOKIE', '')
 
-                  let results = [];
-                  for (const item of res.list) {
-                      // 如果是子文件夹，递归进去，路径加上文件夹名
-                      if (item.type === 'folder') {
-                          console.log(`  > 发现子文件夹: ${item.name}`);
-                          const subPath = `${currentPath}/${item.name}`;
-                          const subFiles = await parseFolder(item.url, pwd, subPath);
-                          results = results.concat(subFiles);
-                      } 
-                      // 如果是文件，保存信息
-                      else {
-                          console.log(`  + 找到文件: ${item.name} -> ${currentPath}`);
-                          results.push({
-                              name: item.name,
-                              url: item.url,
-                              pwd: pwd,
-                              path: currentPath,
-                              size: item.size,
-                              direct_url: item.directLink, // 库直接解析好的直链
-                              updated_at: new Date().toISOString()
-                          });
-                      }
-                  }
-                  return results;
-              } catch (e) {
-                  console.error(`❌ 解析异常: ${url}`, e.message);
-                  return [];
-              }
-          }
+          if not FOLDER_URL:
+              print("❌ 缺少 FOLDER_URL 环境变量")
+              exit(1)
 
-          (async () => {
-              const rootUrl = process.env.FOLDER_URL;
-              const pwd = process.env.GLOBAL_PWD;
-
-              console.log(`开始解析根目录: ${rootUrl}`);
-              const allFiles = await parseFolder(rootUrl, pwd);
-              
-              // 写入最终 JSON
-              fs.writeFileSync('lanzou-cache.json', JSON.stringify(allFiles, null, 2));
-              console.log(`\n✅ 解析完成！共提取 ${allFiles.length} 个文件，层级已保留。`);
-          })();
-          EOF
+          session = requests.Session()
+          session.headers.update({
+              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+              'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+              'Accept-Language': 'zh-CN,zh;q=0.9'
+          })
           
-          # 运行脚本
-          node parse.js
+          if COOKIE:
+              session.headers.update({'Cookie': COOKIE})
+              print("✅ 已成功注入登录态 Cookie")
+          else:
+              print("⚠️ 警告：未检测到 Cookie，可能会被蓝奏云拦截")
+
+          parsed = urlparse(FOLDER_URL)
+          domain = parsed.netloc
+          root_id = parsed.path.strip('/').split('/')[-1]
+
+          results = []
+          # 队列结构: (folder_id, 路径)
+          queue = [(root_id, "蓝奏云专属")]
+
+          while queue:
+              current_id, current_path = queue.pop(0)
+              print(f"正在扫描: {current_path} (ID: {current_id})")
+
+              # 构造请求 URL，带上统一密码
+              if current_id == root_id:
+                  url = f'https://{domain}/{root_id}?pwd={GLOBAL_PWD}'
+              else:
+                  url = f'https://{domain}/{root_id}?folder_id={current_id}&pwd={GLOBAL_PWD}'
+
+              try:
+                  res = session.get(url, timeout=15)
+                  html = res.text
+                  
+                  # 提取页面中的文件列表 JSON
+                  match = re.search(r"var files = '(.*?)';", html, re.S)
+                  if not match:
+                      match = re.search(r"var files = (\[.*?\]);", html, re.S)
+
+                  if not match:
+                      print(f"  ❌ 无法提取列表数据 (可能 Cookie 失效或被拦截)")
+                      continue
+
+                  try:
+                      files_data = json.loads(match.group(1))
+                  except json.JSONDecodeError:
+                      print(f"  ❌ JSON 解析失败")
+                      continue
+
+                  # 遍历当前目录下的文件和文件夹
+                  for item in files_data:
+                      item_type = str(item.get('type'))
+                      item_id = item.get('id')
+                      item_name = item.get('name_all') or item.get('name')
+                      item_size = item.get('size', '0')
+
+                      if item_type == '0': 
+                          # 是文件
+                          share_url = f"https://{domain}/{root_id}_{item_id}"
+                          results.append({
+                              "name": item_name,
+                              "url": share_url,
+                              "pwd": GLOBAL_PWD,
+                              "path": current_path,
+                              "size": item_size
+                          })
+                          print(f"  + 获取文件: {item_name}")
+                      elif item_type == '1': 
+                          # 是子文件夹，加入队列继续遍历
+                          next_path = f"{current_path}/{item_name}" if current_path != "蓝奏云专属" else f"蓝奏云专属/{item_name}"
+                          queue.append((item_id, next_path))
+                          print(f"  > 发现子文件夹: {item_name}")
+
+              except Exception as e:
+                  print(f"  ❌ 请求异常: {e}")
+              
+              # 每次请求停顿 1.5 秒，防止触发风控
+              time.sleep(1.5)
+
+          # 写入最终的 JSON 文件
+          with open('lanzou-cache.json', 'w', encoding='utf-8') as f:
+              json.dump(results, f, ensure_ascii=False, indent=2)
+          
+          print(f"\n✅ 扫描完成！共提取 {len(results)} 个文件，已保留完整层级。")
+          if len(results) == 0:
+              print("⚠️ 提取数量为 0，请检查日志中是否有 '无法提取列表数据' 的报错。")
+          PY
 
       - name: 提交并推送
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add lanzou-cache.json
-          # 如果没有变化则不产生提交
-          git diff --staged --quiet || git commit -m "chore: 自动更新蓝奏云直链缓存 [skip ci]"
+          git diff --staged --quiet || git commit -m "chore: 自动更新蓝奏云层级缓存 [skip ci]"
           git push

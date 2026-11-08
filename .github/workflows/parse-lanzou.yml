@@ -1,15 +1,11 @@
-name: 蓝奏云层级全量解析 (Cookie穿透版)
+name: 蓝奏云排错测试
 
 on:
-  schedule:
-    - cron: '0 * * * *' # 每小时的第 0 分钟自动执行
-  workflow_dispatch:      # 支持在 Actions 页面手动点击运行
+  workflow_dispatch: # 手动触发
 
 jobs:
-  parse-lanzou:
+  test-lanzou:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write     # 允许 Action 向仓库写入文件
     steps:
       - name: 检出仓库
         uses: actions/checkout@v5
@@ -22,119 +18,35 @@ jobs:
       - name: 安装依赖
         run: pip install requests
 
-      - name: 递归解析文件夹并生成 JSON
+      - name: 运行排错脚本
         env:
-          # 【配置区】请确认这是你要解析的文件夹分享链接和密码
           FOLDER_URL: "https://wwbmd.lanzout.com/b011mmapdg"
           GLOBAL_PWD: "1234"
-          # 读取你在仓库 Secrets 里配置的最新 Cookie
           LANZOU_COOKIE: ${{ secrets.LANZOU_COOKIE }}
         run: |
           python3 - <<'PY'
-          import os, json, time, re, requests
-          from urllib.parse import urlparse
-
-          FOLDER_URL = os.environ.get('FOLDER_URL')
-          GLOBAL_PWD = os.environ.get('GLOBAL_PWD', '')
-          COOKIE = os.environ.get('LANZOU_COOKIE', '')
-
-          if not FOLDER_URL:
-              print("❌ 缺少 FOLDER_URL 环境变量")
-              exit(1)
-
-          session = requests.Session()
-          session.headers.update({
-              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-              'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
-              'Accept-Language': 'zh-CN,zh;q=0.9'
-          })
+          import os, sys, requests
           
-          if COOKIE:
-              session.headers.update({'Cookie': COOKIE})
-              print("✅ 已成功注入登录态 Cookie")
-          else:
-              print("⚠️ 警告：未检测到 Cookie，可能会被蓝奏云拦截")
-
-          parsed = urlparse(FOLDER_URL)
-          domain = parsed.netloc
-          root_id = parsed.path.strip('/').split('/')[-1]
-
-          results = []
-          # 队列结构: (folder_id, 路径)
-          queue = [(root_id, "蓝奏云专属")]
-
-          while queue:
-              current_id, current_path = queue.pop(0)
-              print(f"正在扫描: {current_path} (ID: {current_id})")
-
-              # 构造请求 URL，带上统一密码
-              if current_id == root_id:
-                  url = f'https://{domain}/{root_id}?pwd={GLOBAL_PWD}'
-              else:
-                  url = f'https://{domain}/{root_id}?folder_id={current_id}&pwd={GLOBAL_PWD}'
-
-              try:
-                  res = session.get(url, timeout=15)
-                  html = res.text
-                  
-                  # 提取页面中的文件列表 JSON
-                  match = re.search(r"var files = '(.*?)';", html, re.S)
-                  if not match:
-                      match = re.search(r"var files = (\[.*?\]);", html, re.S)
-
-                  if not match:
-                      print(f"  ❌ 无法提取列表数据 (可能 Cookie 失效或被拦截)")
-                      continue
-
-                  try:
-                      files_data = json.loads(match.group(1))
-                  except json.JSONDecodeError:
-                      print(f"  ❌ JSON 解析失败")
-                      continue
-
-                  # 遍历当前目录下的文件和文件夹
-                  for item in files_data:
-                      item_type = str(item.get('type'))
-                      item_id = item.get('id')
-                      item_name = item.get('name_all') or item.get('name')
-                      item_size = item.get('size', '0')
-
-                      if item_type == '0': 
-                          # 是文件
-                          share_url = f"https://{domain}/{root_id}_{item_id}"
-                          results.append({
-                              "name": item_name,
-                              "url": share_url,
-                              "pwd": GLOBAL_PWD,
-                              "path": current_path,
-                              "size": item_size
-                          })
-                          print(f"  + 获取文件: {item_name}")
-                      elif item_type == '1': 
-                          # 是子文件夹，加入队列继续遍历
-                          next_path = f"{current_path}/{item_name}" if current_path != "蓝奏云专属" else f"蓝奏云专属/{item_name}"
-                          queue.append((item_id, next_path))
-                          print(f"  > 发现子文件夹: {item_name}")
-
-              except Exception as e:
-                  print(f"  ❌ 请求异常: {e}")
-              
-              # 每次请求停顿 1.5 秒，防止触发风控
-              time.sleep(1.5)
-
-          # 写入最终的 JSON 文件
-          with open('lanzou-cache.json', 'w', encoding='utf-8') as f:
-              json.dump(results, f, ensure_ascii=False, indent=2)
+          print("1. 开始执行...")
+          url = os.environ.get('FOLDER_URL')
+          cookie = os.environ.get('LANZOU_COOKIE')
           
-          print(f"\n✅ 扫描完成！共提取 {len(results)} 个文件，已保留完整层级。")
-          if len(results) == 0:
-              print("⚠️ 提取数量为 0，请检查日志中是否有 '无法提取列表数据' 的报错。")
+          print("2. FOLDER_URL:", url)
+          print("3. Cookie 长度:", len(cookie) if cookie else 0)
+          
+          headers = {
+              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+              'Cookie': cookie
+          }
+          
+          print("4. 准备发送请求...")
+          try:
+              # 强制请求一次看看蓝奏云回什么
+              res = requests.get(f"{url}?pwd={os.environ.get('GLOBAL_PWD')}", headers=headers, timeout=10)
+              print("5. 请求成功！HTTP状态码:", res.status_code)
+              print("6. 网页长度:", len(res.text))
+              print("7. 网页前100个字符:", res.text[:100])
+          except Exception as e:
+              print("❌ 请求异常:", e)
+              sys.exit(1)
           PY
-
-      - name: 提交并推送
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add lanzou-cache.json
-          git diff --staged --quiet || git commit -m "chore: 自动更新蓝奏云层级缓存 [skip ci]"
-          git push

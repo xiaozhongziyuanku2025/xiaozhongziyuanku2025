@@ -1,9 +1,9 @@
-name: 蓝奏云云端全自动解析 (无头浏览器版)
+name: 蓝奏云云端全自动解析 (终极防封版)
 
 on:
+  workflow_dispatch:      # 支持手动点击运行
   schedule:
-    - cron: '0 * * * *' # 每小时的 0 分钟自动执行
-  workflow_dispatch:    # 保留手动触发，方便测试
+    - cron: '0 * * * *'   # 每小时的 0 分钟自动执行
 
 jobs:
   parse-lanzou:
@@ -22,14 +22,15 @@ jobs:
       - name: 安装 Playwright 及浏览器
         run: |
           pip install playwright
-          # 安装 Chromium 浏览器及系统依赖，耗时约 1-2 分钟
           python -m playwright install chromium --with-deps
 
       - name: 运行自动化浏览器解析
         env:
-          # 【配置区】填入你的文件夹链接和统一密码
+          # 填入你的文件夹链接和统一密码
           FOLDER_URL: "https://wwbmd.lanzout.com/b011mmapdg"
           GLOBAL_PWD: "1234"
+          # 读取你配置的 Cookie（如果有的话，可以极大降低被拦截的概率）
+          LANZOU_COOKIE: ${{ secrets.LANZOU_COOKIE }}
         run: |
           python3 - <<'PY'
           import asyncio
@@ -39,15 +40,31 @@ jobs:
           async def main():
               print(f"启动云端无头浏览器，开始解析: {os.environ['FOLDER_URL']}")
               results = []
-              queue = [(os.environ['FOLDER_URL'], "蓝奏云专属")]
+              
+              # 【优化1】直接在链接中带上密码，尝试绕过输入框
+              start_url = f"{os.environ['FOLDER_URL']}?pwd={os.environ['GLOBAL_PWD']}"
+              queue = [(start_url, "蓝奏云专属")]
               
               async with async_playwright() as p:
                   browser = await p.chromium.launch(headless=True)
-                  # 设置真实的浏览器上下文，降低风控概率
                   context = await browser.new_context(
                       user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
                       viewport={"width": 1920, "height": 1080}
                   )
+                  
+                  # 【优化2】如果配置了 Cookie，强行注入到浏览器，伪装成登录用户
+                  cookie_str = os.environ.get('LANZOU_COOKIE', '')
+                  if cookie_str:
+                      print("✅ 检测到 Cookie，正在注入浏览器...")
+                      cookies = []
+                      for item in cookie_str.split(';'):
+                          if '=' in item:
+                              k, v = item.strip().split('=', 1)
+                              # 同时适配 lanzout 和 lanzouq
+                              cookies.append({'name': k, 'value': v, 'domain': '.lanzout.com', 'path': '/'})
+                              cookies.append({'name': k, 'value': v, 'domain': '.lanzouq.com', 'path': '/'})
+                      await context.add_cookies(cookies)
+
                   page = await context.new_page()
                   
                   while queue:
@@ -55,27 +72,31 @@ jobs:
                       print(f"正在扫描: {current_path}")
                       
                       try:
-                          await page.goto(current_url, timeout=30000)
-                          await page.wait_for_timeout(1500)
+                          # 等待网络空闲，确保页面加载完毕
+                          await page.goto(current_url, timeout=30000, wait_until="networkidle")
+                          await page.wait_for_timeout(2000)
                           
-                          # 如果遇到密码框，自动填入统一密码
-                          if await page.locator("input[type='password']").count() > 0:
-                              print("  [检测到密码框，正在自动输入...]")
-                              await page.fill("input[type='password']", os.environ['GLOBAL_PWD'])
-                              submit_btn = page.locator("button[type='submit'], .passwd, input[type='button']")
-                              if await submit_btn.count() > 0:
-                                  await submit_btn.first.click()
-                              else:
-                                  await page.press("input[type='password']", "Enter")
-                              # 等待页面刷新出列表
-                              await page.wait_for_timeout(2500)
+                          # 再次检测是否还有密码框（有些旧版页面需要手动输入）
+                          if await page.locator("input[type='password'], input[name='pwd']").count() > 0:
+                              print("  [检测到密码输入框，正在尝试输入...]")
+                              await page.fill("input[type='password'], input[name='pwd']", os.environ['GLOBAL_PWD'])
+                              await page.press("input[type='password'], input[name='pwd']", "Enter")
+                              await page.wait_for_timeout(3000)
                               
                           html = await page.content()
                           
-                          # 提取文件列表 JSON
+                          # 提取文件列表
                           match = re.search(r"var files = '(.*?)';", html, re.S) or re.search(r"var files = (\[.*?\]);", html, re.S)
+                          
                           if not match:
-                              print(f"  ❌ 提取失败，可能链接失效或被风控。")
+                              print(f"  ❌ 提取失败。")
+                              # 【优化3】保存失败的网页源码和截图供分析
+                              debug_dir = "debug_output"
+                              os.makedirs(debug_dir, exist_ok=True)
+                              with open(f"{debug_dir}/error_{len(results)}.html", "w", encoding="utf-8") as f:
+                                  f.write(html)
+                              await page.screenshot(path=f"{debug_dir}/error_{len(results)}.png", full_page=True)
+                              print(f"  已保存网页截图和源码到 {debug_dir} 目录。")
                               continue
                               
                           files_data = json.loads(match.group(1))
@@ -88,7 +109,6 @@ jobs:
                               item_size = item.get('size', '0')
                               
                               if item_type == '0': 
-                                  # 文件
                                   base_url = "https://" + page.url.split('/')[2]
                                   results.append({
                                       "name": item_name,
@@ -99,7 +119,6 @@ jobs:
                                   })
                                   print(f"  + 获取文件: {item_name}")
                               elif item_type == '1': 
-                                  # 子文件夹，递归加入队列
                                   base_url = "https://" + page.url.split('/')[2]
                                   folder_url = f"{base_url}/b011mmapdg?folder_id={item_id}&pwd={os.environ['GLOBAL_PWD']}"
                                   next_path = f"{current_path}/{item_name}" if current_path != "蓝奏云专属" else f"蓝奏云专属/{item_name}"
@@ -110,7 +129,6 @@ jobs:
                           
                   await browser.close()
                   
-              # 写入 JSON
               with open('lanzou-cache.json', 'w', encoding='utf-8') as f:
                   json.dump(results, f, ensure_ascii=False, indent=2)
               print(f"\n✅ 扫描完成！共提取 {len(results)} 个文件。")
@@ -123,6 +141,12 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add lanzou-cache.json
-          # 如果 JSON 没有变化则不产生提交
           git diff --staged --quiet || git commit -m "chore: 自动更新蓝奏云层级缓存 [skip ci]"
           git push
+          
+      - name: 上传失败截图 (如果提取失败)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lanzou-debug-info
+          path: debug_output/

@@ -14,7 +14,6 @@ async def main():
         context = await browser.new_context(
             user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
         )
-        
         await context.add_init_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
         
         cookie_str = os.environ.get('LANZOU_COOKIE', '')
@@ -28,12 +27,38 @@ async def main():
             await context.add_cookies(cookies)
 
         page = await context.new_page()
-        # 拦截图片加快速度
         await page.route("**/*", lambda route: route.abort() if route.request.resource_type in ["image", "media", "font"] else route.continue_())
+
+        # 核心：监听所有响应，捕获 filemoreajax.php 的返回数据
+        captured_files = None
+        async def handle_response(response):
+            nonlocal captured_files
+            if "filemoreajax.php" in response.url:
+                try:
+                    text = await response.text()
+                    print(f"  [网络捕获] 截获 filemoreajax.php，响应长度: {len(text)}")
+                    # 蓝奏云此接口返回的通常是 JSON
+                    data = json.loads(text)
+                    # 兼容不同版本的返回结构
+                    if isinstance(data, dict):
+                        if 'text' in data and isinstance(data['text'], list):
+                            captured_files = data['text']
+                        elif 'data' in data and isinstance(data['data'], list):
+                            captured_files = data['data']
+                        elif isinstance(data, list):
+                            captured_files = data
+                    elif isinstance(data, list):
+                        captured_files = data
+                    if captured_files:
+                        print(f"  [网络捕获] 成功解析到 {len(captured_files)} 个项目！")
+                except Exception as e:
+                    print(f"  [网络捕获] 解析响应失败: {e}")
+        page.on("response", handle_response)
 
         while queue:
             current_url, current_path = queue.pop(0)
-            print(f"\n正在扫描: {current_path}")
+            print(f"\n{'='*40}\n正在扫描: {current_path}")
+            captured_files = None # 重置
             
             try:
                 try:
@@ -42,9 +67,10 @@ async def main():
                     pass
                 
                 await page.wait_for_timeout(2000)
-                print(f"  当前页面标题: {await page.title()}")
+                title = await page.title()
+                print(f"  页面标题: {title}")
 
-                # 1. 在所有 iframe 中地毯式搜索密码框
+                # 尝试填入密码
                 pwd_filled = False
                 for frame in page.frames:
                     try:
@@ -52,55 +78,75 @@ async def main():
                         for inp in inputs:
                             itype = await inp.get_attribute('type')
                             iname = await inp.get_attribute('name')
-                            iplaceholder = await inp.get_attribute('placeholder')
-                            
-                            # 只要像密码框，就填
-                            if itype == 'password' or iname == 'pwd' or (iplacholder and '密码' in iplacholder if iplacholder else False):
-                                print(f"  [找到密码框] type={itype}, name={iname}")
+                            # 放宽条件
+                            if itype == 'password' or iname == 'pwd' or (await inp.get_attribute('placeholder') and '密码' in (await inp.get_attribute('placeholder'))):
+                                print(f"  [密码框] 在 frame 中发现: type={itype}, name={iname}")
                                 await inp.fill(os.environ.get('GLOBAL_PWD'))
                                 pwd_filled = True
-                                
                                 btn = frame.locator("button:has-text('确认'), button:has-text('提交'), input[type='button'], input[type='submit'], .passwd")
                                 if await btn.count() > 0:
-                                    print("  [点击确认按钮]")
+                                    print("  [提交] 点击确认按钮")
                                     await btn.first.click()
                                 else:
-                                    print("  [按回车提交]")
+                                    print("  [提交] 按下回车键")
                                     await inp.press("Enter")
-                                await page.wait_for_timeout(3000)
                                 break
                     except: pass
 
-                if not pwd_filled:
-                    print("  [无密码框，直接提取]")
+                if pwd_filled:
+                    # 提交后等待网络请求或页面变化
+                    await page.wait_for_timeout(4000) 
+                
+                # 如果网络捕获成功，直接用
+                if captured_files:
+                    files_data = captured_files
+                else:
+                    # 否则，深度遍历所有 frame，寻找 var files 或直接的文件元素
+                    print("  [回退] 网络未捕获，开始遍历所有 frame 查找数据...")
+                    files_json_str = None
+                    for idx, frame in enumerate(page.frames):
+                        try:
+                            f_url = frame.url
+                            print(f"    - Frame [{idx}]: {f_url[:80]}...")
+                            
+                            # 打印部分源码片段用于分析
+                            html = await frame.content()
+                            snippet = html[:200].replace('\n', ' ')
+                            print(f"      源码片段: {snippet}...")
+                            
+                            fj = await frame.evaluate("() => { return typeof files !== 'undefined' ? JSON.stringify(files) : null; }")
+                            if fj and fj != 'null':
+                                files_json_str = fj
+                                print(f"      ✅ 在 Frame [{idx}] 内存中找到 files")
+                                break
+                            
+                            match = re.search(r"var files = '(.*?)';", html, re.S) or re.search(r"var files = (\[.*?\]);", html, re.S)
+                            if match:
+                                files_json_str = match.group(1)
+                                print(f"      ✅ 在 Frame [{idx}] 源码中找到 files")
+                                break
+                        except Exception as e:
+                            print(f"      Frame [{idx}] 检查失败: {e}")
 
-                await page.wait_for_timeout(1500) # 给数据加载留点时间
-                
-                # 2. 在所有 iframe 中寻找文件列表
-                files_json_str = None
-                for frame in page.frames:
-                    try:
-                        # 方法1：读取内存
-                        fj = await frame.evaluate("() => { return typeof files !== 'undefined' ? JSON.stringify(files) : null; }")
-                        if fj and fj != 'null':
-                            files_json_str = fj
-                            print(f"  ✅ 成功从 frame 内存中抓取到数据！")
-                            break
-                        # 方法2：正则匹配
-                        html = await frame.content()
-                        match = re.search(r"var files = '(.*?)';", html, re.S) or re.search(r"var files = (\[.*?\]);", html, re.S)
-                        if match:
-                            files_json_str = match.group(1)
-                            print(f"  ✅ 成功从 frame 源码中抓取到数据！")
-                            break
-                    except: pass
-                
-                if not files_json_str:
-                    print(f"  ❌ 提取失败，所有 frame 中都没找到 files 变量。")
-                    continue
-                    
-                files_data = json.loads(files_json_str)
-                print(f"  ✅ 解析完毕！找到 {len(files_data)} 个项目")
+                    if files_json_str:
+                        try:
+                            files_data = json.loads(files_json_str)
+                        except:
+                            print("  ❌ JSON 解析失败，可能不是标准 JSON 格式。")
+                            continue
+                    else:
+                        print("  ❌ 所有 frame 均未找到 files 变量。")
+                        # 保存完整页面源码以便分析
+                        html = await page.content()
+                        with open("debug_full.html", "w", encoding="utf-8") as f:
+                            f.write(html)
+                        print("  已保存完整页面源码至 debug_full.html")
+                        # 如果页面提示密码错误
+                        if "密码错误" in html or "密码不正确" in html:
+                            print("  ⚠️ 页面提示密码错误，请检查 GLOBAL_PWD 是否正确。")
+                        continue
+
+                print(f"  ✅ 最终解析到 {len(files_data)} 个项目")
                 
                 for item in files_data:
                     item_type = str(item.get('type'))
@@ -117,13 +163,13 @@ async def main():
                             "path": current_path,
                             "size": item_size
                         })
-                        print(f"  + 获取文件: {item_name}")
+                        print(f"  + 文件: {item_name}")
                     elif item_type == '1': 
                         base_url = "https://" + page.url.split('/')[2]
                         folder_url = f"{base_url}/b011mmapdg?folder_id={item_id}&pwd={os.environ.get('GLOBAL_PWD')}"
                         next_path = f"{current_path}/{item_name}" if current_path != "蓝奏云专属" else f"蓝奏云专属/{item_name}"
                         queue.append((folder_url, next_path))
-                        print(f"  > 发现子文件夹: {item_name}")
+                        print(f"  > 文件夹: {item_name}")
                         
                 await page.goto("about:blank")
                         

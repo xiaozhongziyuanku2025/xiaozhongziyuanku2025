@@ -1,120 +1,40 @@
-          python3 - <<'PY'
-          import asyncio
-          from playwright.async_api import async_playwright
-          import json, re, os
+name: 蓝奏云云端全量解析
 
-          async def main():
-              print(f"启动云端无头浏览器，开始解析: {os.environ['FOLDER_URL']}")
-              results = []
-              
-              start_url = f"{os.environ['FOLDER_URL']}?pwd={os.environ['GLOBAL_PWD']}"
-              queue = [(start_url, "蓝奏云专属")]
-              
-              async with async_playwright() as p:
-                  browser = await p.chromium.launch(headless=True)
-                  context = await browser.new_context(
-                      user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-                      viewport={"width": 1280, "height": 800}
-                  )
-                  
-                  cookie_str = os.environ.get('LANZOU_COOKIE', '')
-                  if cookie_str:
-                      print("✅ 检测到 Cookie，正在注入...")
-                      cookies = []
-                      for item in cookie_str.split(';'):
-                          if '=' in item:
-                              k, v = item.strip().split('=', 1)
-                              # 使用 url 参数代替 domain，避免跨域子域名失效
-                              cookies.append({'name': k, 'value': v, 'url': 'https://wwbmd.lanzout.com'})
-                              cookies.append({'name': k, 'value': v, 'url': 'https://www.lanzouq.com'})
-                      await context.add_cookies(cookies)
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 * * * *'
 
-                  page = await context.new_page()
-                  
-                  # 【核心优化】拦截图片、字体、媒体加载，极大加快速度，防止截图卡死
-                  await page.route("**/*", lambda route: route.abort() if route.request.resource_type in ["image", "media", "font"] else route.continue_())
+jobs:
+  parse-lanzou:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: 检出仓库
+        uses: actions/checkout@v5
 
-                  while queue:
-                      current_url, current_path = queue.pop(0)
-                      print(f"\n正在扫描: {current_path}")
-                      
-                      try:
-                          # 强行访问，只要网页骨架加载了就往下走
-                          try:
-                              await page.goto(current_url, timeout=15000, wait_until="commit")
-                          except Exception:
-                              print(f"  [警告] 页面 goto 超时，强行继续...")
-                              
-                          await page.wait_for_timeout(3000) # 死等 3 秒让 JS 跑完
-                          
-                          title = await page.title()
-                          print(f"  当前网页标题: {title}")
+      - name: 安装 Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
 
-                          if await page.locator("input[type='password'], input[name='pwd']").count() > 0:
-                              print("  [检测到密码框，正在自动输入...]")
-                              await page.fill("input[type='password'], input[name='pwd']", os.environ['GLOBAL_PWD'])
-                              await page.press("input[type='password'], input[name='pwd']", "Enter")
-                              await page.wait_for_timeout(3000)
-                              
-                          files_json_str = None
-                          
-                          # 方法 1：从 JS 内存里偷
-                          try:
-                              files_json_str = await page.evaluate("() => { return typeof files !== 'undefined' ? JSON.stringify(files) : null; }")
-                          except: pass
-                          
-                          # 方法 2：从 HTML 源码里搜
-                          if not files_json_str:
-                              html = await page.content()
-                              match = re.search(r"var files = '(.*?)';", html, re.S) or re.search(r"var files = (\[.*?\]);", html, re.S)
-                              if match:
-                                  files_json_str = match.group(1)
-                          
-                          if not files_json_str:
-                              print(f"  ❌ 提取失败。")
-                              debug_dir = "debug_output"
-                              os.makedirs(debug_dir, exist_ok=True)
-                              try:
-                                  # 【核心优化】加上 5 秒超时，防止卡死
-                                  await page.screenshot(path=f"{debug_dir}/error.png", timeout=5000)
-                                  print(f"  已保存当前页面截图到 {debug_dir}/error.png")
-                              except:
-                                  print(f"  [提示] 截图也超时了，但不会卡住脚本了。")
-                              continue
-                              
-                          files_data = json.loads(files_json_str)
-                          print(f"  ✅ 成功提取！找到 {len(files_data)} 个项目")
-                          
-                          for item in files_data:
-                              item_type = str(item.get('type'))
-                              item_id = item.get('id')
-                              item_name = item.get('name_all') or item.get('name')
-                              item_size = item.get('size', '0')
-                              
-                              if item_type == '0': 
-                                  base_url = "https://" + page.url.split('/')[2]
-                                  results.append({
-                                      "name": item_name,
-                                      "url": f"{base_url}/b011mmapdg_{item_id}",
-                                      "pwd": os.environ['GLOBAL_PWD'],
-                                      "path": current_path,
-                                      "size": item_size
-                                  })
-                                  print(f"  + 获取文件: {item_name}")
-                              elif item_type == '1': 
-                                  base_url = "https://" + page.url.split('/')[2]
-                                  folder_url = f"{base_url}/b011mmapdg?folder_id={item_id}&pwd={os.environ['GLOBAL_PWD']}"
-                                  next_path = f"{current_path}/{item_name}" if current_path != "蓝奏云专属" else f"蓝奏云专属/{item_name}"
-                                  queue.append((folder_url, next_path))
-                                  print(f"  > 发现子文件夹: {item_name}")
-                      except Exception as e:
-                          print(f"  ❌ 页面处理异常: {e}")
-                          
-                  await browser.close()
-                  
-              with open('lanzou-cache.json', 'w', encoding='utf-8') as f:
-                  json.dump(results, f, ensure_ascii=False, indent=2)
-              print(f"\n✅ 扫描完成！共提取 {len(results)} 个文件。")
+      - name: 安装 Playwright 及浏览器
+        run: |
+          pip install playwright
+          python -m playwright install chromium --with-deps
 
-          asyncio.run(main())
-          PY
+      - name: 运行自动化浏览器解析
+        env:
+          FOLDER_URL: "https://wwbmd.lanzout.com/b011mmapdg"
+          GLOBAL_PWD: "1234"
+          LANZOU_COOKIE: ${{ secrets.LANZOU_COOKIE }}
+        run: python fetch_lanzou.py
+
+      - name: 提交并推送
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add lanzou-cache.json
+          git diff --staged --quiet || git commit -m "chore: 自动更新蓝奏云层级缓存 [skip ci]"
+          git push

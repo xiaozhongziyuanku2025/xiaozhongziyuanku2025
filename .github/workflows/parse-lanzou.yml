@@ -1,16 +1,16 @@
 name: 蓝奏云排错测试
 
 on:
-  workflow_dispatch: # 手动触发
+  workflow_dispatch:
 
 jobs:
-  test-lanzou:
+  test:
     runs-on: ubuntu-latest
     steps:
-      - name: 检出仓库
+      - name: 下载代码
         uses: actions/checkout@v5
 
-      - name: 安装 Python 环境
+      - name: 安装 Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
@@ -18,35 +18,8 @@ jobs:
       - name: 安装依赖
         run: pip install requests
 
-      - name: 运行排错脚本
+      - name: 运行刚才写的 Python 脚本
         env:
           FOLDER_URL: "https://wwbmd.lanzout.com/b011mmapdg"
-          GLOBAL_PWD: "1234"
           LANZOU_COOKIE: ${{ secrets.LANZOU_COOKIE }}
-        run: |
-          python3 - <<'PY'
-          import os, sys, requests
-          
-          print("1. 开始执行...")
-          url = os.environ.get('FOLDER_URL')
-          cookie = os.environ.get('LANZOU_COOKIE')
-          
-          print("2. FOLDER_URL:", url)
-          print("3. Cookie 长度:", len(cookie) if cookie else 0)
-          
-          headers = {
-              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-              'Cookie': cookie
-          }
-          
-          print("4. 准备发送请求...")
-          try:
-              # 强制请求一次看看蓝奏云回什么
-              res = requests.get(f"{url}?pwd={os.environ.get('GLOBAL_PWD')}", headers=headers, timeout=10)
-              print("5. 请求成功！HTTP状态码:", res.status_code)
-              print("6. 网页长度:", len(res.text))
-              print("7. 网页前100个字符:", res.text[:100])
-          except Exception as e:
-              print("❌ 请求异常:", e)
-              sys.exit(1)
-          PY
+        run: python test.py

@@ -15,12 +15,10 @@ async def main():
             user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
         )
         
-        # 抹除自动化特征
         await context.add_init_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
         
         cookie_str = os.environ.get('LANZOU_COOKIE', '')
         if cookie_str:
-            print("✅ 检测到 Cookie，正在注入...")
             cookies = []
             for item in cookie_str.split(';'):
                 if '=' in item:
@@ -30,6 +28,7 @@ async def main():
             await context.add_cookies(cookies)
 
         page = await context.new_page()
+        # 拦截图片加快速度
         await page.route("**/*", lambda route: route.abort() if route.request.resource_type in ["image", "media", "font"] else route.continue_())
 
         while queue:
@@ -42,52 +41,66 @@ async def main():
                 except:
                     pass
                 
-                await page.wait_for_timeout(1000) # 基础等待
+                await page.wait_for_timeout(2000)
+                print(f"  当前页面标题: {await page.title()}")
 
-                # 检查是否有密码框
-                pwd_locator = page.locator("input[name='pwd'], input[type='password']")
-                if await pwd_locator.count() > 0:
-                    print("  [检测到密码框，正在输入并点击按钮...]")
-                    pwd_input = pwd_locator.first
-                    await pwd_input.fill(os.environ.get('GLOBAL_PWD'))
-                    await page.wait_for_timeout(500) # 假装人类停顿
-                    
-                    # 智能寻找提交按钮
-                    submit_btn = page.locator("button:has-text('确认'), button:has-text('提交'), input[type='button'], input[type='submit'], .passwd, .btn-passwd")
-                    
-                    if await submit_btn.count() > 0:
-                        print("  [找到确认按钮，正在点击...]")
-                        await submit_btn.first.click()
-                    else:
-                        print("  [未找到明确按钮，尝试按回车...]")
-                        await pwd_input.press("Enter")
-                    
-                    # 等待页面响应，等待密码框消失或者文件加载出来
+                # 1. 在所有 iframe 中地毯式搜索密码框
+                pwd_filled = False
+                for frame in page.frames:
                     try:
-                        await page.wait_for_function("() => typeof files !== 'undefined' && files.length >= 0", timeout=10000)
-                        print("  [页面数据加载完毕！]")
-                    except Exception:
-                        print("  [等待列表加载超时，可能密码错误或网络卡顿]")
-                        await page.wait_for_timeout(3000) # 再死等一会儿
+                        inputs = await frame.locator("input").all()
+                        for inp in inputs:
+                            itype = await inp.get_attribute('type')
+                            iname = await inp.get_attribute('name')
+                            iplaceholder = await inp.get_attribute('placeholder')
+                            
+                            # 只要像密码框，就填
+                            if itype == 'password' or iname == 'pwd' or (iplacholder and '密码' in iplacholder if iplacholder else False):
+                                print(f"  [找到密码框] type={itype}, name={iname}")
+                                await inp.fill(os.environ.get('GLOBAL_PWD'))
+                                pwd_filled = True
+                                
+                                btn = frame.locator("button:has-text('确认'), button:has-text('提交'), input[type='button'], input[type='submit'], .passwd")
+                                if await btn.count() > 0:
+                                    print("  [点击确认按钮]")
+                                    await btn.first.click()
+                                else:
+                                    print("  [按回车提交]")
+                                    await inp.press("Enter")
+                                await page.wait_for_timeout(3000)
+                                break
+                    except: pass
+
+                if not pwd_filled:
+                    print("  [无密码框，直接提取]")
+
+                await page.wait_for_timeout(1500) # 给数据加载留点时间
                 
-                # 提取数据
+                # 2. 在所有 iframe 中寻找文件列表
                 files_json_str = None
-                try:
-                    files_json_str = await page.evaluate("() => { return typeof files !== 'undefined' ? JSON.stringify(files) : null; }")
-                except: pass
+                for frame in page.frames:
+                    try:
+                        # 方法1：读取内存
+                        fj = await frame.evaluate("() => { return typeof files !== 'undefined' ? JSON.stringify(files) : null; }")
+                        if fj and fj != 'null':
+                            files_json_str = fj
+                            print(f"  ✅ 成功从 frame 内存中抓取到数据！")
+                            break
+                        # 方法2：正则匹配
+                        html = await frame.content()
+                        match = re.search(r"var files = '(.*?)';", html, re.S) or re.search(r"var files = (\[.*?\]);", html, re.S)
+                        if match:
+                            files_json_str = match.group(1)
+                            print(f"  ✅ 成功从 frame 源码中抓取到数据！")
+                            break
+                    except: pass
                 
                 if not files_json_str:
-                    html = await page.content()
-                    match = re.search(r"var files = '(.*?)';", html, re.S) or re.search(r"var files = (\[.*?\]);", html, re.S)
-                    if match:
-                        files_json_str = match.group(1)
-                
-                if not files_json_str:
-                    print(f"  ❌ 提取失败，页面可能还在密码页。当前标题: {await page.title()}")
+                    print(f"  ❌ 提取失败，所有 frame 中都没找到 files 变量。")
                     continue
                     
                 files_data = json.loads(files_json_str)
-                print(f"  ✅ 成功提取！找到 {len(files_data)} 个项目")
+                print(f"  ✅ 解析完毕！找到 {len(files_data)} 个项目")
                 
                 for item in files_data:
                     item_type = str(item.get('type'))
@@ -112,7 +125,6 @@ async def main():
                         queue.append((folder_url, next_path))
                         print(f"  > 发现子文件夹: {item_name}")
                         
-                # 清理状态，准备进入下一个目录
                 await page.goto("about:blank")
                         
             except Exception as e:

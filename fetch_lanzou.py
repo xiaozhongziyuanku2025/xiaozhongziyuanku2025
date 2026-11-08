@@ -35,34 +35,27 @@ async def main():
             if "filemoreajax.php" in response.url:
                 try:
                     text = await response.text()
-                    print(f"\n  [网络捕获] 发现 filemoreajax.php 请求！")
-                    print(f"  [网络捕获] 原始返回数据: {text}")
                     data = json.loads(text)
                     if isinstance(data, dict) and 'text' in data and isinstance(data['text'], list):
                         captured_data = data['text']
                     elif isinstance(data, list):
                         captured_data = data
-                    else:
-                        captured_data = data # 兜底，即使是错误信息也留作观察
-                except Exception as e:
-                    print(f"  [网络捕获] 解析响应失败: {e}")
+                except: pass
         page.on("response", handle_response)
 
         while queue:
             current_url, current_path = queue.pop(0)
-            print(f"\n{'='*40}\n正在扫描: {current_path}")
+            print(f"\n正在扫描: {current_path}")
             captured_data = None
             
             try:
                 try:
                     await page.goto(current_url, timeout=15000, wait_until="domcontentloaded")
-                except:
-                    pass
+                except: pass
                 
                 await page.wait_for_timeout(2000)
-                print(f"  当前页面标题: {await page.title()}")
 
-                # 强制填密码
+                # 填密码
                 pwd_filled = False
                 for frame in page.frames:
                     try:
@@ -84,35 +77,24 @@ async def main():
                 if pwd_filled:
                     await page.wait_for_timeout(4000) 
                 
-                # 检查网络捕获
-                if captured_data:
-                    if isinstance(captured_data, dict):
-                        print(f"  [调试] 捕获到的数据是字典，不是列表！内容: {captured_data}")
-                        files_data = []
-                    else:
-                        files_data = captured_data
-                        print(f"  [调试] 成功捕获列表，长度: {len(files_data)}")
-                        if len(files_data) > 0:
-                            print(f"  [调试] 列表第一个元素的原始内容: {files_data[0]}")
-                else:
+                if not captured_data:
                     print("  ❌ 网络没有截获到 filemoreajax.php 数据！")
                     continue
 
-                print(f"  [处理] 开始遍历 {len(files_data)} 个对象...")
-                for idx, item in enumerate(files_data):
-                    print(f"    - 正在处理第 {idx+1} 个对象: {item}")
+                files_data = captured_data
+                print(f"  ✅ 成功截获 {len(files_data)} 个项目，开始解析层级...")
+                
+                for item in files_data:
+                    # 【核心修复1】蓝奏云返回的是 t，而不是 type
+                    item_type = str(item.get('t')) 
                     
-                    if not isinstance(item, dict):
-                        print(f"      ⚠️ 跳过：对象不是字典")
-                        continue
-                        
-                    item_type = str(item.get('type'))
-                    item_id = item.get('id')
-                    item_name = item.get('name_all') or item.get('name') or item.get('info')
+                    # 【核心修复2】把 id 后面的乱码尾巴切掉
+                    raw_id = item.get('id', '')
+                    item_id = raw_id.split('?')[0] 
+                    
+                    item_name = item.get('name_all') or item.get('name')
                     item_size = item.get('size', '0')
                     
-                    print(f"      - 解析属性: type={item_type}, id={item_id}, name={item_name}")
-
                     if item_type == '0': 
                         base_url = "https://" + page.url.split('/')[2]
                         results.append({
@@ -122,15 +104,15 @@ async def main():
                             "path": current_path,
                             "size": item_size
                         })
-                        print(f"      ✅ 已添加为文件")
+                        print(f"  + 获取文件: {item_name}")
                     elif item_type == '1': 
                         base_url = "https://" + page.url.split('/')[2]
                         folder_url = f"{base_url}/b011mmapdg?folder_id={item_id}&pwd={os.environ.get('GLOBAL_PWD')}"
                         next_path = f"{current_path}/{item_name}" if current_path != "蓝奏云专属" else f"蓝奏云专属/{item_name}"
                         queue.append((folder_url, next_path))
-                        print(f"      ✅ 已添加为文件夹，加入队列")
+                        print(f"  > 发现子文件夹: {item_name}")
                     else:
-                        print(f"      ❌ 未知的 type 类型: {item_type}，跳过！")
+                        print(f"  ⚠️ 未知项目: {item}")
 
                 await page.goto("about:blank")
                         

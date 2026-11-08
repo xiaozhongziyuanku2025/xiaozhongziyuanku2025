@@ -15,10 +15,9 @@ async def main():
             user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
         )
         
-        # 抹除 webdriver 自动化特征
+        # 抹除自动化特征
         await context.add_init_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
         
-        # 注入 Cookie
         cookie_str = os.environ.get('LANZOU_COOKIE', '')
         if cookie_str:
             print("✅ 检测到 Cookie，正在注入...")
@@ -31,8 +30,6 @@ async def main():
             await context.add_cookies(cookies)
 
         page = await context.new_page()
-        
-        # 【绝招】拦截图片和字体，防止页面卡死
         await page.route("**/*", lambda route: route.abort() if route.request.resource_type in ["image", "media", "font"] else route.continue_())
 
         while queue:
@@ -40,32 +37,45 @@ async def main():
             print(f"\n正在扫描: {current_path}")
             
             try:
-                # 只要有网页框架就行，不强求网络完全空闲
                 try:
                     await page.goto(current_url, timeout=15000, wait_until="domcontentloaded")
                 except:
-                    print(f"  [警告] 页面加载稍慢，强行尝试提取数据...")
-                    
-                await page.wait_for_timeout(2000) # 给 JS 留 2 秒执行时间
+                    pass
                 
-                title = await page.title()
-                print(f"  当前页面标题: {title}")
+                await page.wait_for_timeout(1000) # 基础等待
 
-                # 如果弹出了密码框
-                if await page.locator("input[type='password'], input[name='pwd']").count() > 0:
-                    print("  [检测到密码框，正在自动填写...]")
-                    await page.fill("input[type='password'], input[name='pwd']", os.environ.get('GLOBAL_PWD'))
-                    await page.press("input[type='password'], input[name='pwd']", "Enter")
-                    await page.wait_for_timeout(3000) # 等待验证跳转
+                # 检查是否有密码框
+                pwd_locator = page.locator("input[name='pwd'], input[type='password']")
+                if await pwd_locator.count() > 0:
+                    print("  [检测到密码框，正在输入并点击按钮...]")
+                    pwd_input = pwd_locator.first
+                    await pwd_input.fill(os.environ.get('GLOBAL_PWD'))
+                    await page.wait_for_timeout(500) # 假装人类停顿
                     
-                files_json_str = None
+                    # 智能寻找提交按钮
+                    submit_btn = page.locator("button:has-text('确认'), button:has-text('提交'), input[type='button'], input[type='submit'], .passwd, .btn-passwd")
+                    
+                    if await submit_btn.count() > 0:
+                        print("  [找到确认按钮，正在点击...]")
+                        await submit_btn.first.click()
+                    else:
+                        print("  [未找到明确按钮，尝试按回车...]")
+                        await pwd_input.press("Enter")
+                    
+                    # 等待页面响应，等待密码框消失或者文件加载出来
+                    try:
+                        await page.wait_for_function("() => typeof files !== 'undefined' && files.length >= 0", timeout=10000)
+                        print("  [页面数据加载完毕！]")
+                    except Exception:
+                        print("  [等待列表加载超时，可能密码错误或网络卡顿]")
+                        await page.wait_for_timeout(3000) # 再死等一会儿
                 
-                # 方式一：直接从浏览器内存变量拿
+                # 提取数据
+                files_json_str = None
                 try:
                     files_json_str = await page.evaluate("() => { return typeof files !== 'undefined' ? JSON.stringify(files) : null; }")
                 except: pass
                 
-                # 方式二：从网页源码正则匹配
                 if not files_json_str:
                     html = await page.content()
                     match = re.search(r"var files = '(.*?)';", html, re.S) or re.search(r"var files = (\[.*?\]);", html, re.S)
@@ -73,7 +83,7 @@ async def main():
                         files_json_str = match.group(1)
                 
                 if not files_json_str:
-                    print(f"  ❌ 提取失败。页面内容可能不包含文件列表。")
+                    print(f"  ❌ 提取失败，页面可能还在密码页。当前标题: {await page.title()}")
                     continue
                     
                 files_data = json.loads(files_json_str)
@@ -101,6 +111,10 @@ async def main():
                         next_path = f"{current_path}/{item_name}" if current_path != "蓝奏云专属" else f"蓝奏云专属/{item_name}"
                         queue.append((folder_url, next_path))
                         print(f"  > 发现子文件夹: {item_name}")
+                        
+                # 清理状态，准备进入下一个目录
+                await page.goto("about:blank")
+                        
             except Exception as e:
                 print(f"  ❌ 页面处理异常: {e}")
                 

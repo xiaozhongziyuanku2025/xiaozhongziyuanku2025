@@ -1,35 +1,7 @@
-name: 蓝奏云云端全自动解析 (终极防封版)
-
-on:
-  workflow_dispatch:      # 支持手动点击运行
-  schedule:
-    - cron: '0 * * * *'   # 每小时的 0 分钟自动执行
-
-jobs:
-  parse-lanzou:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    steps:
-      - name: 检出仓库
-        uses: actions/checkout@v5
-
-      - name: 安装 Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-
-      - name: 安装 Playwright 及浏览器
-        run: |
-          pip install playwright
-          python -m playwright install chromium --with-deps
-
       - name: 运行自动化浏览器解析
         env:
-          # 填入你的文件夹链接和统一密码
           FOLDER_URL: "https://wwbmd.lanzout.com/b011mmapdg"
           GLOBAL_PWD: "1234"
-          # 读取你配置的 Cookie（如果有的话，可以极大降低被拦截的概率）
           LANZOU_COOKIE: ${{ secrets.LANZOU_COOKIE }}
         run: |
           python3 - <<'PY'
@@ -41,18 +13,15 @@ jobs:
               print(f"启动云端无头浏览器，开始解析: {os.environ['FOLDER_URL']}")
               results = []
               
-              # 【优化1】直接在链接中带上密码，尝试绕过输入框
               start_url = f"{os.environ['FOLDER_URL']}?pwd={os.environ['GLOBAL_PWD']}"
               queue = [(start_url, "蓝奏云专属")]
               
               async with async_playwright() as p:
                   browser = await p.chromium.launch(headless=True)
                   context = await browser.new_context(
-                      user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-                      viewport={"width": 1920, "height": 1080}
+                      user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
                   )
                   
-                  # 【优化2】如果配置了 Cookie，强行注入到浏览器，伪装成登录用户
                   cookie_str = os.environ.get('LANZOU_COOKIE', '')
                   if cookie_str:
                       print("✅ 检测到 Cookie，正在注入浏览器...")
@@ -60,7 +29,6 @@ jobs:
                       for item in cookie_str.split(';'):
                           if '=' in item:
                               k, v = item.strip().split('=', 1)
-                              # 同时适配 lanzout 和 lanzouq
                               cookies.append({'name': k, 'value': v, 'domain': '.lanzout.com', 'path': '/'})
                               cookies.append({'name': k, 'value': v, 'domain': '.lanzouq.com', 'path': '/'})
                       await context.add_cookies(cookies)
@@ -72,34 +40,40 @@ jobs:
                       print(f"正在扫描: {current_path}")
                       
                       try:
-                          # 等待网络空闲，确保页面加载完毕
-                          await page.goto(current_url, timeout=30000, wait_until="networkidle")
+                          # 【核心修复】改为 domcontentloaded，只要网页骨架加载完就往下走
+                          try:
+                              await page.goto(current_url, timeout=20000, wait_until="domcontentloaded")
+                          except Exception as goto_err:
+                              print(f"  [警告] 页面加载未完全完成，尝试强行提取数据: {goto_err}")
+                              
+                          # 额外等待 2 秒，让 JS 把文件列表渲染出来
                           await page.wait_for_timeout(2000)
                           
-                          # 再次检测是否还有密码框（有些旧版页面需要手动输入）
                           if await page.locator("input[type='password'], input[name='pwd']").count() > 0:
                               print("  [检测到密码输入框，正在尝试输入...]")
                               await page.fill("input[type='password'], input[name='pwd']", os.environ['GLOBAL_PWD'])
                               await page.press("input[type='password'], input[name='pwd']", "Enter")
                               await page.wait_for_timeout(3000)
                               
-                          html = await page.content()
+                          # 直接从网页执行环境中读取 var files，这比正则匹配 HTML 更稳定
+                          files_json_str = await page.evaluate("() => { return typeof files !== 'undefined' ? JSON.stringify(files) : null; }")
                           
-                          # 提取文件列表
-                          match = re.search(r"var files = '(.*?)';", html, re.S) or re.search(r"var files = (\[.*?\]);", html, re.S)
+                          if not files_json_str:
+                              # 如果 evaluate 拿不到，退回正则匹配
+                              html = await page.content()
+                              match = re.search(r"var files = '(.*?)';", html, re.S) or re.search(r"var files = (\[.*?\]);", html, re.S)
+                              if match:
+                                  files_json_str = match.group(1)
                           
-                          if not match:
-                              print(f"  ❌ 提取失败。")
-                              # 【优化3】保存失败的网页源码和截图供分析
+                          if not files_json_str:
+                              print(f"  ❌ 提取失败，页面可能触发了验证码。")
                               debug_dir = "debug_output"
                               os.makedirs(debug_dir, exist_ok=True)
-                              with open(f"{debug_dir}/error_{len(results)}.html", "w", encoding="utf-8") as f:
-                                  f.write(html)
                               await page.screenshot(path=f"{debug_dir}/error_{len(results)}.png", full_page=True)
-                              print(f"  已保存网页截图和源码到 {debug_dir} 目录。")
+                              print(f"  已保存截图到 {debug_dir}")
                               continue
                               
-                          files_data = json.loads(match.group(1))
+                          files_data = json.loads(files_json_str)
                           print(f"  [解析] 找到 {len(files_data)} 个项目")
                           
                           for item in files_data:
@@ -125,7 +99,7 @@ jobs:
                                   queue.append((folder_url, next_path))
                                   print(f"  > 发现子文件夹: {item_name}")
                       except Exception as e:
-                          print(f"  ❌ 页面加载异常: {e}")
+                          print(f"  ❌ 页面处理异常: {e}")
                           
                   await browser.close()
                   
@@ -135,18 +109,3 @@ jobs:
 
           asyncio.run(main())
           PY
-
-      - name: 提交并推送
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add lanzou-cache.json
-          git diff --staged --quiet || git commit -m "chore: 自动更新蓝奏云层级缓存 [skip ci]"
-          git push
-          
-      - name: 上传失败截图 (如果提取失败)
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: lanzou-debug-info
-          path: debug_output/

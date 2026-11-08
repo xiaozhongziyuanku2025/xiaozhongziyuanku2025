@@ -1,0 +1,128 @@
+name: 蓝奏云云端全自动解析 (无头浏览器版)
+
+on:
+  schedule:
+    - cron: '0 * * * *' # 每小时的 0 分钟自动执行
+  workflow_dispatch:    # 保留手动触发，方便测试
+
+jobs:
+  parse-lanzou:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: 检出仓库
+        uses: actions/checkout@v5
+
+      - name: 安装 Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: 安装 Playwright 及浏览器
+        run: |
+          pip install playwright
+          # 安装 Chromium 浏览器及系统依赖，耗时约 1-2 分钟
+          python -m playwright install chromium --with-deps
+
+      - name: 运行自动化浏览器解析
+        env:
+          # 【配置区】填入你的文件夹链接和统一密码
+          FOLDER_URL: "https://wwbmd.lanzout.com/b011mmapdg"
+          GLOBAL_PWD: "1234"
+        run: |
+          python3 - <<'PY'
+          import asyncio
+          from playwright.async_api import async_playwright
+          import json, re, os
+
+          async def main():
+              print(f"启动云端无头浏览器，开始解析: {os.environ['FOLDER_URL']}")
+              results = []
+              queue = [(os.environ['FOLDER_URL'], "蓝奏云专属")]
+              
+              async with async_playwright() as p:
+                  browser = await p.chromium.launch(headless=True)
+                  # 设置真实的浏览器上下文，降低风控概率
+                  context = await browser.new_context(
+                      user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                      viewport={"width": 1920, "height": 1080}
+                  )
+                  page = await context.new_page()
+                  
+                  while queue:
+                      current_url, current_path = queue.pop(0)
+                      print(f"正在扫描: {current_path}")
+                      
+                      try:
+                          await page.goto(current_url, timeout=30000)
+                          await page.wait_for_timeout(1500)
+                          
+                          # 如果遇到密码框，自动填入统一密码
+                          if await page.locator("input[type='password']").count() > 0:
+                              print("  [检测到密码框，正在自动输入...]")
+                              await page.fill("input[type='password']", os.environ['GLOBAL_PWD'])
+                              submit_btn = page.locator("button[type='submit'], .passwd, input[type='button']")
+                              if await submit_btn.count() > 0:
+                                  await submit_btn.first.click()
+                              else:
+                                  await page.press("input[type='password']", "Enter")
+                              # 等待页面刷新出列表
+                              await page.wait_for_timeout(2500)
+                              
+                          html = await page.content()
+                          
+                          # 提取文件列表 JSON
+                          match = re.search(r"var files = '(.*?)';", html, re.S) or re.search(r"var files = (\[.*?\]);", html, re.S)
+                          if not match:
+                              print(f"  ❌ 提取失败，可能链接失效或被风控。")
+                              continue
+                              
+                          files_data = json.loads(match.group(1))
+                          print(f"  [解析] 找到 {len(files_data)} 个项目")
+                          
+                          for item in files_data:
+                              item_type = str(item.get('type'))
+                              item_id = item.get('id')
+                              item_name = item.get('name_all') or item.get('name')
+                              item_size = item.get('size', '0')
+                              
+                              if item_type == '0': 
+                                  # 文件
+                                  base_url = "https://" + page.url.split('/')[2]
+                                  results.append({
+                                      "name": item_name,
+                                      "url": f"{base_url}/b011mmapdg_{item_id}",
+                                      "pwd": os.environ['GLOBAL_PWD'],
+                                      "path": current_path,
+                                      "size": item_size
+                                  })
+                                  print(f"  + 获取文件: {item_name}")
+                              elif item_type == '1': 
+                                  # 子文件夹，递归加入队列
+                                  base_url = "https://" + page.url.split('/')[2]
+                                  folder_url = f"{base_url}/b011mmapdg?folder_id={item_id}&pwd={os.environ['GLOBAL_PWD']}"
+                                  next_path = f"{current_path}/{item_name}" if current_path != "蓝奏云专属" else f"蓝奏云专属/{item_name}"
+                                  queue.append((folder_url, next_path))
+                                  print(f"  > 发现子文件夹: {item_name}")
+                      except Exception as e:
+                          print(f"  ❌ 页面加载异常: {e}")
+                          
+                  await browser.close()
+                  
+              # 写入 JSON
+              with open('lanzou-cache.json', 'w', encoding='utf-8') as f:
+                  json.dump(results, f, ensure_ascii=False, indent=2)
+              print(f"\n✅ 扫描完成！共提取 {len(results)} 个文件。")
+
+          asyncio.run(main())
+          PY
+
+      - name: 提交并推送
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add lanzou-cache.json
+          # 如果 JSON 没有变化则不产生提交
+          git diff --staged --quiet || git commit -m "chore: 自动更新蓝奏云层级缓存 [skip ci]"
+          git push

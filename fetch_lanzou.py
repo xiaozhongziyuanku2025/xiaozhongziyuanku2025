@@ -3,7 +3,7 @@ from playwright.async_api import async_playwright
 import json, re, os
 
 async def main():
-    print("🚀 启动守株待兔版终极爬虫...")
+    print("🚀 启动终极拦截版爬虫...")
     account = os.environ.get('LANZOU_ACCOUNT')
     password = os.environ.get('LANZOU_PASSWORD')
 
@@ -12,8 +12,7 @@ async def main():
         return
 
     results = []
-    # ⚠️ 这里已改回精准的名字：小众资源库
-    target_folder_name = "小众资源库" 
+    target_folder_name = "小众资源库"
 
     async with async_playwright() as p:
         browser = await p.chromium.launch(headless=True)
@@ -24,25 +23,22 @@ async def main():
         await context.add_init_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
         page = await context.new_page()
 
-        # 准备用于保存网络截获的数据
-        captured_folders = None
-        captured_root_files = None
+        # 截获的文件夹数据池
+        captured_folder_data = {}
 
         async def handle_response(response):
-            nonlocal captured_folders, captured_root_files
             if "doupload.php" in response.url:
                 try:
-                    data = await response.json()
-                    if data.get('zt') == 1 and isinstance(data.get('text'), list):
-                        items = data['text']
-                        # 如果列表里有 fol_id，说明这是文件夹列表
-                        if len(items) > 0 and 'fol_id' in items[0]:
-                            captured_folders = items
-                            print(f"  [网络截获] 拿到根目录文件夹列表！共 {len(items)} 个文件夹")
-                        # 如果列表里有 id 和 name_all，说明这是文件列表
-                        elif len(items) > 0 and 'name_all' in items[0]:
-                            captured_root_files = items
-                            print(f"  [网络截获] 拿到根目录文件列表！共 {len(items)} 个文件")
+                    post_data = response.request.post_data or ""
+                    url = response.url
+                    # 尝试获取当前请求的 folder_id
+                    match = re.search(r"folder_id=(-?\d+)", post_data or url)
+                    if match:
+                        fid = match.group(1)
+                        data = await response.json()
+                        if data.get('zt') == 1:
+                            captured_folder_data[fid] = data.get('text', [])
+                            print(f"  [网络截获] 拿到文件夹 {fid} 的数据，共 {len(captured_folder_data[fid])} 个项目")
                 except:
                     pass
         page.on("response", handle_response)
@@ -57,7 +53,7 @@ async def main():
             await page.fill("#username", account)
             await page.fill(".input.pwd", password)
             await page.click("#s3")
-            await page.wait_for_timeout(5000) # 等待登录并触发页面加载
+            await page.wait_for_timeout(5000)
         except Exception as e:
             print(f"❌ 填写表单失败: {e}")
 
@@ -67,99 +63,78 @@ async def main():
         
         print("✅ 登录成功！等待网盘数据加载完毕...")
         await page.goto("https://pc.woozooo.com/mydisk.php", timeout=30000)
-        await page.wait_for_timeout(5000) # 给浏览器充足的时间去发请求
+        await page.wait_for_timeout(5000)
 
-        # --- 1. 解析根目录文件 ---
-        if captured_root_files:
-            for item in captured_root_files:
-                results.append({
-                    "name": item.get('name_all'),
-                    "url": "", 
-                    "pwd": "",
-                    "path": "", # 根目录文件路径为空
-                    "size": item.get('size', '0')
-                })
-                print(f"  + 发现根目录文件: {item.get('name_all')}")
-        else:
-            print("⚠️ 未截获到根目录文件列表")
-
-        # --- 2. 查找目标文件夹 ID ---
+        # --- 1. 处理根目录 ---
+        root_items = captured_folder_data.pop('-1', []) or captured_folder_data.pop('0', [])
+        
         target_folder_id = None
-        if captured_folders:
-            for folder in captured_folders:
-                # 精准匹配“小众资源库”
-                if folder.get('name') == target_folder_name:
-                    target_folder_id = folder.get('fol_id')
-                    print(f"✅ 在文件夹列表中找到【{target_folder_name}】，ID: {target_folder_id}")
-                    break
-            
-            if not target_folder_id:
-                print(f"❌ 没找到名为【{target_folder_name}】的文件夹。")
-                print(f"   >>> 你账号里截获到的文件夹有: {[f.get('name') for f in captured_folders]}")
-                return
+        if root_items:
+            for item in root_items:
+                if 'name_all' in item: # 是文件
+                    results.append({
+                        "name": item.get('name_all'),
+                        "url": "",
+                        "pwd": "",
+                        "path": "", # 根目录为空
+                        "size": item.get('size', '0')
+                    })
+                    print(f"  + 发现根目录文件: {item.get('name_all')}")
+                elif 'fol_id' in item: # 是文件夹
+                    if item.get('name') == target_folder_name:
+                        target_folder_id = item.get('fol_id')
+                        print(f"✅ 在根目录中找到【{target_folder_name}】，ID: {target_folder_id}")
         else:
-            print("❌ 未截获到任何文件夹列表！")
+            print("⚠️ 未截获到根目录数据")
             return
 
-        # --- 3. 深度遍历子文件夹 ---
-        queue = [(target_folder_id, "")] # path 默认为空
+        if not target_folder_id:
+            print(f"❌ 未找到名为【{target_folder_name}】的文件夹。")
+            return
+
+        # --- 2. 深度遍历子文件夹 ---
+        queue = [(target_folder_id, "")]
         
         while queue:
             current_id, current_path = queue.pop(0)
             display_path = current_path if current_path else "小众资源库(根)"
             print(f"\n正在扫描子目录: {display_path} (ID: {current_id})")
             
-            folder_res = await page.evaluate(f"""async () => {{
-                const res = await fetch('https://pc.woozooo.com/doupload.php', {{
-                    method: 'POST',
-                    headers: {{
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                        'X-Requested-With': 'XMLHttpRequest',
-                        'Referer': 'https://pc.woozooo.com/mydisk.php'
-                    }},
-                    body: 'task=task_list&folder_id={current_id}'
-                }});
-                return await res.text();
-            }}""")
+            # 核心：直接让浏览器跳转到该文件夹，触发表单内合法的 JS 请求
+            folder_url = f"https://pc.woozooo.com/mydisk.php?item=files&action=index&folder_id={current_id}"
+            await page.goto(folder_url, timeout=30000)
             
-            try:
-                folder_data = json.loads(folder_res)
-            except:
-                print(f"  ❌ JSON 解析失败: {folder_res[:100]}")
+            # 等待拦截器拿到数据
+            items = []
+            for _ in range(15):
+                if str(current_id) in captured_folder_data:
+                    items = captured_folder_data.pop(str(current_id))
+                    break
+                await page.wait_for_timeout(500)
+                
+            if not items:
+                print(f"  ⚠️ 等待超时，未截获到 {current_id} 的数据")
                 continue
                 
-            if folder_data.get('zt') != 1:
-                print(f"  ❌ 接口返回错误，可能请求头被拦截: {folder_data}")
-                continue
-                
-            items = folder_data.get('text', [])
-            if not isinstance(items, list):
-                print(f"  ✅ 目录为空")
-                continue
-                
-            print(f"  ✅ 获取到 {len(items)} 个项目")
-            
             for item in items:
-                if 'fol_id' in item: 
-                    # 是文件夹
+                if 'fol_id' in item: # 是文件夹
                     next_path = f"{current_path}/{item['name']}" if current_path else item['name']
                     queue.append((item['fol_id'], next_path))
                     print(f"  > 子文件夹: {item['name']}")
-                elif 'id' in item and 'name_all' in item:
-                    # 是文件
+                elif 'id' in item and 'name_all' in item: # 是文件
                     item_id = item['id']
                     item_name = item['name_all']
                     item_size = item.get('size', '0')
-                    
                     print(f"  + 正在处理文件: {item_name}")
-                    # 获取分享链接
+                    
+                    # 文件分享链接通过浏览器原生 fetch 获取（带上正确的 Referer）
                     share_res = await page.evaluate(f"""async () => {{
-                        const res = await fetch('https://pc.woozooo.com/doupload.php', {{
+                        const res = await fetch('https://pc.woozooo.com/doupload.php?uid={account}', {{
                             method: 'POST',
                             headers: {{
                                 'Content-Type': 'application/x-www-form-urlencoded',
                                 'X-Requested-With': 'XMLHttpRequest',
-                                'Referer': 'https://pc.woozooo.com/mydisk.php'
+                                'Referer': window.location.href
                             }},
                             body: 'task=file_share&file_id={item_id}'
                         }});
@@ -185,9 +160,9 @@ async def main():
                             print(f"    ✅ 获取分享链接: {share_url}")
                         else:
                             print(f"    ❌ 分享失败: {share_data}")
-                    except:
-                        pass
-                    await page.wait_for_timeout(500)
+                    except Exception as e:
+                        print(f"    ❌ 解析分享响应异常: {e}")
+                    await page.wait_for_timeout(300)
 
         await browser.close()
         

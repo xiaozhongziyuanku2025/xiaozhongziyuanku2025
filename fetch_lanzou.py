@@ -23,23 +23,27 @@ async def main():
         await context.add_init_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
         page = await context.new_page()
 
-        # 截获的文件夹数据池
+        # 截获的数据池
         captured_folder_data = {}
 
         async def handle_response(response):
             if "doupload.php" in response.url:
                 try:
                     post_data = response.request.post_data or ""
-                    url = response.url
-                    # 尝试获取当前请求的 folder_id
-                    match = re.search(r"folder_id=(-?\d+)", post_data or url)
+                    # 只要请求里带了 folder_id，就截获
+                    match = re.search(r"folder_id=(-?\d+)", post_data)
                     if match:
                         fid = match.group(1)
                         data = await response.json()
                         if data.get('zt') == 1:
-                            captured_folder_data[fid] = data.get('text', [])
-                            print(f"  [网络截获] 拿到文件夹 {fid} 的数据，共 {len(captured_folder_data[fid])} 个项目")
-                except:
+                            items = data.get('text', [])
+                            if isinstance(items, list):
+                                if fid not in captured_folder_data:
+                                    captured_folder_data[fid] = []
+                                # 【核心修复】使用 extend 追加数据，绝不让后面的文件列表覆盖前面的文件夹列表
+                                captured_folder_data[fid].extend(items)
+                                print(f"  [网络截获] 拿到文件夹 {fid} 的数据，新增 {len(items)} 个项目")
+                except Exception as e:
                     pass
         page.on("response", handle_response)
 
@@ -66,7 +70,10 @@ async def main():
         await page.wait_for_timeout(5000)
 
         # --- 1. 处理根目录 ---
-        root_items = captured_folder_data.pop('-1', []) or captured_folder_data.pop('0', [])
+        # 把 -1 和 0 的数据都合并起来
+        root_items = []
+        root_items.extend(captured_folder_data.get('-1', []))
+        root_items.extend(captured_folder_data.get('0', []))
         
         target_folder_id = None
         if root_items:
@@ -100,7 +107,11 @@ async def main():
             display_path = current_path if current_path else "小众资源库(根)"
             print(f"\n正在扫描子目录: {display_path} (ID: {current_id})")
             
-            # 核心：直接让浏览器跳转到该文件夹，触发表单内合法的 JS 请求
+            # 每次进入新文件夹前，先清空一下之前的截获记录，防止混淆
+            if str(current_id) in captured_folder_data:
+                del captured_folder_data[str(current_id)]
+
+            # 直接让浏览器跳转到该文件夹
             folder_url = f"https://pc.woozooo.com/mydisk.php?item=files&action=index&folder_id={current_id}"
             await page.goto(folder_url, timeout=30000)
             
@@ -127,7 +138,7 @@ async def main():
                     item_size = item.get('size', '0')
                     print(f"  + 正在处理文件: {item_name}")
                     
-                    # 文件分享链接通过浏览器原生 fetch 获取（带上正确的 Referer）
+                    # 文件分享链接
                     share_res = await page.evaluate(f"""async () => {{
                         const res = await fetch('https://pc.woozooo.com/doupload.php?uid={account}', {{
                             method: 'POST',
@@ -158,8 +169,6 @@ async def main():
                                 "size": item_size
                             })
                             print(f"    ✅ 获取分享链接: {share_url}")
-                        else:
-                            print(f"    ❌ 分享失败: {share_data}")
                     except Exception as e:
                         print(f"    ❌ 解析分享响应异常: {e}")
                     await page.wait_for_timeout(300)

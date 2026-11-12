@@ -3,7 +3,7 @@ from playwright.async_api import async_playwright
 import json, re, os
 
 async def main():
-    print("🚀 启动「点击弹窗」终极探测版爬虫...")
+    print("🚀 启动「点击弹窗」终极拦截+直达版爬虫...")
     account = os.environ.get('LANZOU_ACCOUNT')
     password = os.environ.get('LANZOU_PASSWORD')
 
@@ -23,6 +23,25 @@ async def main():
         await context.add_init_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
         page = await context.new_page()
 
+        captured_folder_data = {}
+
+        # 监听后台请求，偷取 folder_id
+        async def handle_response(response):
+            if "doupload.php" in response.url:
+                try:
+                    post_data = response.request.post_data or ""
+                    match = re.search(r"folder_id=(-?\d+)", post_data)
+                    if match:
+                        fid = match.group(1)
+                        data = await response.json()
+                        if data.get('zt') == 1 and isinstance(data.get('text'), list):
+                            if fid not in captured_folder_data:
+                                captured_folder_data[fid] = []
+                            captured_folder_data[fid].extend(data.get('text', []))
+                except: pass
+        page.on("response", handle_response)
+
+        # ================= 登录 =================
         print("正在访问登录页...")
         await page.goto("https://accounts.woozooo.com/accounts.php?action=login&ref=pc.woozooo.com", timeout=30000)
         await page.wait_for_timeout(2000)
@@ -41,95 +60,86 @@ async def main():
             await browser.close()
             return
 
-        print("✅ 登录成功！等待 1 秒...")
-        await page.wait_for_timeout(1000)
-        
-        # 强制等待页面网络请求空闲
-        print("正在进入网盘主页...")
+        print("✅ 登录成功！正在进入网盘主页...")
         await page.goto("https://pc.woozooo.com/mydisk.php", timeout=30000)
-        await page.wait_for_load_state("networkidle") # 等待网络请求彻底结束
-        await page.wait_for_timeout(3000)
+        # 去掉 networkidle，改用固定等待，防止死锁
+        await page.wait_for_timeout(4000)
 
         # ================= 详细日志排查 =================
         print("\n🔍 [详细日志] 开始扫描页面结构...")
         page_html = await page.content()
-        print(f"页面 HTML 长度: {len(page_html)} 字符")
-        
-        # 打印页面上所有可见的文字
         visible_text = await page.inner_text("body")
-        print(f"👉 页面可见文字 (前 500 字): \n{visible_text[:500]}\n")
-        
-        print(f"👉 页面 HTML 片段 (前 500 字): \n{page_html[:500]}\n")
-        
-        # 检查是否有 iframe，有时候内容在内嵌框架里
-        print(f"👉 发现 {len(page.frames)} 个 iframe 框架")
-        for idx, frame in enumerate(page.frames):
-            print(f"   - 框架 {idx}: {frame.url}")
-        # ================================================
+        print(f"👉 页面可见文字 (前 300 字): \n{visible_text[:300]}\n")
 
-        print(f"\n正在尝试寻找文件夹【{target_folder_name}】...")
-        # 使用宽松匹配，只要包含这几个字即可
-        folder_locator = page.locator(f"text={target_folder_name}").first
+        # ================= 寻找目标文件夹 =================
+        target_folder_id = None
         
-        if await folder_locator.count() == 0:
-            print(f"❌ 依然找不到。尝试用 JS 强行查找是否有这个文本...")
-            has_text = await page.evaluate(f"document.body.innerText.includes('{target_folder_name}')")
-            print(f"   JS 检查结果: 页面文本中是否包含该名字: {has_text}")
-            
-            if has_text:
-                print("   ⚠️ 文本存在，但 Playwright 选择器找不到。可能是被隐藏了，尝试用 JS 强行点击...")
-                await page.evaluate(f"""() => {{
-                    const els = Array.from(document.querySelectorAll('*'));
-                    for (let el of els) {{
-                        if (el.innerText && el.innerText.trim() === '{target_folder_name}') {{
-                            el.click();
-                            return true;
-                        }}
-                    }}
-                }}""")
-                await page.wait_for_timeout(3000)
-            else:
-                await browser.close()
-                return
-        else:
-            print("✅ 找到了文件夹元素，正在执行鼠标拟真点击...")
-            await folder_locator.click(force=True)
-            await page.wait_for_timeout(3000)
+        # 方案A：从后台拦截的数据里找 ID
+        root_items = captured_folder_data.get('-1', [])
+        for item in root_items:
+            if 'fol_id' in item and target_folder_name in item.get('name', ''):
+                target_folder_id = item.get('fol_id')
+                print(f"✅ 从后台拦截数据中找到【{target_folder_name}】，ID: {target_folder_id}")
+                break
 
-        # ================= 进入文件夹后，打印文件结构 =================
-        print("\n🔍 [详细日志] 进入文件夹后，分析文件列表...")
-        visible_text_folder = await page.inner_text("body")
-        print(f"👉 文件夹内可见文字: \n{visible_text_folder[:500]}\n")
+        # 方案B：如果拦截数据没拿到，去网页上用 JS 强行找
+        if not target_folder_id:
+            print("⚠️ 未在后台数据中找到，尝试从网页源码提取...")
+            id_match = re.search(rf"show_folder\('(\d+)'.*?{target_folder_name}", page_html, re.S)
+            if id_match:
+                target_folder_id = id_match.group(1)
+                print(f"✅ 从网页源码中找到【{target_folder_name}】，ID: {target_folder_id}")
 
-        # 尝试广泛捕获文件元素
-        file_elements = await page.locator("a, td").all()
-        valid_files = []
-        for el in file_elements:
-            try:
-                txt = await el.inner_text()
-                if txt and len(txt) > 2 and ".exe" in txt or ".apk" in txt or ".jpg" in txt or ".txt" in txt or "Win" in txt:
-                    valid_files.append(el)
-            except:
-                pass
+        if not target_folder_id:
+            print("❌ 彻底找不到目标文件夹，结束。")
+            await browser.close()
+            return
 
-        print(f"👉 捕获到疑似文件元素 {len(valid_files)} 个")
+        # ================= 进入目标文件夹 =================
+        print(f"\n🚪 正在直达文件夹 ID: {target_folder_id}...")
+        folder_url = f"https://pc.woozooo.com/mydisk.php?item=files&action=index&folder_id={target_folder_id}"
+        await page.goto(folder_url, timeout=30000)
+        await page.wait_for_timeout(4000)
+
+        folder_text = await page.inner_text("body")
+        print(f"👉 文件夹内可见文字 (前 300 字): \n{folder_text[:300]}\n")
+
+        # ================= 点击文件弹窗 =================
+        print("🔍 开始尝试点击文件并提取弹窗...")
         
-        for element in valid_files:
+        # 蓝奏云文件通常是 a 标签或者包含在表格里，我们用 JS 遍历寻找包含扩展名的元素
+        file_elements = await page.locator("a, td, div").all()
+        seen_files = set()
+
+        for element in file_elements:
             try:
                 file_name = await element.inner_text()
                 file_name = file_name.strip()
-                print(f"\n📄 尝试点击文件: {file_name}")
                 
+                # 简单判断是不是文件名（过滤掉导航、按钮等文字）
+                if not file_name or len(file_name) < 3 or file_name in seen_files:
+                    continue
+                if not ('.' in file_name or 'Win' in file_name or '活动' in file_name):
+                    continue
+                if "文件夹" in file_name or "返回" in file_name or "登录" in file_name:
+                    continue
+                
+                # 限制长度防止点到奇奇怪怪的容器
+                if len(file_name) > 50:
+                    continue
+
+                seen_files.add(file_name)
+                print(f"\n📄 发现疑似文件: {file_name}")
+                print(f"    🖱️ 正在点击...")
+                
+                # 强行点击
                 await element.click(force=True)
-                await page.wait_for_timeout(2500) # 等待弹窗
+                await page.wait_for_timeout(2500) # 等弹窗
                 
-                # 提取弹窗内容
+                # 提取弹窗文字
                 popup_text = await page.inner_text("body")
                 
-                # 打印弹窗新增的文字，方便排错
-                print(f"   [弹窗探测] 页面文字增量：...")
-
-                # 匹配链接
+                # 匹配链接和密码
                 url_match = re.search(r"(https?://[a-zA-Z0-9.-]+/[a-zA-Z0-9]+)", popup_text)
                 pwd_match = re.search(r"(?:密码|提取码)[:：]\s*([a-zA-Z0-9]+)", popup_text)
                 
@@ -137,15 +147,21 @@ async def main():
                 share_pwd = pwd_match.group(1) if pwd_match else ""
 
                 if share_url:
-                    print(f"   ✅ 弹窗提取成功: {share_url}，密码: {share_pwd}")
-                    results.append({"name": file_name, "url": share_url, "pwd": share_pwd, "path": "", "size": "0"})
+                    print(f"    ✅ 成功获取: {share_url}，密码: {share_pwd}")
+                    results.append({
+                        "name": file_name, "url": share_url, "pwd": share_pwd, 
+                        "path": "", "size": "0"
+                    })
                 else:
-                    print(f"   ❌ 弹窗未包含链接，可能点击没触发弹窗，或者需要按 ESC 关闭旧弹窗。")
-                
+                    print(f"    ⚠️ 弹窗中未匹配到链接。弹窗文字片段: {popup_text[:100]}")
+
+                # 关闭弹窗
                 await page.keyboard.press("Escape")
                 await page.wait_for_timeout(500)
+
             except Exception as e:
-                print(f"   ❌ 点击文件异常: {e}")
+                # 忽略点击失败的元素
+                pass
 
         await browser.close()
 

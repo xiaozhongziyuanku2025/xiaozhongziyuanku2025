@@ -1,7 +1,7 @@
-name: 蓝奏云账号登录抓取
+name: 蓝奏云混合架构解析
 
 on:
-  workflow_dispatch: # 仅支持手动触发
+  workflow_dispatch: # 只有手动触发
 
 jobs:
   parse-lanzou:
@@ -17,17 +17,18 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: 安装依赖库与浏览器
+      - name: 安装依赖及浏览器
         run: |
-          # 升级 pip 并安装所需的 Python 库
+          # 升级 pip 并安装 requests 和 playwright
           python -m pip install --upgrade pip
-          pip install playwright ddddocr
+          pip install requests playwright
           
-          # 为 Playwright 安装 Chromium 浏览器及其系统依赖
+          # 安装 Chromium 浏览器及系统依赖
           python -m playwright install chromium --with-deps
 
-      - name: 运行账号登录解析
+      - name: 运行混合架构解析
         env:
+          # 从 Secrets 读取账号和密码
           LANZOU_ACCOUNT: ${{ secrets.LANZOU_ACCOUNT }}
           LANZOU_PASSWORD: ${{ secrets.LANZOU_PASSWORD }}
         run: python fetch_lanzou.py
@@ -37,14 +38,14 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add lanzou-cache.json
-          git diff --staged --quiet || git commit -m "chore: 账号登录更新蓝奏云缓存 [skip ci]"
+          git diff --staged --quiet || git commit -m "chore: 混合架构更新蓝奏云缓存 [skip ci]"
           git push
           
-      - name: 上传失败截图和源码供查看
+      - name: 上传失败截图供排查 (如果有)
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: login-debug
+          name: debug-screenshots
           path: |
-            login_failed.png
-            login_failed.html
+            *.png
+            *.html

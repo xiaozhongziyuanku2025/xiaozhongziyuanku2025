@@ -3,7 +3,7 @@ from playwright.async_api import async_playwright
 import json, re, os
 
 async def main():
-    print("🚀 启动「遍历盲点」终极日志版爬虫...")
+    print("🚀 启动「网络劫持+无脑点击」终极版...")
     account = os.environ.get('LANZOU_ACCOUNT')
     password = os.environ.get('LANZOU_PASSWORD')
 
@@ -24,22 +24,30 @@ async def main():
         page = await context.new_page()
 
         captured_folder_data = {}
-        
+        captured_share_info = None
+
+        # 深度监听所有网络响应
         async def handle_response(response):
+            nonlocal captured_share_info
             if "doupload.php" in response.url:
                 try:
+                    data = await response.json()
+                    if not isinstance(data, dict): return
+                    
+                    # 1. 捕获文件夹列表
                     post_data = response.request.post_data or ""
                     match = re.search(r"folder_id=(-?\d+)", post_data)
-                    if match:
+                    if match and data.get('zt') == 1 and isinstance(data.get('text'), list):
                         fid = match.group(1)
-                        data = await response.json()
-                        if data.get('zt') == 1 and isinstance(data.get('text'), list):
-                            if fid not in captured_folder_data:
-                                captured_folder_data[fid] = []
-                            for item in data.get('text', []):
-                                if item not in captured_folder_data[fid]:
-                                    captured_folder_data[fid].append(item)
-                            print(f"    [网络截获] 拿到文件夹 {fid} 数据，共 {len(data.get('text'))} 项")
+                        if fid not in captured_folder_data:
+                            captured_folder_data[fid] = []
+                        captured_folder_data[fid].extend(data.get('text', []))
+                        print(f"    [网络截获] 拿到目录 {fid} 数据，共 {len(data.get('text'))} 项")
+
+                    # 2. 捕获分享信息 (你提供的关键数据结构)
+                    if data.get('zt') == 1 and isinstance(data.get('info'), dict) and 'f_id' in data['info']:
+                        captured_share_info = data['info']
+                        print(f"    🟢 [网络劫持] 截获分享信息！f_id: {captured_share_info['f_id']}, pwd: {captured_share_info.get('pwd', '')}")
                 except: pass
         page.on("response", handle_response)
 
@@ -66,10 +74,9 @@ async def main():
         await page.goto("https://pc.woozooo.com/mydisk.php", timeout=30000)
         await page.wait_for_timeout(4000)
 
-        # ================= 寻找目标文件夹 =================
+        # 寻找目标文件夹
         root_items = captured_folder_data.get('-1', [])
         target_folder_id = None
-
         for item in root_items:
             if 'fol_id' in item and target_folder_name in item.get('name', ''):
                 target_folder_id = item.get('fol_id')
@@ -96,11 +103,6 @@ async def main():
             await page.goto(folder_url, timeout=30000)
             await page.wait_for_timeout(3000)
             
-            # 【详细日志】打印页面源码和文本
-            print(f"\n🔍 [详细日志] 页面 HTML (前 500 字): \n{(await page.content())[:500]}\n")
-            print(f"🔍 [详细日志] 页面可见文字 (前 500 字): \n{(await page.inner_text('body'))[:500]}\n")
-
-            # 处理子文件夹队列
             items = []
             for _ in range(10):
                 if str(current_id) in captured_folder_data:
@@ -108,73 +110,66 @@ async def main():
                     break
                 await page.wait_for_timeout(500)
                 
-            if items:
-                for item in items:
-                    if 'fol_id' in item:
-                        next_path = f"{current_path}/{item['name']}" if current_path else item['name']
-                        queue.append((item['fol_id'], next_path))
-                        print(f"  > 发现子文件夹: {item['name']}")
+            if not items:
+                print("  ⚠️ 未截获到该目录文件数据")
+                continue
 
-            # ================= 核心：盲点文件行 =================
-            print(f"\n🖱️ 开始盲点页面上的文件行...")
-            
-            # 蓝奏云的文件列表通常包裹在 <table> 或者 <tr> 中
-            # 我们抓取所有的 tr 行
-            rows = await page.locator("tr").all()
-            print(f"  页面上共找到 {len(rows)} 个表格行(tr)")
-
-            for row in rows:
-                try:
-                    row_text = await row.inner_text()
-                    row_text = row_text.strip()
+            for item in items:
+                # 处理子文件夹
+                if 'fol_id' in item:
+                    next_path = f"{current_path}/{item['name']}" if current_path else item['name']
+                    queue.append((item['fol_id'], next_path))
+                    print(f"  > 发现子文件夹: {item['name']}")
+                
+                # 处理文件：点击并截获
+                elif 'id' in item and 'name_all' in item:
+                    item_name = item['name_all']
+                    item_size = item.get('size', '0')
                     
-                    # 跳过表头或者空行
-                    if not row_text or "文件名" in row_text or "大小" in row_text or len(row_text) < 5:
-                        continue
-                        
-                    print(f"\n  发现疑似文件行: {row_text[:50]}...")
+                    print(f"\n  + 正在点击文件: {item_name}")
+                    captured_share_info = None # 每次点击前清空上次的数据
                     
-                    # 找到该行内的文件名链接（通常是第一个 a 标签）
-                    file_link = row.locator("a").first
-                    if await file_link.count() > 0:
-                        print(f"    🖱️ 点击文件名链接...")
-                        # 强制点击，哪怕被弹窗遮挡也能点
-                        await file_link.click(force=True)
-                        await page.wait_for_timeout(2000) # 等待弹窗刷新
+                    try:
+                        # 使用模糊匹配点击，应对文件名过长被截断的问题
+                        # 截取文件名前10个字符去定位元素，确保能点到
+                        search_text = item_name[:10] if len(item_name) > 10 else item_name
+                        locator = page.get_by_text(search_text).first
                         
-                        # 抓取全屏文字
-                        popup_text = await page.inner_text("body")
-                        
-                        # 匹配链接和密码
-                        url_match = re.search(r"(https?://[a-zA-Z0-9.-]+/[a-zA-Z0-9]+)", popup_text)
-                        pwd_match = re.search(r"(?:密码|提取码)[:：]\s*([a-zA-Z0-9]+)", popup_text)
-                        
-                        share_url = url_match.group(1) if url_match else ""
-                        share_pwd = pwd_match.group(1) if pwd_match else ""
-
-                        # 提取真实的文件名（通常在点击后获取或者从 row_text 解析）
-                        # 这里用 a 标签的文本作为名字
-                        file_name = await file_link.inner_text()
-                        file_name = file_name.strip()
-
-                        if share_url:
-                            print(f"    ✅ 【弹窗成功】链接: {share_url} | 密码: {share_pwd}")
+                        if await locator.count() > 0:
+                            await locator.click(force=True)
+                            print("    🖱️ 已点击，等待网络响应...")
                             
-                            # 去重（同一个文件可能会被点两次）
-                            if not any(r['name'] == file_name and r['path'] == current_path for r in results):
-                                results.append({
-                                    "name": file_name,
-                                    "url": share_url,
-                                    "pwd": share_pwd,
-                                    "path": current_path,
-                                    "size": "0"
-                                })
+                            # 等待网络劫持
+                            for _ in range(10):
+                                if captured_share_info:
+                                    break
+                                await page.wait_for_timeout(300)
+                                
+                            if captured_share_info:
+                                domain = captured_share_info.get('is_newd', 'https://wwbmd.lanzn.com')
+                                f_id = captured_share_info.get('f_id', '')
+                                pwd = captured_share_info.get('pwd', '')
+                                full_url = f"{domain}/{f_id}"
+                                
+                                print(f"    ✅ 拼接链接成功: {full_url} | 密码: {pwd}")
+                                
+                                # 去重并添加
+                                if not any(r['name'] == item_name and r['path'] == current_path for r in results):
+                                    results.append({
+                                        "name": item_name,
+                                        "url": full_url,
+                                        "pwd": pwd,
+                                        "path": current_path,
+                                        "size": item_size
+                                    })
+                            else:
+                                print(f"    ❌ 超时：未截获到该文件的分享数据。")
                         else:
-                            print(f"    ⚠️ 【弹窗无链接】弹窗文字片段: {popup_text[:100]}")
+                            print(f"    ❌ 页面上找不到文件名 '{search_text}'")
                             
-                except Exception as e:
-                    print(f"    ❌ 行处理异常: {e}")
-                    
+                    except Exception as e:
+                        print(f"    ❌ 点击或处理异常: {e}")
+
         await browser.close()
 
     with open('lanzou-cache.json', 'w', encoding='utf-8') as f:

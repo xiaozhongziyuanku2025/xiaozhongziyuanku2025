@@ -3,7 +3,7 @@ from playwright.async_api import async_playwright
 import json, re, os
 
 async def main():
-    print("🚀 启动全拟真混合架构爬虫 (纯浏览器拦截版)...")
+    print("🚀 启动终极完美版爬虫 (拦截+分享全通)...")
     account = os.environ.get('LANZOU_ACCOUNT')
     password = os.environ.get('LANZOU_PASSWORD')
 
@@ -25,7 +25,6 @@ async def main():
 
         captured_folder_data = {}
 
-        # 【核心】只拦截浏览器发出的原生请求，绝不自己发
         async def handle_response(response):
             if "doupload.php" in response.url:
                 try:
@@ -38,12 +37,41 @@ async def main():
                             if fid not in captured_folder_data:
                                 captured_folder_data[fid] = []
                             captured_folder_data[fid].extend(data.get('text', []))
-                            print(f"  [网络截获] 文件夹 {fid} 数据，新增 {len(data.get('text', []))} 项")
-                        else:
-                            print(f"  [网络截获] 文件夹 {fid} 数据返回异常: {data}")
-                except Exception as e:
-                    pass
+                except: pass
         page.on("response", handle_response)
+
+        # --- 辅助函数：获取分享链接 ---
+        async def get_share_url(file_id, current_folder_id):
+            # 策略1：使用原生 JS fetch（带上 folder_id）
+            try:
+                res_text = await page.evaluate(f"""async () => {{
+                    const res = await fetch('https://pc.woozooo.com/doupload.php', {{
+                        method: 'POST',
+                        headers: {{
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'Referer': window.location.href
+                        }},
+                        body: 'task=file_share&file_id={file_id}&folder_id={current_folder_id}'
+                    }});
+                    return await res.text();
+                }}""")
+                
+                data = json.loads(res_text)
+                if data.get('zt') == 1:
+                    url = data.get('info') or data.get('url') or ''
+                    pwd = data.get('pwd', '')
+                    if url and not url.startswith("http"):
+                        url = f"https://www.lanzouq.com/{url}"
+                    return url, pwd
+                else:
+                    # 如果依然被风控拒绝，尝试从返回的数据中提取可能存在的短链
+                    if data.get('info') and isinstance(data.get('info'), str):
+                        return f"https://www.lanzouq.com/{data['info']}", data.get('pwd', '')
+            except Exception as e:
+                print(f"    [调试] 分享接口请求异常: {e}")
+            
+            return "", ""
 
         print("正在访问登录页...")
         await page.goto("https://accounts.woozooo.com/accounts.php?action=login&ref=pc.woozooo.com", timeout=30000)
@@ -55,51 +83,48 @@ async def main():
             await page.click("#s3")
             await page.wait_for_timeout(5000)
         except Exception as e:
-            print(f"❌ 登录操作异常: {e}")
+            print(f"❌ 登录异常: {e}")
 
         if "mydisk" not in page.url:
             print(f"❌ 登录失败，当前 URL: {page.url}")
+            await browser.close()
             return
         
         print("✅ 登录成功！正在进入网盘...")
         await page.goto("https://pc.woozooo.com/mydisk.php", timeout=30000)
         await page.wait_for_timeout(5000)
 
-        # --- 1. 从拦截到的数据里找“小众资源库” ---
-        print("\n[阶段一] 解析根目录...")
-        # 蓝奏云可能会发 -1 或 0 的请求
-        root_items = captured_folder_data.get('-1', []) or captured_folder_data.get('0', [])
-        
-        if not root_items:
-            print("⚠️ 未截获到根目录的任何数据。网页可能还没加载完。")
-            
+        # 1. 处理根目录
+        root_items = captured_folder_data.get('-1', [])
         target_folder_id = None
         seen_root = set()
 
         for item in root_items:
-            item_name = item.get('name_all') or item.get('name')
-            unique_key = f"{item_name}_{item.get('id') or item.get('fol_id')}"
+            unique_key = f"{item.get('name_all') or item.get('name')}_{item.get('id') or item.get('fol_id')}"
             if unique_key in seen_root: continue
             seen_root.add(unique_key)
 
-            if 'name_all' in item: # 根目录文件
+            if 'name_all' in item: 
+                share_url, pwd = await get_share_url(item.get('id'), -1) # 根目录传 -1
                 results.append({
-                    "name": item_name, "url": f"https://www.lanzouq.com/{item.get('duan')}" if item.get('duan') else "",
-                    "pwd": "", "path": "", "size": item.get('size', '0')
+                    "name": item.get('name_all'),
+                    "url": share_url,
+                    "pwd": pwd,
+                    "path": "", 
+                    "size": item.get('size', '0')
                 })
-                print(f"  + 根目录文件: {item_name}")
-            elif 'fol_id' in item: # 根目录文件夹
-                print(f"  > 发现文件夹: {item_name}")
-                if target_folder_name in item_name:
+                print(f"  + 根目录文件: {item.get('name_all')} (链接: {share_url})")
+            elif 'fol_id' in item: 
+                if target_folder_name in item.get('name', ''):
                     target_folder_id = item.get('fol_id')
-                    print(f"✅ 找到目标文件夹【{item_name}】，ID: {target_folder_id}")
+                    print(f"✅ 找到目标文件夹【{item.get('name')}】，ID: {target_folder_id}")
 
         if not target_folder_id:
-            print("❌ 未找到目标文件夹，退出。")
+            print("❌ 未找到目标文件夹")
+            await browser.close()
             return
 
-        # --- 2. 深度遍历 ---
-        print("\n[阶段二] 开始深度遍历...")
+        # 2. 深度遍历子文件夹
         queue = [(target_folder_id, "")]
         
         while queue:
@@ -121,34 +146,36 @@ async def main():
                 await page.wait_for_timeout(500)
                 
             if not items:
-                print(f"  ⚠️ 等待超时，未截获数据")
                 continue
             
             seen_sub = set()
             for item in items:
-                item_name = item.get('name_all') or item.get('name')
-                unique_key = f"{item_name}_{item.get('id') or item.get('fol_id')}"
+                unique_key = f"{item.get('name_all') or item.get('name')}_{item.get('id') or item.get('fol_id')}"
                 if unique_key in seen_sub: continue
                 seen_sub.add(unique_key)
 
                 if 'fol_id' in item: 
-                    next_path = f"{current_path}/{item_name}" if current_path else item_name
+                    next_path = f"{current_path}/{item['name']}" if current_path else item['name']
                     queue.append((item['fol_id'], next_path))
-                    print(f"  > 子文件夹: {item_name}")
+                    print(f"  > 子文件夹: {item['name']}")
                 elif 'id' in item and 'name_all' in item: 
+                    item_id = item['id']
                     item_name = item['name_all']
                     unique_key = f"{item_name}_{current_path}"
+                    
                     if unique_key in seen_files: continue
                     seen_files.add(unique_key)
                     
-                    # 纯用 duan 短链，不发额外请求
-                    share_url = f"https://www.lanzouq.com/{item['duan']}" if item.get('duan') else ""
-
+                    share_url, pwd = await get_share_url(item_id, current_id) # 传入当前所在的 folder_id
                     results.append({
-                        "name": item_name, "url": share_url, "pwd": "",
-                        "path": current_path, "size": item.get('size', '0')
+                        "name": item_name,
+                        "url": share_url,
+                        "pwd": pwd,
+                        "path": current_path,
+                        "size": item.get('size', '0')
                     })
-                    print(f"  + 文件: {item_name} (短链: {share_url})")
+                    print(f"  + 文件: {item_name} (链接: {share_url})")
+                    await page.wait_for_timeout(300)
 
         await browser.close()
         

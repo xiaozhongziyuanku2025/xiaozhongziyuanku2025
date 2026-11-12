@@ -1,16 +1,20 @@
 name: 蓝奏云混合架构解析
 
 on:
-  workflow_dispatch: # 只有手动触发
+  workflow_dispatch:
 
 jobs:
   parse-lanzou:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+    
     steps:
       - name: 检出仓库
-        uses: actions/checkout@v5
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
 
       - name: 安装 Python
         uses: actions/setup-python@v5
@@ -19,16 +23,12 @@ jobs:
 
       - name: 安装依赖及浏览器
         run: |
-          # 升级 pip 并安装 requests 和 playwright
           python -m pip install --upgrade pip
           pip install requests playwright
-          
-          # 安装 Chromium 浏览器及系统依赖
           python -m playwright install chromium --with-deps
 
       - name: 运行混合架构解析
         env:
-          # 从 Secrets 读取账号和密码
           LANZOU_ACCOUNT: ${{ secrets.LANZOU_ACCOUNT }}
           LANZOU_PASSWORD: ${{ secrets.LANZOU_PASSWORD }}
         run: python fetch_lanzou.py
@@ -37,15 +37,16 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+          # 先拉取最新代码并变基，防止和 Pages 构建冲突
+          git pull origin main --rebase
           git add lanzou-cache.json
-          git diff --staged --quiet || git commit -m "chore: 混合架构更新蓝奏云缓存 [skip ci]"
-          git push
-          
-      - name: 上传失败截图供排查 (如果有)
+          git diff --staged --quiet || git commit -m "chore: 自动更新蓝奏云缓存 [skip ci]"
+          git push origin main
+
+      - name: 上传失败截图供排查
         if: failure()
         uses: actions/upload-artifact@v4
         with:
           name: debug-screenshots
-          path: |
-            *.png
-            *.html
+          path: "*.png"
+          if-no-files-found: ignore

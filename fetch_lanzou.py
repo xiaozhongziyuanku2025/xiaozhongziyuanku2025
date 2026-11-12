@@ -3,7 +3,7 @@ from playwright.async_api import async_playwright
 import json, re, os
 
 async def main():
-    print("🚀 启动终极 UI 拟真+请求兜底版爬虫...")
+    print("🚀 启动终极文件名点击探测版爬虫...")
     account = os.environ.get('LANZOU_ACCOUNT')
     password = os.environ.get('LANZOU_PASSWORD')
 
@@ -32,16 +32,15 @@ async def main():
                     post_data = response.request.post_data or ""
                     data = await response.json()
                     
-                    # 1. 捕获文件夹数据
+                    # 监听文件夹数据
                     match = re.search(r"folder_id=(-?\d+)", post_data)
                     if match and isinstance(data, dict) and data.get('zt') == 1 and isinstance(data.get('text'), list):
                         fid = match.group(1)
                         if fid not in captured_folder_data:
                             captured_folder_data[fid] = []
-                        # 使用 extend 累加，防止覆盖
                         captured_folder_data[fid].extend(data.get('text', []))
                             
-                    # 2. 捕获分享数据
+                    # 监听分享数据
                     if "file_share" in post_data and data.get('zt') == 1:
                         file_id_match = re.search(r"file_id=(\d+)", post_data)
                         if file_id_match:
@@ -51,7 +50,7 @@ async def main():
                             if url and not url.startswith("http"):
                                 url = f"https://www.lanzouq.com/{url}"
                             captured_share_data[fid] = {"url": url, "pwd": pwd}
-                            print(f"    [网络截获] 成功获取 file_id {fid} 的分享链接")
+                            print(f"    🟢 [网络截获] 成功获取 file_id {fid} 的分享链接！")
                 except: pass
         page.on("response", handle_response)
 
@@ -76,34 +75,53 @@ async def main():
         await page.goto("https://pc.woozooo.com/mydisk.php", timeout=30000)
         await page.wait_for_timeout(5000)
 
-        # 综合获取分享链接函数：优先 UI 点击，失败回退请求
-        async def get_share_url(file_name, file_id, current_folder_id):
-            # --- 尝试策略1：UI 拟真点击 ---
+        async def get_share_url_by_clicking(file_name, file_id, current_folder_id):
+            print(f"    🖱️ 尝试点击文件名获取: {file_name}")
+            
+            # --- 策略1：直接点击文件名 ---
             try:
-                row = page.locator(f"tr:has-text('{file_name}')").first
-                if await row.count() > 0:
-                    more_btn = row.locator("a[onclick*='show_menu'], a[title='更多'], .file_menus, i.fa-ellipsis-h").first
-                    if await more_btn.count() == 0:
-                        more_btn = row.locator("a").last
+                # 根据文件名精准定位元素并点击
+                name_locator = page.locator(f"text='{file_name}'").first
+                if await name_locator.count() > 0:
+                    await name_locator.click(force=True)
+                    print(f"      [UI] 已点击文件名，等待弹窗或接口响应...")
+                    await page.wait_for_timeout(2500) # 等待界面反应
                     
-                    if await more_btn.count() > 0:
-                        await more_btn.hover()
-                        await page.wait_for_timeout(300)
-                        await more_btn.click(force=True)
-                        await page.wait_for_timeout(500)
+                    # 1. 检查是否在后台直接被截获了（最理想的情况）
+                    if file_id in captured_share_data:
+                        res = captured_share_data.pop(file_id)
+                        print(f"      ✅ 直接触发了后台分享请求！")
+                        return res['url'], res['pwd']
                         
-                        share_btn = page.locator("text='外链分享', a:has-text('分享')").first
-                        if await share_btn.count() > 0:
-                            await share_btn.click()
-                            print(f"    [UI点击] 触发外链分享，等待接口返回...")
-                            await page.wait_for_timeout(2500)
+                    # 2. 如果没有直接触发，检查页面上有没有出现弹窗按钮
+                    print(f"      [DOM探查] 点击后出现的按钮或文字:")
+                    # 打印当前可见的按钮/链接文本，供排查
+                    visible_texts = await page.evaluate("""() => {
+                        const els = Array.from(document.querySelectorAll('a, button, .btn, .dialog span'));
+                        return els.map(e => e.innerText.trim()).filter(t => t.length > 0 && t.length < 20);
+                    }""")
+                    unique_texts = list(set([t for t in visible_texts if t]))
+                    print(f"      👉 页面可见文字: {unique_texts}")
+
+                    # 尝试寻找可能含有关键字的弹窗按钮
+                    for keyword in ["外链", "分享", "复制链接"]:
+                        btn = page.locator(f"text={keyword}").first
+                        if await btn.count() > 0:
+                            print(f"      [UI] 发现包含 '{keyword}' 的按钮，尝试点击...")
+                            await btn.click(force=True)
+                            await page.wait_for_timeout(2000)
                             if file_id in captured_share_data:
                                 res = captured_share_data.pop(file_id)
                                 return res['url'], res['pwd']
+                            else:
+                                print(f"      [UI] 点击了 '{keyword}'，但未截获到请求。")
+                else:
+                    print(f"      ❌ 页面上完全找不到文件名文本")
             except Exception as e:
-                pass # 忽略UI点击失败，直接进策略2
+                print(f"      [UI异常] 点击操作失败: {e}")
 
-            # --- 尝试策略2：直接发请求兜底 ---
+            # --- 策略2：如果 UI 彻底失败，作为最后的底线，尝试直接发带 folder_id 的请求 ---
+            print(f"      [兜底] 尝试发送原生请求...")
             try:
                 res_text = await page.evaluate(f"""async () => {{
                     const res = await fetch('https://pc.woozooo.com/doupload.php', {{
@@ -142,11 +160,8 @@ async def main():
             if 'name_all' in item: 
                 item_name = item.get('name_all')
                 item_id = str(item.get('id'))
-                print(f"  + 正在处理根目录文件: {item_name}")
-                share_url, pwd = await get_share_url(item_name, item_id, -1)
-                results.append({
-                    "name": item_name, "url": share_url, "pwd": pwd, "path": "", "size": item.get('size', '0')
-                })
+                share_url, pwd = await get_share_url_by_clicking(item_name, item_id, -1)
+                results.append({"name": item_name, "url": share_url, "pwd": pwd, "path": "", "size": item.get('size', '0')})
             elif 'fol_id' in item: 
                 if target_folder_name in item.get('name', ''):
                     target_folder_id = item.get('fol_id')
@@ -159,11 +174,10 @@ async def main():
 
         # 2. 深度遍历子文件夹
         queue = [(target_folder_id, "")]
-        
         while queue:
             current_id, current_path = queue.pop(0)
             display_path = current_path if current_path else "小众资源库(根)"
-            print(f"\n正在扫描子目录: {display_path} (ID: {current_id})")
+            print(f"\n📂 正在扫描子目录: {display_path} (ID: {current_id})")
             
             if str(current_id) in captured_folder_data:
                 del captured_folder_data[str(current_id)]
@@ -178,8 +192,7 @@ async def main():
                     break
                 await page.wait_for_timeout(500)
                 
-            if not items:
-                continue
+            if not items: continue
             
             seen_sub = set()
             for item in items:
@@ -190,22 +203,15 @@ async def main():
                 if 'fol_id' in item: 
                     next_path = f"{current_path}/{item['name']}" if current_path else item['name']
                     queue.append((item['fol_id'], next_path))
-                    print(f"  > 子文件夹: {item['name']}")
                 elif 'id' in item and 'name_all' in item: 
                     item_id = str(item['id'])
                     item_name = item['name_all']
                     unique_key = f"{item_name}_{current_path}"
-                    
                     if unique_key in seen_files: continue
                     seen_files.add(unique_key)
                     
-                    print(f"  + 正在处理文件: {item_name}")
-                    share_url, pwd = await get_share_url(item_name, item_id, current_id)
-                    
-                    results.append({
-                        "name": item_name, "url": share_url, "pwd": pwd, "path": current_path, "size": item.get('size', '0')
-                    })
-                    await page.wait_for_timeout(500)
+                    share_url, pwd = await get_share_url_by_clicking(item_name, item_id, current_id)
+                    results.append({"name": item_name, "url": share_url, "pwd": pwd, "path": current_path, "size": item.get('size', '0')})
 
         await browser.close()
         

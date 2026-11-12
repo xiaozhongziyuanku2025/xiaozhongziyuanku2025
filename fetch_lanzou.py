@@ -3,7 +3,7 @@ from playwright.async_api import async_playwright
 import json, re, os
 
 async def main():
-    print("🚀 启动「点击弹窗」终极拦截+直达版爬虫...")
+    print("🚀 启动「接口直连」终极稳定版爬虫...")
     account = os.environ.get('LANZOU_ACCOUNT')
     password = os.environ.get('LANZOU_PASSWORD')
 
@@ -25,7 +25,7 @@ async def main():
 
         captured_folder_data = {}
 
-        # 监听后台请求，偷取 folder_id
+        # 监听文件夹数据
         async def handle_response(response):
             if "doupload.php" in response.url:
                 try:
@@ -37,7 +37,10 @@ async def main():
                         if data.get('zt') == 1 and isinstance(data.get('text'), list):
                             if fid not in captured_folder_data:
                                 captured_folder_data[fid] = []
-                            captured_folder_data[fid].extend(data.get('text', []))
+                            # 去重累加
+                            for item in data.get('text', []):
+                                if item not in captured_folder_data[fid]:
+                                    captured_folder_data[fid].append(item)
                 except: pass
         page.on("response", handle_response)
 
@@ -62,106 +65,112 @@ async def main():
 
         print("✅ 登录成功！正在进入网盘主页...")
         await page.goto("https://pc.woozooo.com/mydisk.php", timeout=30000)
-        # 去掉 networkidle，改用固定等待，防止死锁
         await page.wait_for_timeout(4000)
 
-        # ================= 详细日志排查 =================
-        print("\n🔍 [详细日志] 开始扫描页面结构...")
-        page_html = await page.content()
-        visible_text = await page.inner_text("body")
-        print(f"👉 页面可见文字 (前 300 字): \n{visible_text[:300]}\n")
+        # ================= 获取分享链接的函数 =================
+        async def get_share_link(file_id):
+            try:
+                # 【核心修复】只传 file_id，绝不再传 folder_id！
+                res_text = await page.evaluate(f"""async () => {{
+                    const formData = new URLSearchParams();
+                    formData.append('task', 'file_share');
+                    formData.append('file_id', '{file_id}');
+                    
+                    const res = await fetch('https://pc.woozooo.com/doupload.php', {{
+                        method: 'POST',
+                        headers: {{
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }},
+                        body: formData.toString()
+                    }});
+                    return await res.text();
+                }}""")
+                
+                data = json.loads(res_text)
+                if data.get('zt') == 1:
+                    url = data.get('info') or data.get('url') or ''
+                    pwd = data.get('pwd', '')
+                    if url and not url.startswith("http"):
+                        url = f"https://www.lanzouq.com/{url}"
+                    return url, pwd
+                else:
+                    print(f"    ⚠️ 接口返回异常: {data.get('info')}")
+                    return "", ""
+            except Exception as e:
+                print(f"    ❌ 获取分享异常: {e}")
+                return "", ""
 
         # ================= 寻找目标文件夹 =================
-        target_folder_id = None
-        
-        # 方案A：从后台拦截的数据里找 ID
         root_items = captured_folder_data.get('-1', [])
+        target_folder_id = None
+
         for item in root_items:
             if 'fol_id' in item and target_folder_name in item.get('name', ''):
                 target_folder_id = item.get('fol_id')
                 print(f"✅ 从后台拦截数据中找到【{target_folder_name}】，ID: {target_folder_id}")
                 break
 
-        # 方案B：如果拦截数据没拿到，去网页上用 JS 强行找
         if not target_folder_id:
-            print("⚠️ 未在后台数据中找到，尝试从网页源码提取...")
-            id_match = re.search(rf"show_folder\('(\d+)'.*?{target_folder_name}", page_html, re.S)
-            if id_match:
-                target_folder_id = id_match.group(1)
-                print(f"✅ 从网页源码中找到【{target_folder_name}】，ID: {target_folder_id}")
-
-        if not target_folder_id:
-            print("❌ 彻底找不到目标文件夹，结束。")
+            print("❌ 未在根目录找到目标文件夹，退出。")
             await browser.close()
             return
 
-        # ================= 进入目标文件夹 =================
-        print(f"\n🚪 正在直达文件夹 ID: {target_folder_id}...")
-        folder_url = f"https://pc.woozooo.com/mydisk.php?item=files&action=index&folder_id={target_folder_id}"
-        await page.goto(folder_url, timeout=30000)
-        await page.wait_for_timeout(4000)
-
-        folder_text = await page.inner_text("body")
-        print(f"👉 文件夹内可见文字 (前 300 字): \n{folder_text[:300]}\n")
-
-        # ================= 点击文件弹窗 =================
-        print("🔍 开始尝试点击文件并提取弹窗...")
+        # ================= 深度遍历文件夹 =================
+        queue = [(target_folder_id, "")]
         
-        # 蓝奏云文件通常是 a 标签或者包含在表格里，我们用 JS 遍历寻找包含扩展名的元素
-        file_elements = await page.locator("a, td, div").all()
-        seen_files = set()
+        while queue:
+            current_id, current_path = queue.pop(0)
+            display_path = current_path if current_path else "小众资源库(根)"
+            print(f"\n📂 正在扫描目录: {display_path}")
+            
+            if str(current_id) in captured_folder_data:
+                del captured_folder_data[str(current_id)]
 
-        for element in file_elements:
-            try:
-                file_name = await element.inner_text()
-                file_name = file_name.strip()
-                
-                # 简单判断是不是文件名（过滤掉导航、按钮等文字）
-                if not file_name or len(file_name) < 3 or file_name in seen_files:
-                    continue
-                if not ('.' in file_name or 'Win' in file_name or '活动' in file_name):
-                    continue
-                if "文件夹" in file_name or "返回" in file_name or "登录" in file_name:
-                    continue
-                
-                # 限制长度防止点到奇奇怪怪的容器
-                if len(file_name) > 50:
-                    continue
-
-                seen_files.add(file_name)
-                print(f"\n📄 发现疑似文件: {file_name}")
-                print(f"    🖱️ 正在点击...")
-                
-                # 强行点击
-                await element.click(force=True)
-                await page.wait_for_timeout(2500) # 等弹窗
-                
-                # 提取弹窗文字
-                popup_text = await page.inner_text("body")
-                
-                # 匹配链接和密码
-                url_match = re.search(r"(https?://[a-zA-Z0-9.-]+/[a-zA-Z0-9]+)", popup_text)
-                pwd_match = re.search(r"(?:密码|提取码)[:：]\s*([a-zA-Z0-9]+)", popup_text)
-                
-                share_url = url_match.group(1) if url_match else ""
-                share_pwd = pwd_match.group(1) if pwd_match else ""
-
-                if share_url:
-                    print(f"    ✅ 成功获取: {share_url}，密码: {share_pwd}")
-                    results.append({
-                        "name": file_name, "url": share_url, "pwd": share_pwd, 
-                        "path": "", "size": "0"
-                    })
-                else:
-                    print(f"    ⚠️ 弹窗中未匹配到链接。弹窗文字片段: {popup_text[:100]}")
-
-                # 关闭弹窗
-                await page.keyboard.press("Escape")
+            folder_url = f"https://pc.woozooo.com/mydisk.php?item=files&action=index&folder_id={current_id}"
+            await page.goto(folder_url, timeout=30000)
+            await page.wait_for_timeout(3000) # 等待请求截获
+            
+            items = []
+            for _ in range(10):
+                if str(current_id) in captured_folder_data:
+                    items = captured_folder_data.pop(str(current_id))
+                    break
                 await page.wait_for_timeout(500)
+                
+            if not items:
+                print("  ⚠️ 未截获到该目录数据")
+                continue
 
-            except Exception as e:
-                # 忽略点击失败的元素
-                pass
+            for item in items:
+                # 如果是文件夹，加入队列
+                if 'fol_id' in item:
+                    next_path = f"{current_path}/{item['name']}" if current_path else item['name']
+                    queue.append((item['fol_id'], next_path))
+                    print(f"  > 发现子文件夹: {item['name']}")
+                
+                # 如果是文件，直接调用接口拿链接
+                elif 'id' in item and 'name_all' in item:
+                    item_id = str(item['id'])
+                    item_name = item['name_all']
+                    item_size = item.get('size', '0')
+                    
+                    print(f"  + 正在解析文件: {item_name}")
+                    share_url, pwd = await get_share_link(item_id)
+                    
+                    if share_url:
+                        print(f"    ✅ 获取成功: {share_url} (密码: {pwd})")
+                    else:
+                        print(f"    ❌ 获取失败")
+                        
+                    results.append({
+                        "name": item_name,
+                        "url": share_url,
+                        "pwd": pwd,
+                        "path": current_path,
+                        "size": item_size
+                    })
+                    await page.wait_for_timeout(300) # 防封
 
         await browser.close()
 

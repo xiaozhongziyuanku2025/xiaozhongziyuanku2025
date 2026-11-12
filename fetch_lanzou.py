@@ -1,14 +1,9 @@
 import asyncio
 from playwright.async_api import async_playwright
-import requests
 import json, re, os
 
-# ================= 配置区 =================
-TARGET_FOLDER_NAME = "小众资源库"
-# ==========================================
-
 async def main():
-    print("🚀 启动【终极混合架构】爬虫...")
+    print("🚀 启动全拟真混合架构爬虫 (纯浏览器拦截版)...")
     account = os.environ.get('LANZOU_ACCOUNT')
     password = os.environ.get('LANZOU_PASSWORD')
 
@@ -18,10 +13,9 @@ async def main():
 
     results = []
     seen_files = set()
+    target_folder_name = "小众资源库"
 
     async with async_playwright() as p:
-        # ---------------- 阶段一：Playwright 拟真登录 ----------------
-        print("\n[阶段一] 启动无头浏览器进行拟真登录...")
         browser = await p.chromium.launch(headless=True)
         context = await browser.new_context(
             user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
@@ -29,6 +23,29 @@ async def main():
         await context.add_init_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
         page = await context.new_page()
 
+        captured_folder_data = {}
+
+        # 【核心】只拦截浏览器发出的原生请求，绝不自己发
+        async def handle_response(response):
+            if "doupload.php" in response.url:
+                try:
+                    post_data = response.request.post_data or ""
+                    match = re.search(r"folder_id=(-?\d+)", post_data)
+                    if match:
+                        fid = match.group(1)
+                        data = await response.json()
+                        if data.get('zt') == 1 and isinstance(data.get('text'), list):
+                            if fid not in captured_folder_data:
+                                captured_folder_data[fid] = []
+                            captured_folder_data[fid].extend(data.get('text', []))
+                            print(f"  [网络截获] 文件夹 {fid} 数据，新增 {len(data.get('text', []))} 项")
+                        else:
+                            print(f"  [网络截获] 文件夹 {fid} 数据返回异常: {data}")
+                except Exception as e:
+                    pass
+        page.on("response", handle_response)
+
+        print("正在访问登录页...")
         await page.goto("https://accounts.woozooo.com/accounts.php?action=login&ref=pc.woozooo.com", timeout=30000)
         await page.wait_for_timeout(2000)
 
@@ -38,169 +55,106 @@ async def main():
             await page.click("#s3")
             await page.wait_for_timeout(5000)
         except Exception as e:
-            print(f"❌ 登录异常: {e}")
+            print(f"❌ 登录操作异常: {e}")
 
         if "mydisk" not in page.url:
             print(f"❌ 登录失败，当前 URL: {page.url}")
-            await browser.close()
             return
         
-        print("✅ 登录成功！")
+        print("✅ 登录成功！正在进入网盘...")
         await page.goto("https://pc.woozooo.com/mydisk.php", timeout=30000)
-        await page.wait_for_timeout(3000)
+        await page.wait_for_timeout(5000)
 
-        # ---------------- 阶段二：提取 Cookie 交接给 requests ----------------
-        print("\n[阶段二] 提取最新 Cookie，交接给轻量级 HTTP 引擎...")
-        cookies = await context.cookies()
-        cookie_dict = {c['name']: c['value'] for c in cookies}
+        # --- 1. 从拦截到的数据里找“小众资源库” ---
+        print("\n[阶段一] 解析根目录...")
+        # 蓝奏云可能会发 -1 或 0 的请求
+        root_items = captured_folder_data.get('-1', []) or captured_folder_data.get('0', [])
         
-        session = requests.Session()
-        for k, v in cookie_dict.items():
-            session.cookies.set(k, v)
-        
-        session.headers.update({
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-            'Accept': 'application/json, text/javascript, */*; q=0.01',
-            'X-Requested-With': 'XMLHttpRequest',
-            'Referer': 'https://pc.woozooo.com/mydisk.php'
-        })
-
-        def api_post(task, folder_id=None, file_id=None):
-            """使用 requests 发送后台请求"""
-            url = "https://pc.woozooo.com/doupload.php"
-            data = {'task': task}
-            if folder_id is not None:
-                data['folder_id'] = folder_id
-            if file_id is not None:
-                data['file_id'] = file_id
+        if not root_items:
+            print("⚠️ 未截获到根目录的任何数据。网页可能还没加载完。")
             
-            res = session.post(url, data=data, timeout=10)
-            return res.json() if res.status_code == 200 else {"zt": 0}
-
-        # ---------------- 阶段三：requests 高速递归 ----------------
-        print("\n[阶段三] HTTP 引擎高速递归解析层级...")
-        
-        # 1. 找根目录里的“小众资源库”
-        root_res = api_post('task_list', folder_id=-1)
         target_folder_id = None
-        root_items = root_res.get('text', [])
-        if not isinstance(root_items, list): root_items = []
+        seen_root = set()
 
         for item in root_items:
+            item_name = item.get('name_all') or item.get('name')
+            unique_key = f"{item_name}_{item.get('id') or item.get('fol_id')}"
+            if unique_key in seen_root: continue
+            seen_root.add(unique_key)
+
             if 'name_all' in item: # 根目录文件
-                unique_key = f"{item.get('name_all')}_"
-                if unique_key not in seen_files:
-                    seen_files.add(unique_key)
-                    share_url, pwd = get_share_url(item.get('id'), page, session)
-                    results.append({
-                        "name": item.get('name_all'), "url": share_url, "pwd": pwd,
-                        "path": "", "size": item.get('size', '0')
-                    })
-                    print(f"  + 根目录文件: {item.get('name_all')}")
-            elif 'fol_id' in item:
-                if TARGET_FOLDER_NAME in item.get('name', ''):
+                results.append({
+                    "name": item_name, "url": f"https://www.lanzouq.com/{item.get('duan')}" if item.get('duan') else "",
+                    "pwd": "", "path": "", "size": item.get('size', '0')
+                })
+                print(f"  + 根目录文件: {item_name}")
+            elif 'fol_id' in item: # 根目录文件夹
+                print(f"  > 发现文件夹: {item_name}")
+                if target_folder_name in item_name:
                     target_folder_id = item.get('fol_id')
-                    print(f"✅ 找到目标文件夹【{item.get('name')}】，ID: {target_folder_id}")
+                    print(f"✅ 找到目标文件夹【{item_name}】，ID: {target_folder_id}")
 
         if not target_folder_id:
             print("❌ 未找到目标文件夹，退出。")
-            await browser.close()
             return
 
-        # 2. 广度优先遍历子目录
+        # --- 2. 深度遍历 ---
+        print("\n[阶段二] 开始深度遍历...")
         queue = [(target_folder_id, "")]
+        
         while queue:
             current_id, current_path = queue.pop(0)
             display_path = current_path if current_path else "小众资源库(根)"
-            print(f"  正在扫描: {display_path}")
+            print(f"\n正在扫描子目录: {display_path} (ID: {current_id})")
             
-            folder_res = api_post('task_list', folder_id=current_id)
-            if folder_res.get('zt') != 1:
-                print(f"    ❌ 接口被拦截或出错: {folder_res}")
-                continue
-                
-            items = folder_res.get('text', [])
-            if not isinstance(items, list):
-                continue
+            if str(current_id) in captured_folder_data:
+                del captured_folder_data[str(current_id)]
 
+            folder_url = f"https://pc.woozooo.com/mydisk.php?item=files&action=index&folder_id={current_id}"
+            await page.goto(folder_url, timeout=30000)
+            
+            items = []
+            for _ in range(20):
+                if str(current_id) in captured_folder_data:
+                    items = captured_folder_data.pop(str(current_id))
+                    break
+                await page.wait_for_timeout(500)
+                
+            if not items:
+                print(f"  ⚠️ 等待超时，未截获数据")
+                continue
+            
+            seen_sub = set()
             for item in items:
-                if 'fol_id' in item: # 子文件夹
-                    next_path = f"{current_path}/{item['name']}" if current_path else item['name']
+                item_name = item.get('name_all') or item.get('name')
+                unique_key = f"{item_name}_{item.get('id') or item.get('fol_id')}"
+                if unique_key in seen_sub: continue
+                seen_sub.add(unique_key)
+
+                if 'fol_id' in item: 
+                    next_path = f"{current_path}/{item_name}" if current_path else item_name
                     queue.append((item['fol_id'], next_path))
-                elif 'id' in item and 'name_all' in item: # 子文件
+                    print(f"  > 子文件夹: {item_name}")
+                elif 'id' in item and 'name_all' in item: 
                     item_name = item['name_all']
                     unique_key = f"{item_name}_{current_path}"
                     if unique_key in seen_files: continue
                     seen_files.add(unique_key)
+                    
+                    # 纯用 duan 短链，不发额外请求
+                    share_url = f"https://www.lanzouq.com/{item['duan']}" if item.get('duan') else ""
 
-                    share_url, pwd = get_share_url(item.get('id'), page, session)
                     results.append({
-                        "name": item_name, "url": share_url, "pwd": pwd,
+                        "name": item_name, "url": share_url, "pwd": "",
                         "path": current_path, "size": item.get('size', '0')
                     })
-                    print(f"    + {item_name}")
+                    print(f"  + 文件: {item_name} (短链: {share_url})")
 
         await browser.close()
-
-    # --- 写入 JSON ---
+        
     with open('lanzou-cache.json', 'w', encoding='utf-8') as f:
         json.dump(results, f, ensure_ascii=False, indent=2)
-    print(f"\n✅ 全部完成！共提取 {len(results)} 个文件。")
-
-
-async def get_share_url(file_id, page, session):
-    """
-    获取分享链接：先尝试纯 HTTP 请求，失败则降级为 Playwright 拟真点击。
-    """
-    # 策略 A：Requests 高速请求
-    url = "https://pc.woozooo.com/doupload.php"
-    data = {'task': 'file_share', 'file_id': file_id}
-    try:
-        res = session.post(url, data=data, timeout=5)
-        data_json = res.json()
-        if data_json.get('zt') == 1:
-            share_url = data_json.get('info') or data_json.get('url') or ''
-            pwd = data_json.get('pwd', '')
-            if share_url and not share_url.startswith("http"):
-                share_url = f"https://www.lanzouq.com/{share_url}"
-            return share_url, pwd
-    except:
-        pass
-
-    # 策略 B：降级为 Playwright 模拟点击（终极兜底）
-    print(f"      ⚠️ 接口被拦截，启动浏览器兜底提取 file_id: {file_id}")
-    try:
-        # 在浏览器上下文中，直接注入脚本去点分享（模拟真实环境）
-        # 蓝奏云前端的分享逻辑通常会发请求并弹窗
-        res_text = await page.evaluate(f"""async () => {{
-            const fd = new FormData();
-            fd.append('task', 'file_share');
-            fd.append('file_id', '{file_id}');
-            // 加上完整的请求头，尤其是 Referer
-            const res = await fetch('https://pc.woozooo.com/doupload.php', {{
-                method: 'POST',
-                body: fd,
-                headers: {{ 'X-Requested-With': 'XMLHttpRequest' }}
-            }});
-            return await res.text();
-        }}""")
-        
-        # 尝试解析兜底请求的返回
-        try:
-            data = json.loads(res_text)
-            if data.get('zt') == 1:
-                share_url = data.get('info') or ''
-                pwd = data.get('pwd', '')
-                if share_url and not share_url.startswith("http"):
-                    share_url = f"https://www.lanzouq.com/{share_url}"
-                return share_url, pwd
-        except:
-            pass
-    except Exception as e:
-        print(f"      ❌ 兜底提取异常: {e}")
-
-    return "", ""
-
+    print(f"\n✅ 扫描完成！共提取 {len(results)} 个文件。")
 
 if __name__ == "__main__":
     asyncio.run(main())

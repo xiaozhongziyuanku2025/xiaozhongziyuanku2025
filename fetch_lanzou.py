@@ -3,7 +3,7 @@ from playwright.async_api import async_playwright
 import json, re, os
 
 async def main():
-    print("🚀 启动「暴力拟真点击」终极全日志版...")
+    print("🚀 启动「遍历盲点」终极日志版爬虫...")
     account = os.environ.get('LANZOU_ACCOUNT')
     password = os.environ.get('LANZOU_PASSWORD')
 
@@ -25,7 +25,6 @@ async def main():
 
         captured_folder_data = {}
         
-        # 详细网络日志
         async def handle_response(response):
             if "doupload.php" in response.url:
                 try:
@@ -97,6 +96,11 @@ async def main():
             await page.goto(folder_url, timeout=30000)
             await page.wait_for_timeout(3000)
             
+            # 【详细日志】打印页面源码和文本
+            print(f"\n🔍 [详细日志] 页面 HTML (前 500 字): \n{(await page.content())[:500]}\n")
+            print(f"🔍 [详细日志] 页面可见文字 (前 500 字): \n{(await page.inner_text('body'))[:500]}\n")
+
+            # 处理子文件夹队列
             items = []
             for _ in range(10):
                 if str(current_id) in captured_folder_data:
@@ -104,75 +108,73 @@ async def main():
                     break
                 await page.wait_for_timeout(500)
                 
-            if not items:
-                print("  ⚠️ 未截获到该目录数据")
-                continue
+            if items:
+                for item in items:
+                    if 'fol_id' in item:
+                        next_path = f"{current_path}/{item['name']}" if current_path else item['name']
+                        queue.append((item['fol_id'], next_path))
+                        print(f"  > 发现子文件夹: {item['name']}")
 
-            for item in items:
-                if 'fol_id' in item: # 子文件夹
-                    next_path = f"{current_path}/{item['name']}" if current_path else item['name']
-                    queue.append((item['fol_id'], next_path))
-                    print(f"  > 发现子文件夹: {item['name']}")
-                
-                elif 'id' in item and 'name_all' in item: # 文件
-                    item_name = item['name_all']
-                    item_size = item.get('size', '0')
+            # ================= 核心：盲点文件行 =================
+            print(f"\n🖱️ 开始盲点页面上的文件行...")
+            
+            # 蓝奏云的文件列表通常包裹在 <table> 或者 <tr> 中
+            # 我们抓取所有的 tr 行
+            rows = await page.locator("tr").all()
+            print(f"  页面上共找到 {len(rows)} 个表格行(tr)")
+
+            for row in rows:
+                try:
+                    row_text = await row.inner_text()
+                    row_text = row_text.strip()
                     
-                    print(f"\n  + 开始处理文件: {item_name}")
-                    
-                    share_url = ""
-                    share_pwd = ""
-                    
-                    try:
-                        # 使用精确文本匹配点击
-                        print(f"    🖱️ 正在精准定位文本: '{item_name}'")
-                        locator = page.get_by_text(item_name, exact=True).first
+                    # 跳过表头或者空行
+                    if not row_text or "文件名" in row_text or "大小" in row_text or len(row_text) < 5:
+                        continue
                         
-                        if await locator.count() == 0:
-                            print(f"    ⚠️ 精确匹配失败，尝试模糊匹配...")
-                            locator = page.get_by_text(item_name, exact=False).first
-                            if await locator.count() == 0:
-                                print(f"    ❌ 模糊匹配也失败，跳过。")
-                                continue
-                                
-                        print(f"    🖱️ 执行强制点击...")
-                        await locator.click(force=True)
-                        
-                        print("    ⏳ 等待 2.5 秒看弹窗...")
-                        await page.wait_for_timeout(2500)
+                    print(f"\n  发现疑似文件行: {row_text[:50]}...")
+                    
+                    # 找到该行内的文件名链接（通常是第一个 a 标签）
+                    file_link = row.locator("a").first
+                    if await file_link.count() > 0:
+                        print(f"    🖱️ 点击文件名链接...")
+                        # 强制点击，哪怕被弹窗遮挡也能点
+                        await file_link.click(force=True)
+                        await page.wait_for_timeout(2000) # 等待弹窗刷新
                         
                         # 抓取全屏文字
                         popup_text = await page.inner_text("body")
                         
+                        # 匹配链接和密码
                         url_match = re.search(r"(https?://[a-zA-Z0-9.-]+/[a-zA-Z0-9]+)", popup_text)
                         pwd_match = re.search(r"(?:密码|提取码)[:：]\s*([a-zA-Z0-9]+)", popup_text)
                         
-                        if url_match:
-                            share_url = url_match.group(1)
-                        if pwd_match:
-                            share_pwd = pwd_match.group(1)
-                            
+                        share_url = url_match.group(1) if url_match else ""
+                        share_pwd = pwd_match.group(1) if pwd_match else ""
+
+                        # 提取真实的文件名（通常在点击后获取或者从 row_text 解析）
+                        # 这里用 a 标签的文本作为名字
+                        file_name = await file_link.inner_text()
+                        file_name = file_name.strip()
+
                         if share_url:
                             print(f"    ✅ 【弹窗成功】链接: {share_url} | 密码: {share_pwd}")
-                        else:
-                            print(f"    ⚠️ 【弹窗失败】页面文字中未匹配到链接。弹窗快照：")
-                            print(f"    ---\n{popup_text[:500]}\n    ---")
-                            # 按 ESC 防止卡死
-                            await page.keyboard.press("Escape")
-                            await page.wait_for_timeout(500)
                             
-                    except Exception as e:
-                        print(f"    ❌ 点击/解析异常: {e}")
-                        
-                    results.append({
-                        "name": item_name,
-                        "url": share_url,
-                        "pwd": share_pwd,
-                        "path": current_path,
-                        "size": item_size
-                    })
-                    await page.wait_for_timeout(500)
-
+                            # 去重（同一个文件可能会被点两次）
+                            if not any(r['name'] == file_name and r['path'] == current_path for r in results):
+                                results.append({
+                                    "name": file_name,
+                                    "url": share_url,
+                                    "pwd": share_pwd,
+                                    "path": current_path,
+                                    "size": "0"
+                                })
+                        else:
+                            print(f"    ⚠️ 【弹窗无链接】弹窗文字片段: {popup_text[:100]}")
+                            
+                except Exception as e:
+                    print(f"    ❌ 行处理异常: {e}")
+                    
         await browser.close()
 
     with open('lanzou-cache.json', 'w', encoding='utf-8') as f:

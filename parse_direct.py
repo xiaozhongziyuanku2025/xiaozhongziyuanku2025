@@ -1,67 +1,15 @@
-import requests
+import asyncio
+from playwright.async_api import async_playwright
 import json
-import re
 import os
-import time
-from urllib.parse import urlparse
+import re
 
-def get_direct_link(session, share_url, pwd):
-    try:
-        headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
-        }
-        
-        # 1. 访问分享页（带上密码）
-        url = f"{share_url}?pwd={pwd}" if pwd else share_url
-        res = session.get(url, headers=headers, timeout=10)
-        
-        # 如果触发 WAF 盾
-        if "acw_sc__v2" in res.text or "arg1" in res.text:
-            print("    ⚠️ 触发 WAF 盾，请配置 LANZOU_COOKIE。")
-            return ""
-
-        # 2. 从页面源码中提取 ajaxfile.php 的 ID
-        file_match = re.search(r"ajaxfile\.php\?file=(\d+)", res.text)
-        if not file_match:
-            print("    ⚠️ 页面中未找到 ajaxfile 参数。")
-            return ""
-            
-        fid = file_match.group(1)
-        domain = f"{urlparse(share_url).scheme}://{urlparse(share_url).netloc}"
-        ajax_url = f"{domain}/ajaxfile.php?file={fid}"
-        
-        # 3. 请求 ajaxfile.php 接口
-        ajax_headers = headers.copy()
-        ajax_headers['X-Requested-With'] = 'XMLHttpRequest'
-        ajax_headers['Referer'] = url
-        
-        ajax_res = session.get(ajax_url, headers=ajax_headers, timeout=10)
-        data = ajax_res.json()
-        
-        # 4. 拼接真实直链
-        if data.get('zt') == 1:
-            dom = data.get('dom', '')
-            path = data.get('url', '')
-            if dom and path:
-                return f"{dom}/file/{path}"
-        return ""
-    except Exception as e:
-        print(f"    ❌ 解析异常: {e}")
-        return ""
-
-def main():
-    print("🚀 启动极速直链解析...")
-    
-    # 读取 Cookie（强烈建议配置，降低被盾拦截的概率）
+async def main():
+    print("🚀 启动 Playwright 无头浏览器（直链极速解析版）...")
     cookie_str = os.environ.get('LANZOU_COOKIE', '')
-    session = requests.Session()
-    if cookie_str:
-        session.headers.update({'Cookie': cookie_str})
-        print("✅ 已注入 LANZOU_COOKIE")
-
-    input_file = 'lanzou-cache.json'       # 你的母库
-    output_file = 'lanzou-direct.json'     # 前端最终读取的直链库
+    
+    input_file = 'lanzou-cache.json'
+    output_file = 'lanzou-direct.json'
     
     if not os.path.exists(input_file):
         print(f"❌ 未找到 {input_file}，请先运行前置工作流。")
@@ -71,37 +19,97 @@ def main():
         files = json.load(f)
 
     results = []
-    for idx, item in enumerate(files):
-        name = item.get('name', '未知文件')
-        share_url = item.get('url', '')
-        pwd = item.get('pwd', '')
-        path = item.get('path', '')
-        size = item.get('size', '0')
-
-        print(f"\n[{idx+1}/{len(files)}] 解析: {name}")
-        direct_url = get_direct_link(session, share_url, pwd) if share_url else ""
-
-        if direct_url:
-            print(f"  ✅ 直链成功: {direct_url[:50]}...")
-        else:
-            print(f"  ❌ 直链获取失败")
-
-        # 组装新的数据结构
-        results.append({
-            "name": name,
-            "url": share_url,          # 供前端兜底跳转
-            "pwd": pwd,
-            "path": path,
-            "direct_url": direct_url,  # 真实下载链接
-            "size": size
-        })
+    
+    async with async_playwright() as p:
+        browser = await p.chromium.launch(headless=True)
+        context = await browser.new_context(
+            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            viewport={"width": 1280, "height": 800}
+        )
+        await context.add_init_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
         
-        # 延迟 1 秒防封
-        time.sleep(1)
+        # 如果配置了 Cookie 就注入
+        if cookie_str:
+            print("✅ 已注入 LANZOU_COOKIE")
+            cookies = []
+            for item in cookie_str.split(';'):
+                if '=' in item:
+                    k, v = item.strip().split('=', 1)
+                    cookies.append({'name': k, 'value': v, 'domain': '.lanzn.com', 'path': '/'})
+            await context.add_cookies(cookies)
+
+        page = await context.new_page()
+
+        # 拦截 ajaxfile.php 响应
+        captured_data = None
+        async def handle_response(response):
+            nonlocal captured_data
+            if "ajaxfile.php" in response.url:
+                try:
+                    data = await response.json()
+                    if data.get('zt') == 1 and data.get('dom') and data.get('url'):
+                        captured_data = f"{data['dom']}/file/{data['url']}"
+                except: pass
+        page.on("response", handle_response)
+
+        for idx, item in enumerate(files):
+            name = item.get('name', '未知文件')
+            share_url = item.get('url', '')
+            pwd = item.get('pwd', '')
+            path = item.get('path', '')
+            size = item.get('size', '0')
+
+            print(f"\n[{idx+1}/{len(files)}] 解析: {name}")
+            
+            if not share_url:
+                print("  ⚠️ 缺少分享链接，跳过")
+                results.append({**item, "direct_url": ""})
+                continue
+
+            captured_data = None # 清空
+            try:
+                # 打开分享链接
+                await page.goto(share_url, timeout=20000, wait_until="domcontentloaded")
+                await page.wait_for_timeout(1000)
+                
+                # 检查是否有密码框
+                if pwd and await page.locator("input[type='password'], input[name='pwd'], input[placeholder*='密码']").count() > 0:
+                    print("  [检测到密码框，正在输入...]")
+                    await page.fill("input[type='password'], input[name='pwd'], input[placeholder*='密码']", pwd)
+                    await page.keyboard.press("Enter")
+                    await page.wait_for_timeout(2000)
+                
+                # 等待截获 ajaxfile 数据（最多等 8 秒）
+                for _ in range(16):
+                    if captured_data:
+                        break
+                    await page.wait_for_timeout(500)
+                    
+                if captured_data:
+                    print(f"  ✅ 直链成功: {captured_data[:50]}...")
+                else:
+                    print("  ❌ 未截获到 ajaxfile 数据")
+                    
+            except Exception as e:
+                print(f"  ❌ 页面异常: {e}")
+                captured_data = ""
+
+            # 组装结果
+            results.append({
+                "name": name,
+                "url": share_url,       # 分享页，供兜底跳转
+                "pwd": pwd,             # 密码
+                "path": path,           # 层级
+                "direct_url": captured_data or "",  # 直链
+                "size": size
+            })
+            await page.wait_for_timeout(500) # 防封延迟
+
+        await browser.close()
 
     with open(output_file, 'w', encoding='utf-8') as f:
         json.dump(results, f, ensure_ascii=False, indent=2)
     print(f"\n✅ 全部解析完成，已生成 {output_file}")
 
 if __name__ == '__main__':
-    main()
+    asyncio.run(main())
